@@ -18,22 +18,23 @@ exports.handler = async () => {
     }
 
     // GraphQL Query
-    const query = `
-      query ($boardId: [ID!]) {
-        boards(ids: $boardId) {
+const query = `
+  query($boardId: [ID!]) {
+    boards(ids: $boardId) {
+      items_page(limit: 10) {
+        items {
           id
           name
-          items {
+          column_values {
             id
-            name
-            column_values {
-              id
-              text
-            }
+            text
           }
         }
       }
-    `;
+    }
+  }
+`;
+
 
     const variables = { boardId: [BOARD_ID] };
 
