@@ -8,21 +8,26 @@ exports.handler = async () => {
       return jsonResp(500, { error: "Missing MONDAY_BOARD_ID or MONDAY_API_TOKEN" });
     }
 
-    const query = `
-      query ($boardId: [ID!], $limit: Int!) {
-        boards(ids: $boardId) {
+const query = `
+  query ($boardId: [ID!], $limit: Int!) {
+    boards(ids: $boardId) {
+      id
+      name
+      items_page(limit: $limit) {
+        total_count
+        cursor
+        items {
           id
           name
-          items_page(limit: $limit) {
-            items {
-              id
-              name
-              column_values { id text }
-            }
-          }
+          column_values { id text }
         }
       }
-    `;
+    }
+  }
+`;
+
+const variables = { boardId: [BOARD_ID], limit: 100 };
+
 
     const variables = { boardId: [BOARD_ID], limit: 100 };
 
@@ -37,7 +42,8 @@ exports.handler = async () => {
 
     if (json.errors) return jsonResp(502, { errors: json.errors });
 
-    const items = json?.data?.boards?.[0]?.items_page?.items ?? [];
+const items = json?.data?.boards?.[0]?.items_page?.items ?? [];
+
     return jsonResp(200, items);
   } catch (err) {
     return jsonResp(500, { error: String(err) });
