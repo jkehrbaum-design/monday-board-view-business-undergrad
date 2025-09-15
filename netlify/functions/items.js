@@ -1,6 +1,5 @@
 // Netlify Function: /.netlify/functions/items
-// Holt Monday-Items read-only und gibt sie als JSON zurück.
-exports.handler = async function (event, context) {
+exports.handler = async function () {
   try {
     const BOARD_ID = process.env.MONDAY_BOARD_ID;
     const TOKEN = process.env.MONDAY_API_TOKEN;
@@ -8,17 +7,14 @@ exports.handler = async function (event, context) {
     if (!BOARD_ID || !TOKEN) {
       return {
         statusCode: 500,
-        headers: {
-          'Access-Control-Allow-Origin': '*',
-          'Content-Type': 'application/json'
-        },
+        headers: { 'Access-Control-Allow-Origin': '*', 'Content-Type': 'application/json' },
         body: JSON.stringify({ error: 'Missing MONDAY_BOARD_ID or MONDAY_API_TOKEN' })
       };
     }
 
     const query = `
-      query ($boardId: Int!, $limit: Int!, $page: Int!) {
-        items_page(board_id: $boardId, limit: $limit, page: $page) {
+      query ($boardId: [Int]) {
+        boards (ids: $boardId) {
           items {
             id
             name
@@ -30,8 +26,7 @@ exports.handler = async function (event, context) {
         }
       }
     `;
-
-    const variables = { boardId: Number(BOARD_ID), limit: 100, page: 1 };
+    const variables = { boardId: Number(BOARD_ID) };
 
     const resp = await fetch('https://api.monday.com/v2', {
       method: 'POST',
@@ -45,24 +40,16 @@ exports.handler = async function (event, context) {
     const json = await resp.json();
     console.log('monday response:', JSON.stringify(json));
 
-
-    const items = json?.data?.items_page?.items ?? [];
-
+    const items = json?.data?.boards?.[0]?.items ?? [];
     return {
       statusCode: 200,
-      headers: {
-        'Access-Control-Allow-Origin': '*',
-        'Content-Type': 'application/json'
-      },
+      headers: { 'Access-Control-Allow-Origin': '*', 'Content-Type': 'application/json' },
       body: JSON.stringify(items)
     };
   } catch (err) {
     return {
       statusCode: 500,
-      headers: {
-        'Access-Control-Allow-Origin': '*',
-        'Content-Type': 'application/json'
-      },
+      headers: { 'Access-Control-Allow-Origin': '*', 'Content-Type': 'application/json' },
       body: JSON.stringify({ error: String(err) })
     };
   }
