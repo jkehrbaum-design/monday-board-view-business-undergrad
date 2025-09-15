@@ -12,23 +12,30 @@ exports.handler = async function () {
       };
     }
 
-    const query = `
-      query ($boardId: [Int]) {
-        boards (ids: $boardId) {
-          items {
+// ↓ Query ersetzen
+const query = `
+  query ($boardId: [ID!], $limit: Int!) {
+    boards (ids: $boardId) {
+      items_page (limit: $limit, page: 1) {
+        items {
+          id
+          name
+          column_values {
             id
-            name
-            column_values {
-              id
-              text
-            }
+            text
           }
         }
       }
-    `;
-    const variables = { boardId: Number(BOARD_ID) };
+    }
+  }
+`;
 
-    const resp = await fetch('https://api.monday.com/v2', {
+// ↓ Variablen ersetzen
+const variables = { boardId: [String(BOARD_ID)], limit: 100 };
+
+// ↓ Mapping der Antwort ersetzen (weiter unten)
+const items = json?.data?.boards?.[0]?.items_page?.items ?? [];
+
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
