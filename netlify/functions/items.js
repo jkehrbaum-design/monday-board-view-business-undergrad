@@ -8,38 +8,36 @@ exports.handler = async () => {
       return {
         statusCode: 500,
         headers: {
-          'Access-Control-Allow-Origin': '*',
-          'Content-Type': 'application/json'
+          "Access-Control-Allow-Origin": "*",
+          "Content-Type": "application/json"
         },
         body: JSON.stringify({
-          error: 'Missing MONDAY_BOARD_ID or MONDAY_API_TOKEN'
+          error: "Missing MONDAY_BOARD_ID or MONDAY_API_TOKEN"
         })
       };
     }
 
+    // GraphQL Query
     const query = `
-      query ($boardId: [ID!], $limit: Int!, $page: Int!) {
-        boards (ids: $boardId) {
-          items_page(limit: $limit, page: $page) {
-            items {
+      query ($boardId: [ID!]) {
+        boards(ids: $boardId) {
+          id
+          name
+          items {
+            id
+            name
+            column_values {
               id
-              name
-              column_values {
-                id
-                text
-              }
+              text
             }
           }
         }
       }
     `;
 
-    const variables = {
-      boardId: [BOARD_ID],
-      limit: 10,
-      page: 1
-    };
+    const variables = { boardId: [BOARD_ID] };
 
+    // Anfrage an Monday API
     const resp = await fetch("https://api.monday.com/v2", {
       method: "POST",
       headers: {
@@ -52,24 +50,4 @@ exports.handler = async () => {
     const json = await resp.json();
     console.log("monday response:", JSON.stringify(json));
 
-    const items = json?.data?.boards?.[0]?.items_page?.items ?? [];
-
-    return {
-      statusCode: 200,
-      headers: {
-        "Access-Control-Allow-Origin": "*",
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify(items)
-    };
-  } catch (err) {
-    return {
-      statusCode: 500,
-      headers: {
-        "Access-Control-Allow-Origin": "*",
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({ error: String(err) })
-    };
-  }
-};
+    const items = js
