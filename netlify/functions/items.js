@@ -43,6 +43,8 @@ exports.handler = async function (event, context) {
     });
 
     const json = await resp.json();
+    console.log('monday response:', JSON.stringify(json));
+
 
     const items = json?.data?.items_page?.items ?? [];
 
