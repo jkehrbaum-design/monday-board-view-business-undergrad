@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Monday Read-only View (Filterbar)</title>
+  <style>
+    body { font-family: system-ui, Arial, sans-serif; max-width: 950px; margin: 24px auto; padding: 0 12px; }
+    h1 { font-size: 20px; }
+    .toolbar { display: flex; gap: 8px; margin: 12px 0; }
+    input, select { padding: 8px; }
+    table { width: 100%; border-collapse: collapse; }
+    th, td { border: 1px solid #ddd; padding: 8px; vertical-align: top; }
+    th { background: #f7f7f7; text-align: left; }
+    .muted { color: #666; font-size: 12px; }
+  </style>
+</head>
+<body>
+  <h1>Gefilterte Ansicht (read-only)</h1>
+  <p class="muted">Hinweis: Die Daten kommen von einer sicheren Server-Funktion. Du kannst hier filtern/suchen, aber nichts ändern.</p>
+
+  <div class="toolbar">
+    <input id="search" type="text" placeholder="Suche im Namen oder in Spaltenwerten…" />
+  </div>
+
+  <table>
+    <thead>
+      <tr>
+        <th style="width: 25%">Name</th>
+        <th>Spaltenwerte (Text)</th>
+      </tr>
+    </thead>
+    <tbody id="tbody">
+      <tr><td colspan="2">Lade Daten…</td></tr>
+    </tbody>
+  </table>
+
+  <script>
+    let ALL = [];
+
+    function render(rows) {
+      const tb = document.getElementById('tbody');
+      if (!rows || rows.length === 0) {
+        tb.innerHTML = '<tr><td colspan="2">Keine Ergebnisse.</td></tr>';
+        return;
+      }
+      tb.innerHTML = rows.map(item => {
+        const cols = (item.column_values || []).map(c => c?.text || '').filter(Boolean).join(', ');
+        return `<tr>
+          <td>${item.name || ''}</td>
+          <td>${cols || '<span class="muted">—</span>'}</td>
+        </tr>`;
+      }).join('');
+    }
+
+    function applySearch() {
+      const q = document.getElementById('search').value.trim().toLowerCase();
+      if (!q) return render(ALL);
+      const filtered = ALL.filter(it => {
+        const name = (it.name || '').toLowerCase();
+        const cols = (it.column_values || []).map(c => (c?.text || '').toLowerCase()).join(' ');
+        return name.includes(q) || cols.includes(q);
+      });
+      render(filtered);
+    }
+
+    document.getElementById('search').addEventListener('input', applySearch);
+
+    async function load() {
+      try {
+        // Netlify-Funktion (legen wir im nächsten Schritt an):
+        const res = await fetch('/.netlify/functions/items');
+        ALL = await res.json();
+        render(ALL);
+      } catch (e) {
+        document.getElementById('tbody').innerHTML =
+          '<tr><td colspan="2">Konnte noch nicht laden (Funktion fehlt noch) – wir richten sie gleich ein.</td></tr>';
+      }
+    }
+    load();
+  </script>
+</body>
+</html>
