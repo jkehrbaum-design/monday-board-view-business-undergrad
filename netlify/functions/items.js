@@ -9,11 +9,11 @@ exports.handler = async () => {
     }
 
     const query = `
-      query ($boardId: [ID!], $limit: Int!, $page: Int!) {
+      query ($boardId: [ID!], $limit: Int!) {
         boards(ids: $boardId) {
           id
           name
-          items_page(limit: $limit, page: $page) {
+          items_page(limit: $limit) {
             items {
               id
               name
@@ -24,7 +24,7 @@ exports.handler = async () => {
       }
     `;
 
-    const variables = { boardId: [BOARD_ID], limit: 100, page: 1 };
+    const variables = { boardId: [BOARD_ID], limit: 100 };
 
     const resp = await fetch("https://api.monday.com/v2", {
       method: "POST",
