@@ -1,5 +1,4 @@
 // Netlify Function: /.netlify/functions/items
-// Holt Items über boards -> groups -> items (kompatibel, wenn "items" am Board nicht verfügbar ist)
 exports.handler = async () => {
   try {
     const BOARD_ID = process.env.MONDAY_BOARD_ID;
@@ -10,13 +9,11 @@ exports.handler = async () => {
     }
 
     const query = `
-      query ($boardId: [ID!]) {
+      query ($boardId: [ID!], $limit: Int!, $page: Int!) {
         boards(ids: $boardId) {
           id
           name
-          groups {
-            id
-            title
+          items_page(limit: $limit, page: $page) {
             items {
               id
               name
@@ -27,28 +24,20 @@ exports.handler = async () => {
       }
     `;
 
-    const variables = { boardId: [BOARD_ID] };
+    const variables = { boardId: [BOARD_ID], limit: 100, page: 1 };
 
     const resp = await fetch("https://api.monday.com/v2", {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": TOKEN
-      },
+      headers: { "Content-Type": "application/json", "Authorization": TOKEN },
       body: JSON.stringify({ query, variables })
     });
 
     const json = await resp.json();
     console.log("monday response:", JSON.stringify(json));
 
-    if (json.errors) {
-      return jsonResp(502, { errors: json.errors });
-    }
+    if (json.errors) return jsonResp(502, { errors: json.errors });
 
-    // Alle Items aus allen Gruppen zu einer Liste zusammenführen
-    const groups = json?.data?.boards?.[0]?.groups ?? [];
-    const items = groups.flatMap(g => g.items || []);
-
+    const items = json?.data?.boards?.[0]?.items_page?.items ?? [];
     return jsonResp(200, items);
   } catch (err) {
     return jsonResp(500, { error: String(err) });
@@ -58,10 +47,7 @@ exports.handler = async () => {
 function jsonResp(status, body) {
   return {
     statusCode: status,
-    headers: {
-      "Content-Type": "application/json",
-      "Access-Control-Allow-Origin": "*"
-    },
+    headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" },
     body: JSON.stringify(body)
   };
 }
