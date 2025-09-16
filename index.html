@@ -3,156 +3,332 @@
 <head>
   <meta charset="UTF-8" />
   <title>Monday Data Table</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
   <style>
-    body { font-family: Arial, sans-serif; margin: 20px; }
-    table { border-collapse: collapse; width: 100%; margin-top: 10px; }
-    th, td { border: 1px solid #ddd; padding: 8px; }
-    th { background: #f4f4f4; }
-    .filters { display: flex; gap: 10px; flex-wrap: wrap; margin: 10px 0; }
-    .filters label { font-size: 14px; }
+    :root {
+      --bg: #fafafa;
+      --card: #ffffff;
+      --border: #e5e7eb;
+      --muted: #6b7280;
+    }
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; background: var(--bg); margin: 0; }
+    .wrap { max-width: 1200px; margin: 24px auto; padding: 0 16px; }
+    h1 { margin: 0 0 12px; font-size: 20px; }
+    .bar { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; }
+    .card { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 12px; }
+    .filters { display: grid; grid-template-columns: repeat(6, minmax(160px, 1fr)); gap: 12px; }
+    .filters label { display: flex; flex-direction: column; gap: 6px; font-size: 12px; color: var(--muted); }
+    .filters input[type="number"], .filters input[type="text"], .filters select {
+      border: 1px solid var(--border); border-radius: 8px; padding: 8px; font-size: 14px; background: white;
+    }
+    .filters select[multiple] { height: 120px; }
+    .controls { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; margin-top: 8px; }
+    button { border: 1px solid var(--border); background: white; padding: 8px 12px; border-radius: 8px; cursor: pointer; }
+    button:disabled { opacity: 0.5; cursor: not-allowed; }
+    table { border-collapse: collapse; width: 100%; margin-top: 12px; background: var(--card); border: 1px solid var(--border); }
+    th, td { border-bottom: 1px solid var(--border); padding: 8px 10px; text-align: left; font-size: 14px; vertical-align: top; }
+    th { background: #f7f7f7; position: sticky; top: 0; z-index: 1; }
+    .muted { color: var(--muted); }
+    .pill { display:inline-block; border:1px solid var(--border); padding:2px 6px; border-radius:999px; font-size:12px; }
+    .rowcount { font-size: 12px; color: var(--muted); }
+    .table-wrap { overflow: auto; max-height: 70vh; }
+    .nowrap { white-space: nowrap; }
   </style>
 </head>
 <body>
-  <h1>Monday.com Table</h1>
+  <div class="wrap">
+    <h1>Bachelor’s Programs – Freshman Student</h1>
 
-  <!-- Search -->
-  <input type="text" id="search" placeholder="Search by name..." />
+    <div class="card">
+      <div class="bar">
+        <input id="search" type="text" placeholder="Search by name…" style="flex:1; min-width:220px;" />
+        <span class="rowcount" id="rowcount">–</span>
+      </div>
 
-  <!-- Filters -->
-  <div class="filters">
-    <label>
-      State:
-      <select id="filter-state">
-        <option value="">All</option>
-      </select>
-    </label>
+      <div class="filters" style="margin-top:12px;">
+        <label>
+          State (multi)
+          <select id="filter-state" multiple></select>
+        </label>
 
-    <label>
-      Major:
-      <select id="filter-major">
-        <option value="">All</option>
-      </select>
-    </label>
+        <label>
+          Major (multi)
+          <select id="filter-major" multiple></select>
+        </label>
 
-    <label>
-      Ranking ≤ <input type="number" id="filter-ranking" placeholder="Max Ranking" />
-    </label>
+        <label>
+          Ranking ≤
+          <input id="filter-ranking-max" type="number" inputmode="numeric" placeholder="e.g. 200" />
+        </label>
 
-    <label>
-      Cost ≤ <input type="number" id="filter-cost" placeholder="Max Cost" />
-    </label>
+        <label>
+          Final Cost ≤
+          <input id="filter-cost-max" type="number" inputmode="numeric" placeholder="USD" />
+        </label>
 
-    <label>
-      GPA ≥ <input type="number" id="filter-gpa" step="0.1" placeholder="Min GPA" />
-    </label>
+        <label>
+          Min. GPA ≥
+          <input id="filter-gpa-min" type="number" step="0.1" inputmode="decimal" placeholder="e.g. 3.0" />
+        </label>
+
+        <label>
+          Columns (read-only)
+          <span class="pill" id="col-summary">–</span>
+        </label>
+      </div>
+
+      <div class="controls">
+        <label>Limit
+          <select id="limit">
+            <option value="10">10</option>
+            <option value="20" selected>20</option>
+            <option value="50">50</option>
+            <option value="100">100</option>
+          </select>
+        </label>
+        <button id="reload">Reload</button>
+        <button id="load-more">Load more</button>
+        <button id="clear-filters">Clear filters</button>
+        <span class="muted">Pagination via cursor</span>
+      </div>
+    </div>
+
+    <div class="table-wrap">
+      <table id="data-table">
+        <thead><tr id="thead-row"></tr></thead>
+        <tbody id="tbody"></tbody>
+      </table>
+    </div>
   </div>
 
-  <!-- Controls -->
-  <label>Limit:
-    <select id="limit">
-      <option value="10">10</option>
-      <option value="20" selected>20</option>
-      <option value="50">50</option>
-    </select>
-  </label>
-  <button id="reload">Reload</button>
-  <button id="load-more">Load more</button>
-
-  <!-- Table -->
-  <table id="data-table">
-    <thead>
-      <tr>
-        <th>Name</th>
-        <th>State</th>
-        <th>Ranking</th>
-        <th>Final Cost</th>
-        <th>Major</th>
-        <th>Min GPA</th>
-      </tr>
-    </thead>
-    <tbody></tbody>
-  </table>
-
   <script>
-    const apiUrl = '/.netlify/functions/items';
-    let items = [];
-    let cursor = null;
+    // ---------- CONFIG ----------
+    const API_URL = '/.netlify/functions/items';
 
-    const tbody = document.querySelector('#data-table tbody');
-    const searchInput = document.getElementById('search');
-    const stateFilter = document.getElementById('filter-state');
-    const majorFilter = document.getElementById('filter-major');
-    const rankingFilter = document.getElementById('filter-ranking');
-    const costFilter = document.getElementById('filter-cost');
-    const gpaFilter = document.getElementById('filter-gpa');
+    // Full list of 50 US states (alphabetical)
+    const US_STATES_50 = [
+      "Alabama","Alaska","Arizona","Arkansas","California","Colorado","Connecticut","Delaware",
+      "Florida","Georgia","Hawaii","Idaho","Illinois","Indiana","Iowa","Kansas","Kentucky",
+      "Louisiana","Maine","Maryland","Massachusetts","Michigan","Minnesota","Mississippi",
+      "Missouri","Montana","Nebraska","Nevada","New Hampshire","New Jersey","New Mexico",
+      "New York","North Carolina","North Dakota","Ohio","Oklahoma","Oregon","Pennsylvania",
+      "Rhode Island","South Carolina","South Dakota","Tennessee","Texas","Utah","Vermont",
+      "Virginia","Washington","West Virginia","Wisconsin","Wyoming"
+    ];
 
-    async function fetchItems(reset = true) {
-      let url = `${apiUrl}?limit=${document.getElementById('limit').value}`;
-      if (!reset && cursor) url += `&cursor=${cursor}`;
+    // Known numeric fields (best-effort; extend if your API adds more)
+    const NUMERIC_FIELDS = new Set([
+      "ranking",
+      "final_cost_of_attendance",
+      "minimum_gpa_requirement"
+    ]);
 
-      const res = await fetch(url);
-      const data = await res.json();
+    // Friendly label mapping (optional)
+    const LABEL_MAP = {
+      id: "ID",
+      name: "Name",
+      state: "State",
+      ranking: "Ranking",
+      final_cost_of_attendance: "Final Cost of Attendance",
+      major: "Major",
+      minimum_gpa_requirement: "Minimum GPA Requirement"
+    };
 
-      if (reset) {
-        items = data.items;
-        cursor = data.cursor;
-      } else {
-        items = items.concat(data.items);
-        cursor = data.cursor;
+    // ---------- STATE ----------
+    let items = [];     // all loaded so far
+    let cursor = null;  // server-provided cursor for pagination
+    let columns = [];   // dynamic column list (union of keys)
+
+    // ---------- DOM ----------
+    const elSearch = document.getElementById('search');
+    const elLimit = document.getElementById('limit');
+    const elReload = document.getElementById('reload');
+    const elLoadMore = document.getElementById('load-more');
+    const elClear = document.getElementById('clear-filters');
+    const elRowcount = document.getElementById('rowcount');
+
+    const elState = document.getElementById('filter-state');
+    const elMajor = document.getElementById('filter-major');
+    const elRankMax = document.getElementById('filter-ranking-max');
+    const elCostMax = document.getElementById('filter-cost-max');
+    const elGpaMin = document.getElementById('filter-gpa-min');
+    const elColSummary = document.getElementById('col-summary');
+
+    const theadRow = document.getElementById('thead-row');
+    const tbody = document.getElementById('tbody');
+
+    // ---------- HELPERS ----------
+    const toTitle = (s) =>
+      LABEL_MAP[s] || s.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+
+    function parseNumber(val) {
+      if (val == null) return null;
+      if (typeof val === 'number') return val;
+      if (typeof val !== 'string') return null;
+      const cleaned = val.replace(/[^0-9.\-]/g, '');
+      if (!cleaned) return null;
+      const n = Number(cleaned);
+      return Number.isFinite(n) ? n : null;
+    }
+
+    function getSelectedValues(selectEl) {
+      return Array.from(selectEl.selectedOptions).map(o => o.value);
+    }
+
+    function uniqueSorted(arr) {
+      return Array.from(new Set(arr.filter(Boolean))).sort((a, b) => (''+a).localeCompare(''+b));
+    }
+
+    function unionKeys(objs) {
+      const set = new Set();
+      for (const o of objs) {
+        if (o && typeof o === 'object') {
+          Object.keys(o).forEach(k => set.add(k));
+        }
       }
-
-      populateDropdowns();
-      renderTable();
+      // Ensure 'name' is first if present, then 'state', 'major'; rest alphabetical
+      const keys = Array.from(set);
+      const priority = ['name','state','major','ranking','final_cost_of_attendance','minimum_gpa_requirement'];
+      const rest = keys.filter(k => !priority.includes(k)).sort();
+      const ordered = priority.filter(k => keys.includes(k)).concat(rest);
+      return ordered;
     }
 
-    function populateDropdowns() {
-      const states = [...new Set(items.map(i => i.state).filter(Boolean))].sort();
-      const majors = [...new Set(items.map(i => i.major).filter(Boolean))].sort();
-
-      stateFilter.innerHTML = '<option value="">All</option>' + states.map(s => `<option>${s}</option>`).join('');
-      majorFilter.innerHTML = '<option value="">All</option>' + majors.map(m => `<option>${m}</option>`).join('');
+    function setStatesOptions() {
+      elState.innerHTML = US_STATES_50.map(s => `<option value="${s}">${s}</option>`).join('');
     }
 
-    function applyFilters(data) {
-      const search = searchInput.value.toLowerCase();
-      const state = stateFilter.value;
-      const major = majorFilter.value;
-      const maxRanking = rankingFilter.value ? parseInt(rankingFilter.value) : null;
-      const maxCost = costFilter.value ? parseInt(costFilter.value) : null;
-      const minGpa = gpaFilter.value ? parseFloat(gpaFilter.value) : null;
+    function setMajorsOptions() {
+      const majors = uniqueSorted(items.map(i => i?.major));
+      elMajor.innerHTML = majors.map(m => `<option value="${m}">${m}</option>`).join('');
+    }
 
-      return data.filter(i => {
-        if (search && !i.name.toLowerCase().includes(search)) return false;
-        if (state && i.state !== state) return false;
-        if (major && i.major !== major) return false;
-        if (maxRanking && (!i.ranking || parseInt(i.ranking) > maxRanking)) return false;
-        if (maxCost && (!i.final_cost_of_attendance || parseInt(i.final_cost_of_attendance) > maxCost)) return false;
-        if (minGpa && (!i.minimum_gpa_requirement || parseFloat(i.minimum_gpa_requirement) < minGpa)) return false;
+    function updateColumns() {
+      columns = unionKeys(items);
+      // Render header
+      theadRow.innerHTML = columns.map(c => `<th>${toTitle(c)}</th>`).join('');
+      elColSummary.textContent = `${columns.length} cols`;
+      elColSummary.title = columns.join(', ');
+    }
+
+    function applyFilters(rows) {
+      const q = (elSearch.value || '').trim().toLowerCase();
+      const selStates = new Set(getSelectedValues(elState));
+      const selMajors = new Set(getSelectedValues(elMajor));
+      const maxRank = parseNumber(elRankMax.value);
+      const maxCost = parseNumber(elCostMax.value);
+      const minGpa = parseNumber(elGpaMin.value);
+
+      return rows.filter(i => {
+        // search by name
+        if (q && !(i?.name || '').toLowerCase().includes(q)) return false;
+
+        // state multi-select (if any selected)
+        if (selStates.size > 0) {
+          if (!i?.state || !selStates.has(i.state)) return false;
+        }
+
+        // major multi-select (if any selected)
+        if (selMajors.size > 0) {
+          if (!i?.major || !selMajors.has(i.major)) return false;
+        }
+
+        // numeric filters (best-effort)
+        if (maxRank != null) {
+          const r = parseNumber(i?.ranking);
+          if (r == null || r > maxRank) return false;
+        }
+
+        if (maxCost != null) {
+          const c = parseNumber(i?.final_cost_of_attendance);
+          if (c == null || c > maxCost) return false;
+        }
+
+        if (minGpa != null) {
+          const g = parseNumber(i?.minimum_gpa_requirement);
+          if (g == null || g < minGpa) return false;
+        }
+
         return true;
       });
     }
 
     function renderTable() {
+      if (!columns.length) updateColumns();
+
       const filtered = applyFilters(items);
-      tbody.innerHTML = filtered.map(i => `
-        <tr>
-          <td>${i.name}</td>
-          <td>${i.state || ''}</td>
-          <td>${i.ranking || ''}</td>
-          <td>${i.final_cost_of_attendance || ''}</td>
-          <td>${i.major || ''}</td>
-          <td>${i.minimum_gpa_requirement || ''}</td>
-        </tr>
-      `).join('');
+      elRowcount.textContent = `${filtered.length} / ${items.length} shown`;
+
+      tbody.innerHTML = filtered.map(row => {
+        return `<tr>${
+          columns.map(col => {
+            let v = row?.[col];
+            if (v == null) v = '';
+            if (Array.isArray(v)) v = v.join(', ');
+            if (typeof v === 'object' && v !== null) v = JSON.stringify(v);
+            return `<td>${String(v)}</td>`;
+          }).join('')
+        }</tr>`;
+      }).join('');
     }
 
-    document.getElementById('reload').addEventListener('click', () => fetchItems(true));
-    document.getElementById('load-more').addEventListener('click', () => fetchItems(false));
+    // ---------- DATA FETCH ----------
+    async function fetchItems({ reset = true } = {}) {
+      try {
+        let url = `${API_URL}?limit=${encodeURIComponent(elLimit.value)}`;
+        if (!reset && cursor) url += `&cursor=${encodeURIComponent(cursor)}`;
 
-    [searchInput, stateFilter, majorFilter, rankingFilter, costFilter, gpaFilter]
-      .forEach(el => el.addEventListener('input', renderTable));
+        elLoadMore.disabled = true;
+        const res = await fetch(url);
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const data = await res.json();
 
-    fetchItems(true);
+        if (reset) {
+          items = data.items || [];
+        } else {
+          items = items.concat(data.items || []);
+        }
+        cursor = data.cursor || null;
+
+        // Refresh filters & columns after data changes
+        updateColumns();
+        setMajorsOptions();
+        renderTable();
+
+        // enable Load more only if a cursor remains
+        elLoadMore.disabled = !cursor;
+      } catch (e) {
+        console.error(e);
+        alert('Failed to fetch items. See console for details.');
+      }
+    }
+
+    // ---------- EVENTS ----------
+    elReload.addEventListener('click', () => fetchItems({ reset: true }));
+    elLoadMore.addEventListener('click', () => fetchItems({ reset: false }));
+    elLimit.addEventListener('change', () => fetchItems({ reset: true }));
+
+    [elSearch, elRankMax, elCostMax, elGpaMin].forEach(el =>
+      el.addEventListener('input', renderTable)
+    );
+
+    [elState, elMajor].forEach(el =>
+      el.addEventListener('change', renderTable)
+    );
+
+    elClear.addEventListener('click', () => {
+      elSearch.value = '';
+      elState.selectedIndex = -1; // clear multi-select
+      elMajor.selectedIndex = -1;
+      elRankMax.value = '';
+      elCostMax.value = '';
+      elGpaMin.value = '';
+      renderTable();
+    });
+
+    // ---------- INIT ----------
+    setStatesOptions();
+    fetchItems({ reset: true });
   </script>
 </body>
 </html>
