@@ -2,333 +2,375 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Monday Data Table</title>
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Bachelor’s Programs – Freshman Student (Mirror)</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <style>
     :root {
-      --bg: #fafafa;
-      --card: #ffffff;
-      --border: #e5e7eb;
-      --muted: #6b7280;
+      --bg: #fafafa; --border: #e6e9ef; --text: #2a2e34; --muted: #667085;
+      --primary: #1f76f0; --row-height: 36px; --shadow: 0 1px 2px rgba(16,24,40,.06);
     }
-    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; background: var(--bg); margin: 0; }
-    .wrap { max-width: 1200px; margin: 24px auto; padding: 0 16px; }
-    h1 { margin: 0 0 12px; font-size: 20px; }
-    .bar { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; }
-    .card { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 12px; }
-    .filters { display: grid; grid-template-columns: repeat(6, minmax(160px, 1fr)); gap: 12px; }
-    .filters label { display: flex; flex-direction: column; gap: 6px; font-size: 12px; color: var(--muted); }
-    .filters input[type="number"], .filters input[type="text"], .filters select {
-      border: 1px solid var(--border); border-radius: 8px; padding: 8px; font-size: 14px; background: white;
-    }
-    .filters select[multiple] { height: 120px; }
-    .controls { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; margin-top: 8px; }
-    button { border: 1px solid var(--border); background: white; padding: 8px 12px; border-radius: 8px; cursor: pointer; }
-    button:disabled { opacity: 0.5; cursor: not-allowed; }
-    table { border-collapse: collapse; width: 100%; margin-top: 12px; background: var(--card); border: 1px solid var(--border); }
-    th, td { border-bottom: 1px solid var(--border); padding: 8px 10px; text-align: left; font-size: 14px; vertical-align: top; }
-    th { background: #f7f7f7; position: sticky; top: 0; z-index: 1; }
-    .muted { color: var(--muted); }
-    .pill { display:inline-block; border:1px solid var(--border); padding:2px 6px; border-radius:999px; font-size:12px; }
-    .rowcount { font-size: 12px; color: var(--muted); }
-    .table-wrap { overflow: auto; max-height: 70vh; }
-    .nowrap { white-space: nowrap; }
+    *{box-sizing:border-box} body{margin:0;background:var(--bg);color:var(--text);
+      font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;}
+    header{position:sticky;top:0;z-index:30;background:#fff;border-bottom:1px solid var(--border);
+      padding:10px 16px;box-shadow:var(--shadow)}
+    h1{margin:0 0 6px 0;font-size:18px;font-weight:600}
+    .controls{display:flex;gap:12px;flex-wrap:wrap;align-items:center}
+    .control{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--muted)}
+    input[type="text"],input[type="number"],select,button{height:32px;padding:0 10px;border:1px solid var(--border);
+      border-radius:8px;background:#fff;color:var(--text)}
+    button{cursor:pointer} button.primary{border-color:var(--primary);color:#fff;background:var(--primary)}
+    .multiselect{position:relative}
+    .multiselect button{min-width:220px;display:inline-flex;align-items:center;justify-content:space-between}
+    .dropdown{position:absolute;top:36px;left:0;z-index:40;background:#fff;width:320px;max-height:300px;overflow:auto;
+      border:1px solid var(--border);border-radius:10px;box-shadow:var(--shadow);display:none}
+    .dropdown.open{display:block} .dropdown .searchbox{padding:8px;border-bottom:1px solid var(--border)}
+    .option{display:flex;align-items:center;gap:8px;padding:6px 10px;border-bottom:1px solid #f3f4f6}
+    .opt-actions{display:flex;justify-content:space-between;gap:8px;padding:8px;border-top:1px solid var(--border)}
+    .col-chooser{position:relative}
+    .col-panel{position:absolute;top:36px;right:0;width:360px;max-height:380px;overflow:auto;background:#fff;
+      border:1px solid var(--border);border-radius:10px;box-shadow:var(--shadow);padding:8px;display:none;z-index:40}
+    .col-panel.open{display:block} .col-item{display:flex;align-items:center;gap:8px;padding:6px 8px;border-bottom:1px solid #f3f4f6;font-size:13px}
+    .grid-wrap{padding:12px 16px} .grid{border:1px solid var(--border);border-radius:12px;background:#fff;overflow:hidden}
+    .grid-head{position:sticky;top:58px;z-index:20;background:#f7f9fc;border-bottom:1px solid var(--border);
+      font-weight:600;color:#3b4351;display:grid;align-items:center;min-height:36px}
+    .grid-body{position:relative;height:calc(100vh - 210px);overflow:auto}
+    .row{position:absolute;left:0;right:0;display:grid;align-items:center;height:var(--row-height);border-bottom:1px solid #f6f7fb}
+    .cell{padding:0 10px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;font-size:13px}
+    .row:hover{background:#f9fbff} .stripe{background:#fcfcfd} .muted{color:var(--muted)}
   </style>
 </head>
 <body>
-  <div class="wrap">
-    <h1>Bachelor’s Programs – Freshman Student</h1>
-
-    <div class="card">
-      <div class="bar">
-        <input id="search" type="text" placeholder="Search by name…" style="flex:1; min-width:220px;" />
-        <span class="rowcount" id="rowcount">–</span>
+  <header>
+    <h1>Bachelor’s Programs – Freshman Student (Read-only Mirror)</h1>
+    <div class="controls">
+      <div class="control">
+        <input id="search" type="text" placeholder="Search by name or any cell…" />
       </div>
 
-      <div class="filters" style="margin-top:12px;">
-        <label>
-          State (multi)
-          <select id="filter-state" multiple></select>
-        </label>
-
-        <label>
-          Major (multi)
-          <select id="filter-major" multiple></select>
-        </label>
-
-        <label>
-          Ranking ≤
-          <input id="filter-ranking-max" type="number" inputmode="numeric" placeholder="e.g. 200" />
-        </label>
-
-        <label>
-          Final Cost ≤
-          <input id="filter-cost-max" type="number" inputmode="numeric" placeholder="USD" />
-        </label>
-
-        <label>
-          Min. GPA ≥
-          <input id="filter-gpa-min" type="number" step="0.1" inputmode="decimal" placeholder="e.g. 3.0" />
-        </label>
-
-        <label>
-          Columns (read-only)
-          <span class="pill" id="col-summary">–</span>
-        </label>
+      <!-- Multi-select: State -->
+      <div class="control multiselect" id="ms-state">
+        <button type="button">State ▾</button>
+        <div class="dropdown">
+          <div class="searchbox"><input type="text" placeholder="Filter states…" /></div>
+          <div class="options"></div>
+          <div class="opt-actions">
+            <button type="button" data-action="clear">Clear</button>
+            <button type="button" data-action="apply" class="primary">Apply</button>
+          </div>
+        </div>
       </div>
 
-      <div class="controls">
-        <label>Limit
-          <select id="limit">
-            <option value="10">10</option>
-            <option value="20" selected>20</option>
-            <option value="50">50</option>
-            <option value="100">100</option>
-          </select>
-        </label>
-        <button id="reload">Reload</button>
-        <button id="load-more">Load more</button>
-        <button id="clear-filters">Clear filters</button>
-        <span class="muted">Pagination via cursor</span>
+      <!-- Multi-select: Major -->
+      <div class="control multiselect" id="ms-major">
+        <button type="button">Major ▾</button>
+        <div class="dropdown">
+          <div class="searchbox"><input type="text" placeholder="Filter majors…" /></div>
+          <div class="options"></div>
+          <div class="opt-actions">
+            <button type="button" data-action="clear">Clear</button>
+            <button type="button" data-action="apply" class="primary">Apply</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Numeric filters -->
+      <div class="control">Ranking ≤ <input id="f-ranking-max" type="number" placeholder="e.g. 300" /></div>
+      <div class="control">Final Cost ≤ <input id="f-cost-max" type="number" placeholder="USD" /></div>
+      <div class="control">Min GPA ≥ <input id="f-gpa-min" type="number" step="0.1" placeholder="e.g. 3.0" /></div>
+
+      <!-- Column chooser -->
+      <div class="control col-chooser">
+        <button id="btn-cols" type="button">Columns ▾</button>
+        <div class="col-panel" id="col-panel"></div>
+      </div>
+
+      <div class="control">
+        <button id="btn-reset" type="button">Reset filters</button>
       </div>
     </div>
+  </header>
 
-    <div class="table-wrap">
-      <table id="data-table">
-        <thead><tr id="thead-row"></tr></thead>
-        <tbody id="tbody"></tbody>
-      </table>
+  <div class="grid-wrap">
+    <div class="grid">
+      <div class="grid-head" id="grid-head"></div>
+      <div class="grid-body" id="grid-body">
+        <div id="spacer" style="height:0px;"></div>
+      </div>
+    </div>
+    <div class="muted" style="margin-top:8px">
+      Showing <span id="count-shown">0</span> of <span id="count-total">0</span> rows
     </div>
   </div>
 
   <script>
-    // ---------- CONFIG ----------
-    const API_URL = '/.netlify/functions/items';
+    const API = '/.netlify/functions/items?boardId=2761790925';
 
-    // Full list of 50 US states (alphabetical)
-    const US_STATES_50 = [
-      "Alabama","Alaska","Arizona","Arkansas","California","Colorado","Connecticut","Delaware",
-      "Florida","Georgia","Hawaii","Idaho","Illinois","Indiana","Iowa","Kansas","Kentucky",
-      "Louisiana","Maine","Maryland","Massachusetts","Michigan","Minnesota","Mississippi",
-      "Missouri","Montana","Nebraska","Nevada","New Hampshire","New Jersey","New Mexico",
-      "New York","North Carolina","North Dakota","Ohio","Oklahoma","Oregon","Pennsylvania",
-      "Rhode Island","South Carolina","South Dakota","Tennessee","Texas","Utah","Vermont",
-      "Virginia","Washington","West Virginia","Wisconsin","Wyoming"
+    // Fixed 50 US states
+    const US_STATES = [
+      "Alabama","Alaska","Arizona","Arkansas","California","Colorado","Connecticut","Delaware","Florida","Georgia",
+      "Hawaii","Idaho","Illinois","Indiana","Iowa","Kansas","Kentucky","Louisiana","Maine","Maryland",
+      "Massachusetts","Michigan","Minnesota","Mississippi","Missouri","Montana","Nebraska","Nevada","New Hampshire","New Jersey",
+      "New Mexico","New York","North Carolina","North Dakota","Ohio","Oklahoma","Oregon","Pennsylvania","Rhode Island","South Carolina",
+      "South Dakota","Tennessee","Texas","Utah","Vermont","Virginia","Washington","West Virginia","Wisconsin","Wyoming"
     ];
 
-    // Known numeric fields (best-effort; extend if your API adds more)
-    const NUMERIC_FIELDS = new Set([
-      "ranking",
-      "final_cost_of_attendance",
-      "minimum_gpa_requirement"
-    ]);
+    let columns = [], items = [], filtered = [], visibleColIds = [];
 
-    // Friendly label mapping (optional)
-    const LABEL_MAP = {
-      id: "ID",
-      name: "Name",
-      state: "State",
-      ranking: "Ranking",
-      final_cost_of_attendance: "Final Cost of Attendance",
-      major: "Major",
-      minimum_gpa_requirement: "Minimum GPA Requirement"
-    };
+    let COL_ID_STATE = null, COL_ID_MAJOR = null, COL_ID_RANKING = null, COL_ID_COST = null, COL_ID_GPA = null;
 
-    // ---------- STATE ----------
-    let items = [];     // all loaded so far
-    let cursor = null;  // server-provided cursor for pagination
-    let columns = [];   // dynamic column list (union of keys)
+    const ROW_HEIGHT = 36, BUFFER = 8;
+    let startIndex = 0, endIndex = 0;
 
-    // ---------- DOM ----------
-    const elSearch = document.getElementById('search');
-    const elLimit = document.getElementById('limit');
-    const elReload = document.getElementById('reload');
-    const elLoadMore = document.getElementById('load-more');
-    const elClear = document.getElementById('clear-filters');
-    const elRowcount = document.getElementById('rowcount');
+    const headEl = document.getElementById('grid-head');
+    const bodyEl = document.getElementById('grid-body');
+    const spacerEl = document.getElementById('spacer');
+    const countShown = document.getElementById('count-shown');
+    const countTotal = document.getElementById('count-total');
 
-    const elState = document.getElementById('filter-state');
-    const elMajor = document.getElementById('filter-major');
-    const elRankMax = document.getElementById('filter-ranking-max');
-    const elCostMax = document.getElementById('filter-cost-max');
-    const elGpaMin = document.getElementById('filter-gpa-min');
-    const elColSummary = document.getElementById('col-summary');
+    const searchInput = document.getElementById('search');
+    const rankingMax = document.getElementById('f-ranking-max');
+    const costMax = document.getElementById('f-cost-max');
+    const gpaMin = document.getElementById('f-gpa-min');
 
-    const theadRow = document.getElementById('thead-row');
-    const tbody = document.getElementById('tbody');
+    const msState = setupMultiselect(document.getElementById('ms-state'), US_STATES);
+    const msMajor = setupMultiselect(document.getElementById('ms-major'), []); // will fill after fetch
 
-    // ---------- HELPERS ----------
-    const toTitle = (s) =>
-      LABEL_MAP[s] || s.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+    const colBtn = document.getElementById('btn-cols');
+    const colPanel = document.getElementById('col-panel');
+    const resetBtn = document.getElementById('btn-reset');
 
-    function parseNumber(val) {
-      if (val == null) return null;
-      if (typeof val === 'number') return val;
-      if (typeof val !== 'string') return null;
-      const cleaned = val.replace(/[^0-9.\-]/g, '');
-      if (!cleaned) return null;
-      const n = Number(cleaned);
-      return Number.isFinite(n) ? n : null;
-    }
+    init();
 
-    function getSelectedValues(selectEl) {
-      return Array.from(selectEl.selectedOptions).map(o => o.value);
-    }
-
-    function uniqueSorted(arr) {
-      return Array.from(new Set(arr.filter(Boolean))).sort((a, b) => (''+a).localeCompare(''+b));
-    }
-
-    function unionKeys(objs) {
-      const set = new Set();
-      for (const o of objs) {
-        if (o && typeof o === 'object') {
-          Object.keys(o).forEach(k => set.add(k));
+    async function init() {
+      try {
+        const res = await fetch(API);
+        if (!res.ok) {
+          const text = await res.text();
+          alert(`Failed to fetch items. Details: ${text}`);
+          return;
         }
+        const data = await res.json();
+
+        columns = data.columns || [];
+        items = data.items || [];
+        countTotal.textContent = String(items.length);
+
+        const titleMap = indexTitles(columns);
+        COL_ID_STATE   = pickCol(titleMap, ["state"]);
+        COL_ID_MAJOR   = pickCol(titleMap, ["major","program","degree"]);
+        COL_ID_RANKING = pickCol(titleMap, ["ranking","rank"]);
+        COL_ID_COST    = pickCol(titleMap, ["final cost","cost of attendance","tuition","coa"]);
+        COL_ID_GPA     = pickCol(titleMap, ["minimum gpa","min gpa","gpa"]);
+
+        // majors from data
+        const majors = unique(items.map(it => cellText(it, COL_ID_MAJOR)).filter(Boolean)).sort((a,b)=>a.localeCompare(b));
+        msMajor.setOptions(majors);
+
+        visibleColIds = JSON.parse(localStorage.getItem('visibleColIds') || 'null') || columns.map(c => c.id);
+
+        renderHeader();
+        applyFilters();
+        buildColumnChooser();
+        attachEvents();
+      } catch (e) {
+        console.error(e);
+        alert("Failed to fetch items. See console for details.");
       }
-      // Ensure 'name' is first if present, then 'state', 'major'; rest alphabetical
-      const keys = Array.from(set);
-      const priority = ['name','state','major','ranking','final_cost_of_attendance','minimum_gpa_requirement'];
-      const rest = keys.filter(k => !priority.includes(k)).sort();
-      const ordered = priority.filter(k => keys.includes(k)).concat(rest);
-      return ordered;
     }
 
-    function setStatesOptions() {
-      elState.innerHTML = US_STATES_50.map(s => `<option value="${s}">${s}</option>`).join('');
+    function renderHeader() {
+      const cols = columns.filter(c => visibleColIds.includes(c.id));
+      headEl.style.gridTemplateColumns = gridTemplate(cols);
+      headEl.innerHTML = cols.map(c => `<div class="cell" title="${escapeHtml(c.title || c.id)}">${escapeHtml(c.title || c.id)}</div>`).join('');
     }
 
-    function setMajorsOptions() {
-      const majors = uniqueSorted(items.map(i => i?.major));
-      elMajor.innerHTML = majors.map(m => `<option value="${m}">${m}</option>`).join('');
+    function renderBody() {
+      const cols = columns.filter(c => visibleColIds.includes(c.id));
+      const total = filtered.length;
+      const viewH = bodyEl.clientHeight || 400;
+      const rowsPerView = Math.ceil(viewH / ROW_HEIGHT) + BUFFER;
+
+      startIndex = Math.max(0, Math.floor(bodyEl.scrollTop / ROW_HEIGHT) - BUFFER);
+      endIndex = Math.min(total, startIndex + rowsPerView);
+
+      spacerEl.style.height = `${total * ROW_HEIGHT}px`;
+      bodyEl.querySelectorAll('.row').forEach(n => n.remove());
+
+      const frag = document.createDocumentFragment();
+      for (let i = startIndex; i < endIndex; i++) {
+        const it = filtered[i];
+        const row = document.createElement('div');
+        row.className = 'row' + (i % 2 ? ' stripe' : '');
+        row.style.top = `${i * ROW_HEIGHT}px`;
+        row.style.display = 'grid';
+        row.style.gridTemplateColumns = gridTemplate(cols);
+
+        cols.forEach(col => {
+          const txt = cellText(it, col.id) ?? '';
+          const d = document.createElement('div');
+          d.className = 'cell';
+          d.title = txt;
+          d.textContent = txt;
+          row.appendChild(d);
+        });
+        frag.appendChild(row);
+      }
+      bodyEl.appendChild(frag);
+
+      countShown.textContent = String(filtered.length);
     }
 
-    function updateColumns() {
-      columns = unionKeys(items);
-      // Render header
-      theadRow.innerHTML = columns.map(c => `<th>${toTitle(c)}</th>`).join('');
-      elColSummary.textContent = `${columns.length} cols`;
-      elColSummary.title = columns.join(', ');
-    }
+    function applyFilters() {
+      const q = (searchInput.value || '').toLowerCase().trim();
+      const stateSet = new Set(msState.getSelection());
+      const majorSet = new Set(msMajor.getSelection());
+      const rMax = toNum(rankingMax.value);
+      const cMax = toNum(costMax.value);
+      const gMin = toNum(gpaMin.value, true);
 
-    function applyFilters(rows) {
-      const q = (elSearch.value || '').trim().toLowerCase();
-      const selStates = new Set(getSelectedValues(elState));
-      const selMajors = new Set(getSelectedValues(elMajor));
-      const maxRank = parseNumber(elRankMax.value);
-      const maxCost = parseNumber(elCostMax.value);
-      const minGpa = parseNumber(elGpaMin.value);
-
-      return rows.filter(i => {
-        // search by name
-        if (q && !(i?.name || '').toLowerCase().includes(q)) return false;
-
-        // state multi-select (if any selected)
-        if (selStates.size > 0) {
-          if (!i?.state || !selStates.has(i.state)) return false;
+      filtered = items.filter(it => {
+        if (q) {
+          let hit = (it.name || '').toLowerCase().includes(q);
+          if (!hit) {
+            const texts = Object.values(it.column_values || {}).map(v => (v?.text || '').toLowerCase());
+            hit = texts.some(t => t.includes(q));
+          }
+          if (!hit) return false;
         }
-
-        // major multi-select (if any selected)
-        if (selMajors.size > 0) {
-          if (!i?.major || !selMajors.has(i.major)) return false;
+        if (stateSet.size) {
+          const s = cellText(it, COL_ID_STATE);
+          if (!s || !stateSet.has(s)) return false;
         }
-
-        // numeric filters (best-effort)
-        if (maxRank != null) {
-          const r = parseNumber(i?.ranking);
-          if (r == null || r > maxRank) return false;
+        if (majorSet.size) {
+          const m = cellText(it, COL_ID_MAJOR);
+          if (!m || !majorSet.has(m)) return false;
         }
-
-        if (maxCost != null) {
-          const c = parseNumber(i?.final_cost_of_attendance);
-          if (c == null || c > maxCost) return false;
+        if (rMax !== null) {
+          const v = toNum(cellText(it, COL_ID_RANKING));
+          if (v === null || v > rMax) return false;
         }
-
-        if (minGpa != null) {
-          const g = parseNumber(i?.minimum_gpa_requirement);
-          if (g == null || g < minGpa) return false;
+        if (cMax !== null) {
+          const v = toNum(cellText(it, COL_ID_COST));
+          if (v === null || v > cMax) return false;
         }
-
+        if (gMin !== null) {
+          const v = toNum(cellText(it, COL_ID_GPA), true);
+          if (v === null || v < gMin) return false;
+        }
         return true;
       });
+
+      renderBody();
     }
 
-    function renderTable() {
-      if (!columns.length) updateColumns();
-
-      const filtered = applyFilters(items);
-      elRowcount.textContent = `${filtered.length} / ${items.length} shown`;
-
-      tbody.innerHTML = filtered.map(row => {
-        return `<tr>${
-          columns.map(col => {
-            let v = row?.[col];
-            if (v == null) v = '';
-            if (Array.isArray(v)) v = v.join(', ');
-            if (typeof v === 'object' && v !== null) v = JSON.stringify(v);
-            return `<td>${String(v)}</td>`;
-          }).join('')
-        }</tr>`;
+    function buildColumnChooser() {
+      colPanel.innerHTML = columns.map(c => {
+        const checked = visibleColIds.includes(c.id) ? 'checked' : '';
+        return `<div class="col-item">
+          <input type="checkbox" data-col="${c.id}" ${checked} />
+          <span>${escapeHtml(c.title || c.id)}</span>
+        </div>`;
       }).join('');
     }
 
-    // ---------- DATA FETCH ----------
-    async function fetchItems({ reset = true } = {}) {
-      try {
-        let url = `${API_URL}?limit=${encodeURIComponent(elLimit.value)}`;
-        if (!reset && cursor) url += `&cursor=${encodeURIComponent(cursor)}`;
+    function attachEvents() {
+      bodyEl.addEventListener('scroll', renderBody);
+      window.addEventListener('resize', renderBody);
+      [searchInput, rankingMax, costMax, gpaMin].forEach(el => el.addEventListener('input', debounce(applyFilters, 120)));
 
-        elLoadMore.disabled = true;
-        const res = await fetch(url);
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        const data = await res.json();
+      const colBtn = document.getElementById('btn-cols');
+      colBtn.addEventListener('click', () => colPanel.classList.toggle('open'));
+      document.addEventListener('click', (e) => {
+        if (!colPanel.contains(e.target) && e.target !== colBtn) colPanel.classList.remove('open');
+      });
+      colPanel.addEventListener('change', (e) => {
+        const id = e.target.getAttribute('data-col');
+        if (!id) return;
+        if (e.target.checked) { if (!visibleColIds.includes(id)) visibleColIds.push(id); }
+        else { visibleColIds = visibleColIds.filter(x => x !== id); }
+        localStorage.setItem('visibleColIds', JSON.stringify(visibleColIds));
+        renderHeader(); renderBody();
+      });
 
-        if (reset) {
-          items = data.items || [];
-        } else {
-          items = items.concat(data.items || []);
-        }
-        cursor = data.cursor || null;
-
-        // Refresh filters & columns after data changes
-        updateColumns();
-        setMajorsOptions();
-        renderTable();
-
-        // enable Load more only if a cursor remains
-        elLoadMore.disabled = !cursor;
-      } catch (e) {
-        console.error(e);
-        alert('Failed to fetch items. See console for details.');
-      }
+      document.getElementById('btn-reset').addEventListener('click', () => {
+        searchInput.value = ''; rankingMax.value = ''; costMax.value = ''; gpaMin.value = '';
+        msState.clear(); msMajor.clear(); applyFilters();
+      });
     }
 
-    // ---------- EVENTS ----------
-    elReload.addEventListener('click', () => fetchItems({ reset: true }));
-    elLoadMore.addEventListener('click', () => fetchItems({ reset: false }));
-    elLimit.addEventListener('change', () => fetchItems({ reset: true }));
+    // Utilities
+    function indexTitles(cols){ const m={}; cols.forEach(c=>{ m[(c.title||c.id||'').toLowerCase()]=c.id; }); return m; }
+    function pickCol(map, needles){ const keys = Object.keys(map); for (const n of needles){ const k = keys.find(k=>k.includes(n)); if (k) return map[k]; } return null; }
+    function cellText(it, colId){
+      if (!colId) return null;
+      const v = it.column_values?.[colId];
+      if (!v) return null;
+      if (v.text) return v.text;
+      const val = v.value;
+      if (val && typeof val === 'object') {
+        if (val.display_value) return val.display_value;
+        if (val.label?.text) return val.label.text;
+        if (val.title) return val.title;
+        if (val.name) return val.name;
+      }
+      return typeof val === 'string' ? val : '';
+    }
+    function gridTemplate(cols){
+      const first = cols[0]; // Monday zeigt die erste Spalte (Name) etwas breiter
+      return cols.map(c => c===first ? 'minmax(220px, 1.2fr)' : 'minmax(140px, 1fr)').join(' ');
+    }
+    function toNum(x, allowFloat=false){
+      if (x===undefined||x===null) return null;
+      x = String(x);
+      const m = x.replace(/[, $€£]|USD|EUR|US|K/gi,'').match(/-?\d+(\.\d+)?/);
+      if (!m) return null;
+      return allowFloat ? parseFloat(m[0]) : parseInt(m[0],10);
+    }
+    function unique(a){ return Array.from(new Set(a)); }
+    function escapeHtml(s){ return (s||'').replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+    function debounce(fn, ms){ let t; return (...args)=>{ clearTimeout(t); t=setTimeout(()=>fn(...args), ms); }; }
 
-    [elSearch, elRankMax, elCostMax, elGpaMin].forEach(el =>
-      el.addEventListener('input', renderTable)
-    );
+    // Multiselect component
+    function setupMultiselect(rootEl, initialOptions){
+      const btn = rootEl.querySelector('button');
+      const dd = rootEl.querySelector('.dropdown');
+      const search = dd.querySelector('.searchbox input');
+      const list = dd.querySelector('.options');
+      const clearBtn = dd.querySelector('[data-action="clear"]');
+      const applyBtn = dd.querySelector('[data-action="apply"]');
 
-    [elState, elMajor].forEach(el =>
-      el.addEventListener('change', renderTable)
-    );
+      let options = [...initialOptions];
+      let selection = new Set();
 
-    elClear.addEventListener('click', () => {
-      elSearch.value = '';
-      elState.selectedIndex = -1; // clear multi-select
-      elMajor.selectedIndex = -1;
-      elRankMax.value = '';
-      elCostMax.value = '';
-      elGpaMin.value = '';
-      renderTable();
-    });
+      function renderList(filter=''){
+        const f = filter.toLowerCase();
+        const data = options.filter(o => o.toLowerCase().includes(f));
+        list.innerHTML = data.map(o => {
+          const id = `${rootEl.id}-${slug(o)}`;
+          const checked = selection.has(o) ? 'checked' : '';
+          return `<div class="option">
+            <input type="checkbox" id="${id}" value="${escapeHtml(o)}" ${checked}/>
+            <label for="${id}">${escapeHtml(o)}</label>
+          </div>`;
+        }).join('');
+      }
+      function slug(s){ return s.toLowerCase().replace(/\s+/g,'-').replace(/[^a-z0-9\-]/g,''); }
 
-    // ---------- INIT ----------
-    setStatesOptions();
-    fetchItems({ reset: true });
+      btn.addEventListener('click', ()=>{ dd.classList.toggle('open'); if (dd.classList.contains('open')) { renderList(search.value); search.focus(); } });
+      document.addEventListener('click', (e)=>{ if (!rootEl.contains(e.target)) dd.classList.remove('open'); });
+      search.addEventListener('input', ()=>renderList(search.value));
+      list.addEventListener('change', (e)=>{ if (e.target.type==='checkbox'){ const v=e.target.value; e.target.checked?selection.add(v):selection.delete(v); } });
+      clearBtn.addEventListener('click', ()=>{ selection.clear(); renderList(search.value); updateBtnLabel(); });
+      applyBtn.addEventListener('click', ()=>{ dd.classList.remove('open'); updateBtnLabel(); applyFilters(); });
+
+      function setOptions(opts){ options = [...opts]; renderList(search.value); }
+      function getSelection(){ return Array.from(selection); }
+      function clear(){ selection.clear(); updateBtnLabel(); }
+      function updateBtnLabel(){ const n=selection.size; btn.textContent = (rootEl.id==='ms-state'?'State':'Major') + (n?` (${n}) ▾`:' ▾'); }
+
+      renderList(''); updateBtnLabel();
+      return { setOptions, getSelection, clear };
+    }
   </script>
 </body>
 </html>
