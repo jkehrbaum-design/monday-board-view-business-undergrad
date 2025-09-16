@@ -1,26 +1,32 @@
 // netlify/functions/items.js
-// Liefert paginierte Items aus einem Monday-Board + gewünschte Spaltenfelder
+// Paginiert Monday-Items und gibt gewünschte Spalten als Felder zurück.
+// Fix: 'title' kommt von boards.columns, nicht von column_values.
 
 const MONDAY_API = 'https://api.monday.com/v2';
 
 export async function handler(event) {
-  // --- ENV
   const TOKEN = process.env.MONDAY_API_TOKEN;
-  const BOARD_ID = process.env.BOARD_ID || process.env.BOARDID || process.env.MONDAY_BOARD_ID;
+  const BOARD_ID =
+    process.env.BOARD_ID ||
+    process.env.BOARDID ||
+    process.env.MONDAY_BOARD_ID;
 
   if (!TOKEN || !BOARD_ID) {
     return json({ error: 'Missing MONDAY_API_TOKEN or BOARD_ID' }, 500);
   }
 
-  // --- Query-Parameter (Pagination)
   const qs = event.queryStringParameters || {};
-  const limit = clampInt(qs.limit, 50, 1, 100);     // max 100
+  const limit = clampInt(qs.limit, 50, 1, 100);
   const cursor = qs.cursor || null;
 
-  // --- GraphQL
   const query = `
     query($boardIds:[ID!]!, $limit:Int!, $cursor:String) {
       boards(ids:$boardIds) {
+        id
+        columns {
+          id
+          title
+        }
         items_page(limit:$limit, cursor:$cursor) {
           cursor
           items {
@@ -28,7 +34,6 @@ export async function handler(event) {
             name
             column_values {
               id
-              title
               text
             }
           }
@@ -48,7 +53,7 @@ export async function handler(event) {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': TOKEN
+        Authorization: TOKEN
       },
       body: JSON.stringify({ query, variables })
     });
@@ -59,37 +64,63 @@ export async function handler(event) {
       return json({ errors: gql.errors }, 500);
     }
 
-    const page = gql?.data?.boards?.[0]?.items_page || { items: [], cursor: null };
-    const items = (page.items || []).map(toSlimItem);
+    const board = gql?.data?.boards?.[0];
+    const page = board?.items_page || { cursor: null, items: [] };
 
-    // Response-Form: items + cursor (für "Mehr laden")
+    // Map: columnId -> title
+    const idToTitle = new Map(
+      (board?.columns || []).map((c) => [c.id, c.title || ''])
+    );
+
+    const items = (page.items || []).map((it) =>
+      toSlimItem(it, idToTitle)
+    );
+
     return json({
       items,
-      cursor: page.cursor // null, wenn keine nächste Seite
+      cursor: page.cursor
     });
-
   } catch (err) {
     console.error(err);
     return json({ error: 'Fetch failed', detail: String(err) }, 500);
   }
 }
 
-/* ---------------- helpers ---------------- */
+/* ------------ helpers ------------ */
 
-function toSlimItem(item) {
-  // Spalten per Titel abholen (Titel -> Text)
-  const get = (title) =>
-    (item.column_values || []).find((c) => (c.title || '').trim().toLowerCase() === title.trim().toLowerCase())
-      ?.text || '';
+function toSlimItem(item, idToTitle) {
+  // Spaltentitel-Normalisierung (case-insensitive, nur a-z0-9)
+  const normalize = (s) => (s || '').toLowerCase().replace(/[^a-z0-9]+/g, '');
+
+  // Gewünschte Titel (normalisiert)
+  const WANT = {
+    state: normalize('State'),
+    ranking: normalize('Ranking'),
+    final_cost_of_attendance: normalize('Final cost of attendance'),
+    major: normalize('Major'),
+    minimum_gpa_requirement: normalize('Minimum GPA requirement')
+  };
+
+  const values = {};
+  for (const cv of item.column_values || []) {
+    const title = idToTitle.get(cv.id) || '';
+    const key = normalize(title);
+
+    if (key === WANT.state) values.state = cv.text || '';
+    if (key === WANT.ranking) values.ranking = cv.text || '';
+    if (key === WANT.final_cost_of_attendance) values.final_cost_of_attendance = cv.text || '';
+    if (key === WANT.major) values.major = cv.text || '';
+    if (key === WANT.minimum_gpa_requirement) values.minimum_gpa_requirement = cv.text || '';
+  }
 
   return {
     id: item.id,
     name: item.name || '',
-    state: get('State'),
-    ranking: get('Ranking'),
-    final_cost_of_attendance: get('Final cost of attendance'),
-    major: get('Major'),
-    minimum_gpa_requirement: get('Minimum GPA requirement')
+    state: values.state || '',
+    ranking: values.ranking || '',
+    final_cost_of_attendance: values.final_cost_of_attendance || '',
+    major: values.major || '',
+    minimum_gpa_requirement: values.minimum_gpa_requirement || ''
   };
 }
 
