@@ -1,178 +1,158 @@
-<!doctype html>
-<html lang="de">
+<!DOCTYPE html>
+<html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <title>Monday Board – Gefilterte Ansicht (mit Pagination)</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta charset="UTF-8" />
+  <title>Monday Data Table</title>
   <style>
-    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif; margin: 24px; }
-    h1 { font-size: 22px; margin-bottom: 8px; }
-    .hint { color: #666; font-size: 14px; margin-bottom: 16px; }
-    .toolbar { display: flex; gap: 8px; align-items: center; margin-bottom: 12px; flex-wrap: wrap; }
-    input, select, button { padding: 6px 10px; font-size: 14px; }
-    button { cursor: pointer; }
-    table { width: 100%; border-collapse: collapse; }
-    th, td { border-bottom: 1px solid #eee; padding: 8px; vertical-align: top; }
-    th { text-align: left; background: #fafafa; position: sticky; top: 0; }
-    .muted { color: #888; }
-    .status { font-size: 13px; color: #555; margin: 6px 0 16px; }
-    .right { margin-left: auto; }
+    body { font-family: Arial, sans-serif; margin: 20px; }
+    table { border-collapse: collapse; width: 100%; margin-top: 10px; }
+    th, td { border: 1px solid #ddd; padding: 8px; }
+    th { background: #f4f4f4; }
+    .filters { display: flex; gap: 10px; flex-wrap: wrap; margin: 10px 0; }
+    .filters label { font-size: 14px; }
   </style>
 </head>
 <body>
-  <h1>Gefilterte Ansicht (read-only)</h1>
-  <div class="hint">
-    Die Daten kommen aus einer sicheren Netlify-Funktion. Du kannst suchen/„Load more“ nutzen, aber nichts ändern.
-  </div>
+  <h1>Monday.com Table</h1>
 
-  <!-- Toolbar: Suche + Limit + Load more -->
-  <div class="toolbar">
-    <input id="q" type="search" placeholder="Suche im Namen…" />
+  <!-- Search -->
+  <input type="text" id="search" placeholder="Search by name..." />
+
+  <!-- Filters -->
+  <div class="filters">
     <label>
-      Limit&nbsp;
-      <select id="limit">
-        <option value="10">10</option>
-        <option value="20" selected>20</option>
-        <option value="50">50</option>
+      State:
+      <select id="filter-state">
+        <option value="">All</option>
       </select>
     </label>
-    <button id="reload">Neu laden</button>
-    <span class="right"></span>
-    <button id="loadMore">Load more</button>
+
+    <label>
+      Major:
+      <select id="filter-major">
+        <option value="">All</option>
+      </select>
+    </label>
+
+    <label>
+      Ranking ≤ <input type="number" id="filter-ranking" placeholder="Max Ranking" />
+    </label>
+
+    <label>
+      Cost ≤ <input type="number" id="filter-cost" placeholder="Max Cost" />
+    </label>
+
+    <label>
+      GPA ≥ <input type="number" id="filter-gpa" step="0.1" placeholder="Min GPA" />
+    </label>
   </div>
 
-  <div id="status" class="status"></div>
+  <!-- Controls -->
+  <label>Limit:
+    <select id="limit">
+      <option value="10">10</option>
+      <option value="20" selected>20</option>
+      <option value="50">50</option>
+    </select>
+  </label>
+  <button id="reload">Reload</button>
+  <button id="load-more">Load more</button>
 
-  <table>
+  <!-- Table -->
+  <table id="data-table">
     <thead>
       <tr>
-        <th style="width: 28%">Name</th>
-        <th style="width: 10%">State</th>
-        <th style="width: 12%">Ranking</th>
-        <th style="width: 18%">Final cost of attendance</th>
-        <th style="width: 20%">Major</th>
-        <th style="width: 12%">Min. GPA</th>
+        <th>Name</th>
+        <th>State</th>
+        <th>Ranking</th>
+        <th>Final Cost</th>
+        <th>Major</th>
+        <th>Min GPA</th>
       </tr>
     </thead>
-    <tbody id="rows"></tbody>
+    <tbody></tbody>
   </table>
 
   <script>
-    // --- Einstellungen / API-Endpunkt ---
-    const API_BASE = '/.netlify/functions/items';
+    const apiUrl = '/.netlify/functions/items';
+    let items = [];
+    let cursor = null;
 
-    // --- "State" im Frontend ---
-    let nextCursor = null;        // vom Server für "Load more"
-    let isLoading  = false;       // verhindert Doppel-Requests
-    let items      = [];          // bisher geladene Datensätze
+    const tbody = document.querySelector('#data-table tbody');
+    const searchInput = document.getElementById('search');
+    const stateFilter = document.getElementById('filter-state');
+    const majorFilter = document.getElementById('filter-major');
+    const rankingFilter = document.getElementById('filter-ranking');
+    const costFilter = document.getElementById('filter-cost');
+    const gpaFilter = document.getElementById('filter-gpa');
 
-    // --- DOM-Elemente ---
-    const elRows     = document.getElementById('rows');
-    const elQ        = document.getElementById('q');
-    const elLimit    = document.getElementById('limit');
-    const elReload   = document.getElementById('reload');
-    const elMore     = document.getElementById('loadMore');
-    const elStatus   = document.getElementById('status');
+    async function fetchItems(reset = true) {
+      let url = `${apiUrl}?limit=${document.getElementById('limit').value}`;
+      if (!reset && cursor) url += `&cursor=${cursor}`;
 
-    // --- Helpers ---
-    function td(v) { return (v ?? '').toString().trim() || '<span class="muted">–</span>'; }
+      const res = await fetch(url);
+      const data = await res.json();
 
-    function render() {
-      // Client-seitige Suche (optional)
-      const q = elQ.value.trim().toLowerCase();
-      const filtered = !q ? items : items.filter(it => (it.name || '').toLowerCase().includes(q));
-      // Tabelle schreiben
-      elRows.innerHTML = filtered.map(it => `
+      if (reset) {
+        items = data.items;
+        cursor = data.cursor;
+      } else {
+        items = items.concat(data.items);
+        cursor = data.cursor;
+      }
+
+      populateDropdowns();
+      renderTable();
+    }
+
+    function populateDropdowns() {
+      const states = [...new Set(items.map(i => i.state).filter(Boolean))].sort();
+      const majors = [...new Set(items.map(i => i.major).filter(Boolean))].sort();
+
+      stateFilter.innerHTML = '<option value="">All</option>' + states.map(s => `<option>${s}</option>`).join('');
+      majorFilter.innerHTML = '<option value="">All</option>' + majors.map(m => `<option>${m}</option>`).join('');
+    }
+
+    function applyFilters(data) {
+      const search = searchInput.value.toLowerCase();
+      const state = stateFilter.value;
+      const major = majorFilter.value;
+      const maxRanking = rankingFilter.value ? parseInt(rankingFilter.value) : null;
+      const maxCost = costFilter.value ? parseInt(costFilter.value) : null;
+      const minGpa = gpaFilter.value ? parseFloat(gpaFilter.value) : null;
+
+      return data.filter(i => {
+        if (search && !i.name.toLowerCase().includes(search)) return false;
+        if (state && i.state !== state) return false;
+        if (major && i.major !== major) return false;
+        if (maxRanking && (!i.ranking || parseInt(i.ranking) > maxRanking)) return false;
+        if (maxCost && (!i.final_cost_of_attendance || parseInt(i.final_cost_of_attendance) > maxCost)) return false;
+        if (minGpa && (!i.minimum_gpa_requirement || parseFloat(i.minimum_gpa_requirement) < minGpa)) return false;
+        return true;
+      });
+    }
+
+    function renderTable() {
+      const filtered = applyFilters(items);
+      tbody.innerHTML = filtered.map(i => `
         <tr>
-          <td>${td(it.name)}</td>
-          <td>${td(it.state)}</td>
-          <td>${td(it.ranking)}</td>
-          <td>${td(it.final_cost_of_attendance)}</td>
-          <td>${td(it.major)}</td>
-          <td>${td(it.minimum_gpa_requirement)}</td>
+          <td>${i.name}</td>
+          <td>${i.state || ''}</td>
+          <td>${i.ranking || ''}</td>
+          <td>${i.final_cost_of_attendance || ''}</td>
+          <td>${i.major || ''}</td>
+          <td>${i.minimum_gpa_requirement || ''}</td>
         </tr>
       `).join('');
-      // Statuszeile
-      elStatus.textContent = `${filtered.length} Einträge angezeigt · insgesamt geladen: ${items.length}` + (nextCursor ? ' · weitere Seiten verfügbar' : ' · keine weiteren Seiten');
-      // Button aktivieren/deaktivieren
-      elMore.disabled = isLoading || !nextCursor;
-      elMore.textContent = nextCursor ? (isLoading ? 'Lade…' : 'Load more') : 'Keine weiteren Einträge';
     }
 
-    async function fetchPage({cursor = null, limit = 20} = {}) {
-      if (isLoading) return;
-      isLoading = true;
-      render();
+    document.getElementById('reload').addEventListener('click', () => fetchItems(true));
+    document.getElementById('load-more').addEventListener('click', () => fetchItems(false));
 
-      const url = new URL(API_BASE, location.origin);
-      url.searchParams.set('limit', limit);
-      if (cursor) url.searchParams.set('cursor', cursor);
+    [searchInput, stateFilter, majorFilter, rankingFilter, costFilter, gpaFilter]
+      .forEach(el => el.addEventListener('input', renderTable));
 
-      let data;
-      try {
-        const resp = await fetch(url.toString(), { headers: { 'Accept': 'application/json' }});
-        const text = await resp.text();
-        try { data = JSON.parse(text); }
-        catch (e) { throw new Error('Antwort ist kein JSON: ' + text.slice(0, 300)); }
-      } catch (e) {
-        console.error(e);
-        alert('Fehler beim Laden: ' + e.message);
-        isLoading = false;
-        render();
-        return;
-      }
-
-      // Mögliche Antwortformen robust abfangen
-      // Erwartete Form (von deiner Function): { items: [...], cursor: "..." }
-      let pageItems = [];
-      let cursorOut = null;
-      if (Array.isArray(data)) {
-        pageItems = data;
-      } else if (data.items) {
-        pageItems = data.items;
-        cursorOut = data.cursor ?? null;
-      } else if (data.data && Array.isArray(data.data)) { // Fallback
-        pageItems = data.data;
-        cursorOut = data.cursor ?? null;
-      } else {
-        console.warn('Unerwartetes Antwortformat:', data);
-      }
-
-      // An Liste anhängen
-      items = items.concat(pageItems);
-      nextCursor = cursorOut;
-      isLoading = false;
-      render();
-    }
-
-    // --- Events ---
-    elMore.addEventListener('click', () => {
-      if (!nextCursor) return;
-      fetchPage({ cursor: nextCursor, limit: Number(elLimit.value) || 20 });
-    });
-
-    elReload.addEventListener('click', () => {
-      // komplett neu laden (ohne Cursor)
-      items = [];
-      nextCursor = null;
-      fetchPage({ cursor: null, limit: Number(elLimit.value) || 20 });
-    });
-
-    elQ.addEventListener('input', render);
-    elLimit.addEventListener('change', () => {
-      // bei neuem Limit neu starten
-      items = [];
-      nextCursor = null;
-      fetchPage({ cursor: null, limit: Number(elLimit.value) || 20 });
-    });
-
-    // --- Initial: erste Seite laden ---
-    (function init() {
-      // Limit aus URL ?limit=… optional übernehmen
-      const urlLimit = Number(new URLSearchParams(location.search).get('limit'));
-      if (urlLimit) elLimit.value = String(urlLimit);
-      fetchPage({ limit: Number(elLimit.value) || 20 });
-    })();
+    fetchItems(true);
   </script>
 </body>
 </html>
