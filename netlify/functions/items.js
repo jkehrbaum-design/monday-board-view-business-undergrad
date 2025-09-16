@@ -1,41 +1,33 @@
-// Diagnose: zeigt, ob das Board sichtbar ist und wie viele Items es hat
-exports.handler = async () => {
+// Netlify Function: /.netlify/functions/items
+// Holt Items aus einem Monday-Board über boards -> items_page (ohne "page", ohne "total_count").
+// Debug-Modus: /items?debug=1 gibt die rohe Monday-Antwort zurück.
+
+exports.handler = async (event) => {
   try {
     const BOARD_ID = process.env.MONDAY_BOARD_ID;
     const TOKEN = process.env.MONDAY_API_TOKEN;
 
     if (!BOARD_ID || !TOKEN) {
-      return send(500, { error: "Missing MONDAY_BOARD_ID or MONDAY_API_TOKEN" });
+      return json(500, { error: "Missing MONDAY_BOARD_ID or MONDAY_API_TOKEN" });
     }
 
+    // Minimal-kompatible Query für dein Schema
     const query = `
-      query ($boardId: [ID!]) {
+      query ($boardId: [ID!], $limit: Int!) {
         boards(ids: $boardId) {
           id
           name
-          state
-          items_page(limit: 1) { total_count }
+          items_page(limit: $limit) {
+            items {
+              id
+              name
+              column_values { id text }
+            }
+          }
         }
       }
     `;
 
-    const r = await fetch("https://api.monday.com/v2", {
-      method: "POST",
-      headers: { "Content-Type": "application/json", "Authorization": TOKEN },
-      body: JSON.stringify({ query, variables: { boardId: [BOARD_ID] } })
-    });
-
-    const json = await r.json();
-    return send(200, json);
-  } catch (e) {
-    return send(500, { error: String(e) });
-  }
-};
-
-function send(status, body) {
-  return {
-    statusCode: status,
-    headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" },
-    body: JSON.stringify(body, null, 2)
-  };
-}
+    const body = JSON.stringify({
+      query,
+      variables: { boardId:
