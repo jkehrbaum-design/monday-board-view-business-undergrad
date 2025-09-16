@@ -1,4 +1,4 @@
-// Diagnose: gib rohe Board-Infos zurück (keine Filter, nur prüfen)
+// Diagnose: prüfe, ob dein Token das Board sieht und ob Items existieren
 exports.handler = async () => {
   try {
     const BOARD_ID = process.env.MONDAY_BOARD_ID;
@@ -10,19 +10,20 @@ exports.handler = async () => {
           id
           name
           state
-          kind
-          owner { id name }
-          permissions
-          items_page(limit: 1) { total_count }
+          items_page(limit: 1) {
+            total_count
+          }
         }
       }
     `;
-    const variables = { boardId: [BOARD_ID] };
+
+    // WICHTIG: anderer Variablenname, damit nichts doppelt deklariert ist
+    const vars = { boardId: [BOARD_ID] };
 
     const resp = await fetch("https://api.monday.com/v2", {
       method: "POST",
       headers: { "Content-Type": "application/json", "Authorization": TOKEN },
-      body: JSON.stringify({ query, variables })
+      body: JSON.stringify({ query, variables: vars })
     });
 
     const json = await resp.json();
