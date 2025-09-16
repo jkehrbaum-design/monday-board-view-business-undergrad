@@ -35,49 +35,49 @@
     </tbody>
   </table>
 
-  <script>
-    let ALL = [];
+<script>
+  const API = '/.netlify/functions/items';
 
-    function render(rows) {
-      const tb = document.getElementById('tbody');
-      if (!rows || rows.length === 0) {
-        tb.innerHTML = '<tr><td colspan="2">Keine Ergebnisse.</td></tr>';
-        return;
-      }
-      tb.innerHTML = rows.map(item => {
-        const cols = (item.column_values || []).map(c => c?.text || '').filter(Boolean).join(', ');
-        return `<tr>
-          <td>${item.name || ''}</td>
-          <td>${cols || '<span class="muted">—</span>'}</td>
-        </tr>`;
-      }).join('');
+  // kleine HTML-Escape-Hilfe
+  const esc = s =>
+    (s || '').replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+
+  let ALL = [];
+
+  async function load() {
+    try {
+      const r = await fetch(API, { cache: 'no-store' });
+      ALL = await r.json();      // erwartet: [{id, name, preview}]
+      render();
+    } catch (e) {
+      console.error(e);
+      document.querySelector('#tbody').innerHTML =
+        '<tr><td colspan="2">Fehler beim Laden.</td></tr>';
     }
+  }
 
-    function applySearch() {
-      const q = document.getElementById('search').value.trim().toLowerCase();
-      if (!q) return render(ALL);
-      const filtered = ALL.filter(it => {
-        const name = (it.name || '').toLowerCase();
-        const cols = (it.column_values || []).map(c => (c?.text || '').toLowerCase()).join(' ');
-        return name.includes(q) || cols.includes(q);
-      });
-      render(filtered);
-    }
+  function render() {
+    const q = document.querySelector('#q').value.trim().toLowerCase();
+    const filtered = ALL.filter(it =>
+      it.name?.toLowerCase().includes(q) ||
+      (it.preview || '').toLowerCase().includes(q)
+    );
 
-    document.getElementById('search').addEventListener('input', applySearch);
+    const rows = filtered.map(it => `
+      <tr>
+        <td>${esc(it.name)}</td>
+        <td>${esc(it.preview) || '—'}</td>
+      </tr>
+    `).join('');
 
-    async function load() {
-      try {
-        // Netlify-Funktion (legen wir im nächsten Schritt an):
-        const res = await fetch('/.netlify/functions/items');
-        ALL = await res.json();
-        render(ALL);
-      } catch (e) {
-        document.getElementById('tbody').innerHTML =
-          '<tr><td colspan="2">Konnte noch nicht laden (Funktion fehlt noch) – wir richten sie gleich ein.</td></tr>';
-      }
-    }
-    load();
-  </script>
+    document.querySelector('#tbody').innerHTML = rows || `
+      <tr><td colspan="2">Keine Treffer</td></tr>
+    `;
+  }
+
+  document.querySelector('#q').addEventListener('input', render);
+  load();
+</script>
+
 </body>
 </html>
