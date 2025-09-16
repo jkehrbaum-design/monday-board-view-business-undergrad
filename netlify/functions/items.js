@@ -1,35 +1,23 @@
-// Netlify Function: /.netlify/functions/items
+// Diagnose: gib rohe Board-Infos zurück (keine Filter, nur prüfen)
 exports.handler = async () => {
   try {
     const BOARD_ID = process.env.MONDAY_BOARD_ID;
     const TOKEN = process.env.MONDAY_API_TOKEN;
 
-    if (!BOARD_ID || !TOKEN) {
-      return jsonResp(500, { error: "Missing MONDAY_BOARD_ID or MONDAY_API_TOKEN" });
-    }
-
-const query = `
-  query ($boardId: [ID!], $limit: Int!) {
-    boards(ids: $boardId) {
-      id
-      name
-      items_page(limit: $limit) {
-        total_count
-        cursor
-        items {
+    const query = `
+      query ($boardId: [ID!]) {
+        boards(ids: $boardId) {
           id
           name
-          column_values { id text }
+          state
+          kind
+          owner { id name }
+          permissions
+          items_page(limit: 1) { total_count }
         }
       }
-    }
-  }
-`;
-
-const variables = { boardId: [BOARD_ID], limit: 100 };
-
-
-    const variables = { boardId: [BOARD_ID], limit: 100 };
+    `;
+    const variables = { boardId: [BOARD_ID] };
 
     const resp = await fetch("https://api.monday.com/v2", {
       method: "POST",
@@ -38,22 +26,16 @@ const variables = { boardId: [BOARD_ID], limit: 100 };
     });
 
     const json = await resp.json();
-    console.log("monday response:", JSON.stringify(json));
-
-    if (json.errors) return jsonResp(502, { errors: json.errors });
-
-const items = json?.data?.boards?.[0]?.items_page?.items ?? [];
-
-    return jsonResp(200, items);
+    return {
+      statusCode: 200,
+      headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" },
+      body: JSON.stringify(json, null, 2)
+    };
   } catch (err) {
-    return jsonResp(500, { error: String(err) });
+    return {
+      statusCode: 500,
+      headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" },
+      body: JSON.stringify({ error: String(err) })
+    };
   }
 };
-
-function jsonResp(status, body) {
-  return {
-    statusCode: status,
-    headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" },
-    body: JSON.stringify(body)
-  };
-}
