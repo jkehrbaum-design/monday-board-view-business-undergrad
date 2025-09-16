@@ -1,120 +1,92 @@
-// /.netlify/functions/items
-// Debug-Modi:
-//   ?debug=env     -> zeigt, ob Token & Board-ID ankommen
-//   ?debug=boards  -> listet Boards (id, name), die dein Token sieht
-//   ?debug=1       -> rohe Monday-Antwort für die Items-Query
+// netlify/functions/items.js
+// Holt kompakte Item-Daten aus einem Monday-Board
 
-exports.handler = async (event) => {
+export default async function handler(req, res) {
+  // CORS für deinen Frontend-Aufruf
+  res.setHeader("Access-Control-Allow-Origin", "*");
+  res.setHeader("Content-Type", "application/json");
+
+  // Health-/Debug-Checks wie gehabt
+  const q = (req.query && (req.query.debug || req.query.q)) || "";
+  if (q === "env") {
+    return res.status(200).end(
+      JSON.stringify({
+        hasToken: !!process.env.MONDAY_API_TOKEN,
+        approxTokenLength: process.env.MONDAY_API_TOKEN?.length || 0,
+        boardId: process.env.MONDAY_BOARD_ID || "env:MONDAY_BOARD_ID fehlt",
+      })
+    );
+  }
+
   try {
     const TOKEN = process.env.MONDAY_API_TOKEN;
-    const BOARD_ID = process.env.MONDAY_BOARD_ID || "2761790925";
-    const qs = event?.queryStringParameters || {};
+    const BOARD_ID = process.env.MONDAY_BOARD_ID; // z.B. 2761790925
 
-    // Debug: ENV prüfen
-    if (qs.debug === "env") {
-      const info = {
-        hasToken: Boolean(TOKEN),
-        approxTokenLength: TOKEN ? TOKEN.length : 0,
-        boardId: BOARD_ID,
-      };
-      console.log("[items] env check:", info);
-      return json(200, info);
+    if (!TOKEN || !BOARD_ID) {
+      return res
+        .status(500)
+        .end(JSON.stringify({ error: "TOKEN oder BOARD_ID fehlt" }));
     }
 
-    if (!TOKEN) {
-      return json(500, { error: "MONDAY_API_TOKEN missing in environment variables" });
-    }
-
-    // Debug: Boards auflisten
-    if (qs.debug === "boards") {
-      const listQuery = `
-        query {
-          boards(limit: 50, state: active) {
-            id
-            name
-            state
-          }
-        }
-      `;
-      const listData = await mondayPost(TOKEN, { query: listQuery });
-      if (listData.errors) return json(502, { errors: listData.errors });
-
-      const boards = (listData?.data?.boards ?? []).map(b => ({
-        id: b.id,
-        name: b.name,
-        state: b.state,
-      }));
-      console.log("[items] boards:", boards);
-      return json(200, boards);
-    }
-
-    // Items vom Board holen (items_page ohne total_count/page)
-    const itemsQuery = `
-      query ($boardId: [ID!], $limit: Int!) {
-        boards(ids: $boardId) {
+    // nur die nötigsten Felder holen (Name + Text-Spalten)
+    const query = `
+      query($boardId: [ID!]!) {
+        boards (ids: $boardId) {
           id
           name
-          items_page(limit: $limit) {
+          items_page (limit: 100) {
             items {
               id
               name
-              column_values { id text }
+              column_values {
+                id
+                text
+              }
             }
           }
         }
       }
     `;
 
-    const variables = { boardId: [BOARD_ID], limit: 100 };
-    const data = await mondayPost(TOKEN, { query: itemsQuery, variables });
+    const variables = { boardId: [BOARD_ID] };
 
-    if (qs.debug === "1") {
-      // rohe Monday-Antwort zur Diagnose
-      return json(200, data);
+    const r = await fetch("https://api.monday.com/v2", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: TOKEN,
+      },
+      body: JSON.stringify({ query, variables }),
+    });
+
+    const json = await r.json();
+
+    // Debug-Ausgaben erreichbar über …/items?debug=1 bzw. …?debug=boards
+    if (q === "1" || q === "raw" || q === "boards") {
+      return res.status(200).end(JSON.stringify(json));
     }
 
-    if (data.errors) {
-      console.log("[items] monday errors:", data.errors);
-      return json(502, { errors: data.errors });
+    // Board gefunden?
+    const board = json?.data?.boards?.[0];
+    if (!board) {
+      return res.status(200).end(JSON.stringify([]));
     }
 
-    const items = data?.data?.boards?.[0]?.items_page?.items?.map(it => ({
-      id: it.id,
-      name: it.name,
-      text: (it.column_values || [])
-        .map(cv => cv?.text)
-        .filter(Boolean)
-        .join(" | "),
-    })) ?? [];
+    // kompakt mappen: {id, name, preview}
+    const items = (board.items_page?.items || []).map((it) => {
+      const allText =
+        (it.column_values || [])
+          .map((c) => (c?.text || "").trim())
+          .filter(Boolean)
+          .join(" • ") || "";
+      const preview = allText.length > 240 ? allText.slice(0, 240) + "…" : allText;
+      return { id: it.id, name: it.name, preview };
+    });
 
-    return json(200, items);
-  } catch (e) {
-    console.error("[items] fatal:", e);
-    return json(500, { error: String(e) });
+    return res.status(200).end(JSON.stringify(items));
+  } catch (err) {
+    return res
+      .status(500)
+      .end(JSON.stringify({ error: "Serverfehler", detail: String(err) }));
   }
-};
-
-// ---- Helpers ----
-async function mondayPost(token, bodyObj) {
-  // Node 18+ in Netlify hat global fetch – kein node-fetch nötig
-  const resp = await fetch("https://api.monday.com/v2", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "Authorization": token,
-    },
-    body: JSON.stringify(bodyObj),
-  });
-  return resp.json();
-}
-
-function json(status, body) {
-  return {
-    statusCode: status,
-    headers: {
-      "Content-Type": "application/json",
-      "Access-Control-Allow-Origin": "*",
-    },
-    body: JSON.stringify(body),
-  };
 }
