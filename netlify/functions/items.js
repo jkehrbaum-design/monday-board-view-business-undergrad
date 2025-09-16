@@ -12,6 +12,9 @@ export const handler = async (event) => {
     }
 
     const q = new URLSearchParams(event.rawQuery || "");
+const qsToken = q.get("token");
+const token = process.env.MONDAY_TOKEN || qsToken;
+
     const boardId = Number(q.get("boardId") || "2761790925");
     const maxPages = Number(q.get("maxPages") || 100);
 
