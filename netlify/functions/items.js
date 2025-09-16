@@ -1,20 +1,13 @@
-// File: netlify/functions/items.js
-// Netlify Node 18+ hat global fetch. Keine Zusatz-Dependency nötig.
-// Erfordert in Netlify: Umgebungsvariable MONDAY_TOKEN.
-
+// CommonJS-Version – keine ESM-Exports, kein node-fetch nötig
+// Erfordert Environment Variable: MONDAY_TOKEN
 const MONDAY_API = "https://api.monday.com/v2";
 
-export const handler = async (event) => {
+exports.handler = async (event) => {
   try {
     const token = process.env.MONDAY_TOKEN;
-    if (!token) {
-      return respond(500, { error: "Missing MONDAY_TOKEN in environment" });
-    }
+    if (!token) return respond(500, { error: "Missing MONDAY_TOKEN in environment" });
 
     const q = new URLSearchParams(event.rawQuery || "");
-const qsToken = q.get("token");
-const token = process.env.MONDAY_TOKEN || qsToken;
-
     const boardId = Number(q.get("boardId") || "2761790925");
     const maxPages = Number(q.get("maxPages") || 100);
 
@@ -36,6 +29,7 @@ const token = process.env.MONDAY_TOKEN || qsToken;
       }
     `;
 
+    // Node 18 hat global fetch; wir erzwingen Node 18 unten in netlify.toml
     let cursor = null;
     let allItems = [];
     let columns = null;
@@ -46,16 +40,15 @@ const token = process.env.MONDAY_TOKEN || qsToken;
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          // Monday erwartet KEIN "Bearer ", sondern direkt den Token
+          // Wichtig: KEIN "Bearer " davor
           Authorization: token,
         },
         body: JSON.stringify({ query, variables: { boardId, cursor } }),
       });
 
       const text = await res.text();
-      if (!res.ok) {
-        return respond(res.status, { error: "Monday API error", details: text });
-      }
+      if (!res.ok) return respond(res.status, { error: "Monday API error", details: text });
+
       const payload = safeJson(text);
       const boards = payload?.data?.boards || [];
       if (!boards.length) break;
@@ -92,7 +85,6 @@ const token = process.env.MONDAY_TOKEN || qsToken;
   }
 };
 
-// Helpers
 function respond(status, obj) {
   return {
     statusCode: status,
@@ -103,6 +95,4 @@ function respond(status, obj) {
     body: JSON.stringify(obj),
   };
 }
-function safeJson(s) {
-  try { return s ? JSON.parse(s) : null; } catch { return null; }
-}
+function safeJson(s) { try { return s ? JSON.parse(s) : null; } catch { return null; } }
