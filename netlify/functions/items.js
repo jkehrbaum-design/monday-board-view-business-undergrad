@@ -1,16 +1,36 @@
-// CommonJS-Version – keine ESM-Exports, kein node-fetch nötig
-// Erfordert Environment Variable: MONDAY_TOKEN
+// netlify/functions/items.js (CommonJS, Node 18+)
 const MONDAY_API = "https://api.monday.com/v2";
 
 exports.handler = async (event) => {
   try {
+    const q = new URLSearchParams(event.rawQuery || "");
+    const boardId = Number(q.get("boardId") || "2761790925");
+    const dbgMe = q.get("debug") === "me";
+
     const token = process.env.MONDAY_TOKEN;
     if (!token) return respond(500, { error: "Missing MONDAY_TOKEN in environment" });
 
-    const q = new URLSearchParams(event.rawQuery || "");
-    const boardId = Number(q.get("boardId") || "2761790925");
-    const maxPages = Number(q.get("maxPages") || 100);
+    if (dbgMe) {
+      // Nur „wer bin ich?“ zeigen – hilft beim Einladen ins Board
+      const meRes = await gql(token, `{ me { name email } account { id name } }`);
+      return respond(200, meRes);
+    }
 
+    // Erst minimal prüfen, ob das Board für diesen Token sichtbar ist
+    const probe = await gql(token, `{
+      boards(ids: [${boardId}]) { id name }
+    }`);
+    const visible = probe?.data?.boards?.length ? true : false;
+    if (!visible) {
+      return respond(403, {
+        error: "BOARD_NOT_VISIBLE",
+        hint: "Invite the token's user to the board as viewer.",
+        whoami: probe?.data?.me || undefined, // kann leer sein, wenn nicht angefragt
+        details: probe?.errors || null
+      });
+    }
+
+    // Vollabfrage mit Paging
     const query = `
       query Items($boardId: [Int], $cursor: String) {
         boards (ids: $boardId) {
@@ -29,28 +49,14 @@ exports.handler = async (event) => {
       }
     `;
 
-    // Node 18 hat global fetch; wir erzwingen Node 18 unten in netlify.toml
-    let cursor = null;
-    let allItems = [];
-    let columns = null;
-    let pages = 0;
+    let cursor = null, allItems = [], columns = null, pages = 0, maxPages = 100;
 
     while (pages < maxPages) {
-      const res = await fetch(MONDAY_API, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          // Wichtig: KEIN "Bearer " davor
-          Authorization: token,
-        },
-        body: JSON.stringify({ query, variables: { boardId, cursor } }),
-      });
+      const res = await gql(token, query, { boardId, cursor });
+      const gErrors = res.errors;
+      if (gErrors?.length) return respond(502, { error: "GraphQL errors", errors: gErrors });
 
-      const text = await res.text();
-      if (!res.ok) return respond(res.status, { error: "Monday API error", details: text });
-
-      const payload = safeJson(text);
-      const boards = payload?.data?.boards || [];
+      const boards = res?.data?.boards || [];
       if (!boards.length) break;
 
       const board = boards[0];
@@ -70,29 +76,45 @@ exports.handler = async (event) => {
       );
 
       cursor = page.cursor || null;
-      pages += 1;
+      pages++;
       if (!cursor) break;
     }
 
-    return respond(200, {
-      boardId: String(boardId),
-      columns,
-      items: allItems,
-      count: allItems.length,
-    });
+    return respond(200, { boardId: String(boardId), columns, items: allItems, count: allItems.length });
+
   } catch (err) {
     return respond(500, { error: String(err) });
   }
 };
 
+async function gql(token, query, variables) {
+  const r = await fetch(MONDAY_API, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", Authorization: token },
+    body: JSON.stringify({ query, variables }),
+  });
+  const text = await r.text();
+  let json;
+  try { json = JSON.parse(text); } catch (_) { json = { parse_error: text }; }
+  // hänge zur Diagnose „me“ an
+  if (!json?.data?.me) {
+    try {
+      const me = await fetch(MONDAY_API, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: token },
+        body: JSON.stringify({ query: "{ me { name email } }" }),
+      }).then(x => x.json());
+      json.data = { ...(json.data || {}), ...(me.data || {}) };
+    } catch {}
+  }
+  return json;
+}
+
 function respond(status, obj) {
   return {
     statusCode: status,
-    headers: {
-      "Content-Type": "application/json",
-      "Cache-Control": "public, max-age=60",
-    },
+    headers: { "Content-Type": "application/json", "Cache-Control": "no-cache" },
     body: JSON.stringify(obj),
   };
 }
-function safeJson(s) { try { return s ? JSON.parse(s) : null; } catch { return null; } }
+function safeJson(s){ try { return s ? JSON.parse(s) : null; } catch { return null; } }
