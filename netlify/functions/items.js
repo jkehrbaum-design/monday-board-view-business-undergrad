@@ -1,130 +1,142 @@
 // netlify/functions/items.js
-// CommonJS, Node 18+ (global fetch). Env var: MONDAY_TOKEN
-// Progressive Loader: pageLimit Seiten pro Call (Default 1). Rückgabe enthält cursor, falls weitere Seiten existieren.
+// Paginiert Monday-Items und gibt gewünschte Spalten als Felder zurück.
+// Fix: 'title' kommt von boards.columns, nicht von column_values.
 
-const MONDAY_API = "https://api.monday.com/v2";
+const MONDAY_API = 'https://api.monday.com/v2';
 
-exports.handler = async (event) => {
-  try {
-    const q = new URLSearchParams(event.rawQuery || "");
-    const boardId = q.get("boardId") || "2761790925";  // Monday erwartet [ID!], also String-IDs
-    const cursorIn = q.get("cursor") || null;
-    const pageLimit = clampInt(q.get("pageLimit"), 1, 3, 1); // 1..3 Seiten pro Aufruf (Default 1)
-    const TIME_BUDGET_MS = 8000; // < 10s (Netlify Starter Timeout)
-    const debug = q.get("debug"); // "me" | "probe" | null
+export async function handler(event) {
+  const TOKEN = process.env.MONDAY_API_TOKEN;
+  const BOARD_ID =
+    process.env.BOARD_ID ||
+    process.env.BOARDID ||
+    process.env.MONDAY_BOARD_ID;
 
-    const token = process.env.MONDAY_TOKEN;
-    if (!token) return respond(500, { error: "Missing MONDAY_TOKEN in environment" });
+  if (!TOKEN || !BOARD_ID) {
+    return json({ error: 'Missing MONDAY_API_TOKEN or BOARD_ID' }, 500);
+  }
 
-    // ---- Debug: who am I?
-    if (debug === "me") {
-      return respond(200, await gql(token, `{ me { name email } account { id name } }`));
-    }
+  const qs = event.queryStringParameters || {};
+  const limit = clampInt(qs.limit, 50, 1, 100);
+  const cursor = qs.cursor || null;
 
-    // ---- Debug: sehe ich das Board?
-    if (debug === "probe") {
-      const probe = await gql(token, `
-        query($ids:[ID!]) {
-          me { name email }
-          boards(ids:$ids) { id name state kind workspace { name } subscribers { email } }
-        }`, { ids: [boardId] });
-      return respond(200, probe);
-    }
-
-    // ---- Normale Items-Abfrage (progressiv, mit Zeitbudget)
-    const query = `
-      query Items($ids:[ID!], $cursor:String) {
-        boards(ids:$ids) {
+  const query = `
+    query($boardIds:[ID!]!, $limit:Int!, $cursor:String) {
+      boards(ids:$boardIds) {
+        id
+        columns {
           id
-          name
-          columns { id title type }
-          items_page(limit:500, cursor:$cursor) {
-            cursor
-            items {
+          title
+        }
+        items_page(limit:$limit, cursor:$cursor) {
+          cursor
+          items {
+            id
+            name
+            column_values {
               id
-              name
-              column_values { id text value }
+              text
             }
           }
         }
       }
-    `;
-
-    let cursor = cursorIn;
-    let pages = 0;
-    let items = [];
-    let columns = null;
-    const t0 = Date.now();
-
-    while (pages < pageLimit) {
-      if (Date.now() - t0 > TIME_BUDGET_MS) break; // Timeout-Schutz
-
-      const res = await gql(token, query, { ids: [boardId], cursor });
-      if (res.errors?.length) return respond(502, { error: "GraphQL errors", errors: res.errors });
-
-      const boards = res?.data?.boards || [];
-      if (!boards.length) {
-        // Board (noch) nicht sichtbar oder alter Build?
-        const me = await gql(token, `{ me { name email } }`);
-        return respond(403, { error: "BOARD_NOT_VISIBLE", boardId, me: me?.data?.me || null });
-      }
-
-      const board = boards[0];
-      if (!columns) columns = board.columns || [];
-
-      const page = board.items_page || {};
-      const batch = page.items || [];
-      items.push(...batch.map((it) => ({
-        id: it.id,
-        name: it.name,
-        column_values: (it.column_values || []).reduce((acc, cv) => {
-          acc[cv.id] = { text: cv.text, value: safeJson(cv.value) };
-          return acc;
-        }, {})
-      })));
-
-      cursor = page.cursor || null; // null => keine weiteren Seiten
-      pages += 1;
-      if (!cursor) break;
     }
+  `;
 
-    return respond(200, {
-      boardId,
-      columns,
-      items,
-      count: items.length,
-      cursor,        // für den nächsten Call (oder null, wenn fertig)
-      more: !!cursor
+  const variables = {
+    boardIds: [String(BOARD_ID)],
+    limit,
+    cursor
+  };
+
+  try {
+    const resp = await fetch(MONDAY_API, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: TOKEN
+      },
+      body: JSON.stringify({ query, variables })
     });
 
-  } catch (err) {
-    return respond(500, { error: String(err) });
-  }
-};
+    const gql = await resp.json();
 
-// ---------- Helpers ----------
-async function gql(token, query, variables) {
-  const r = await fetch(MONDAY_API, {
-    method: "POST",
-    headers: { "Content-Type": "application/json", Authorization: token }, // wichtig: kein "Bearer "
-    body: JSON.stringify({ query, variables }),
-  });
-  const text = await r.text();
-  try { return JSON.parse(text); } catch { return { parse_error: text }; }
+    if (gql?.errors) {
+      return json({ errors: gql.errors }, 500);
+    }
+
+    const board = gql?.data?.boards?.[0];
+    const page = board?.items_page || { cursor: null, items: [] };
+
+    // Map: columnId -> title
+    const idToTitle = new Map(
+      (board?.columns || []).map((c) => [c.id, c.title || ''])
+    );
+
+    const items = (page.items || []).map((it) =>
+      toSlimItem(it, idToTitle)
+    );
+
+    return json({
+      items,
+      cursor: page.cursor
+    });
+  } catch (err) {
+    console.error(err);
+    return json({ error: 'Fetch failed', detail: String(err) }, 500);
+  }
 }
 
-function respond(status, obj) {
+/* ------------ helpers ------------ */
+
+function toSlimItem(item, idToTitle) {
+  // Spaltentitel-Normalisierung (case-insensitive, nur a-z0-9)
+  const normalize = (s) => (s || '').toLowerCase().replace(/[^a-z0-9]+/g, '');
+
+  // Gewünschte Titel (normalisiert)
+  const WANT = {
+    state: normalize('State'),
+    ranking: normalize('Ranking'),
+    final_cost_of_attendance: normalize('Final cost of attendance'),
+    major: normalize('Major'),
+    minimum_gpa_requirement: normalize('Minimum GPA requirement')
+  };
+
+  const values = {};
+  for (const cv of item.column_values || []) {
+    const title = idToTitle.get(cv.id) || '';
+    const key = normalize(title);
+
+    if (key === WANT.state) values.state = cv.text || '';
+    if (key === WANT.ranking) values.ranking = cv.text || '';
+    if (key === WANT.final_cost_of_attendance) values.final_cost_of_attendance = cv.text || '';
+    if (key === WANT.major) values.major = cv.text || '';
+    if (key === WANT.minimum_gpa_requirement) values.minimum_gpa_requirement = cv.text || '';
+  }
+
   return {
-    statusCode: status,
-    headers: { "Content-Type": "application/json", "Cache-Control": "no-cache" },
-    body: JSON.stringify(obj),
+    id: item.id,
+    name: item.name || '',
+    state: values.state || '',
+    ranking: values.ranking || '',
+    final_cost_of_attendance: values.final_cost_of_attendance || '',
+    major: values.major || '',
+    minimum_gpa_requirement: values.minimum_gpa_requirement || ''
   };
 }
 
-function safeJson(s) { try { return s ? JSON.parse(s) : null; } catch { return null; } }
-
-function clampInt(v, min, max, fallback) {
+function clampInt(v, def, min, max) {
   const n = parseInt(v, 10);
-  if (Number.isFinite(n)) return Math.max(min, Math.min(max, n));
-  return fallback;
+  if (Number.isNaN(n)) return def;
+  return Math.max(min, Math.min(max, n));
+}
+
+function json(obj, status = 200) {
+  return {
+    statusCode: status,
+    headers: {
+      'Content-Type': 'application/json',
+      'Access-Control-Allow-Origin': '*'
+    },
+    body: JSON.stringify(obj)
+  };
 }
