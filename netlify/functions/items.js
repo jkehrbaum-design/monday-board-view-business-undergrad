@@ -1,38 +1,47 @@
 // netlify/functions/items.js
-// Paginiert Monday-Items und gibt gewünschte Spalten als Felder zurück.
-// Fix: 'title' kommt von boards.columns, nicht von column_values.
+// Lädt Items von einem Board aus monday.com und gibt nur die
+// gewünschten Felder zurück (name, state, ranking, final_cost_of_attendance, major, minimum_gpa_requirement).
+// Pagination: ?limit=50&cursor=<opaque cursor>
 
-const MONDAY_API = 'https://api.monday.com/v2';
+const BOARD_ID = process.env.MONDAY_BOARD_ID || '2761790925';
+const TOKEN    = process.env.MONDAY_API_TOKEN;
 
-export async function handler(event) {
-  const TOKEN = process.env.MONDAY_API_TOKEN;
-  const BOARD_ID =
-    process.env.BOARD_ID ||
-    process.env.BOARDID ||
-    process.env.MONDAY_BOARD_ID;
-
-  if (!TOKEN || !BOARD_ID) {
-    return json({ error: 'Missing MONDAY_API_TOKEN or BOARD_ID' }, 500);
+export const handler = async (event) => {
+  // --- KO-Checks und Debug-Modi ---
+  if (!TOKEN) {
+    return json({ errors: [{ message: 'No monday token (MONDAY_API_TOKEN)' }] }, 500);
+  }
+  if (!BOARD_ID) {
+    return json({ errors: [{ message: 'No board id (MONDAY_BOARD_ID)' }] }, 500);
   }
 
-  const qs = event.queryStringParameters || {};
-  const limit = clampInt(qs.limit, 50, 1, 100);
-  const cursor = qs.cursor || null;
+  const url      = new URL(event?.rawUrl ?? 'http://x');
+  const debug    = url.searchParams.get('debug');
+  const limit    = Math.max(1, Math.min(100, parseInt(url.searchParams.get('limit') || '50', 10)));
+  const cursorIn = url.searchParams.get('cursor');
 
+  // Debug-Ausgaben (helfen dir im Browser)
+  if (debug === 'env') {
+    return json({ hasToken: !!TOKEN, approxTokenLength: TOKEN.length, boardId: BOARD_ID });
+  }
+
+  // --- GraphQL-Query ---
+  // Wir ziehen NUR die Spaltenwerte, die wir brauchen (per .text).
   const query = `
-    query($boardIds:[ID!]!, $limit:Int!, $cursor:String) {
-      boards(ids:$boardIds) {
-        id
-        columns {
-          id
-          title
-        }
-        items_page(limit:$limit, cursor:$cursor) {
+    query ($boardId: [ID!], $limit: Int, $cursor: String) {
+      boards (ids: $boardId) {
+        items_page (limit: $limit, cursor: $cursor) {
           cursor
           items {
             id
             name
-            column_values {
+            column_values (ids: [
+              "state",
+              "ranking",
+              "final_cost_of_attendance",
+              "major",
+              "minimum_gpa_requirement"
+            ]) {
               id
               text
             }
@@ -42,101 +51,62 @@ export async function handler(event) {
     }
   `;
 
-  const variables = {
-    boardIds: [String(BOARD_ID)],
-    limit,
-    cursor
-  };
+  const variables = { boardId: BOARD_ID, limit, cursor: cursorIn || null };
 
   try {
-    const resp = await fetch(MONDAY_API, {
+    const resp = await fetch('https://api.monday.com/v2', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        Authorization: TOKEN
+        'Authorization': TOKEN
       },
       body: JSON.stringify({ query, variables })
     });
 
-    const gql = await resp.json();
+    const data = await resp.json();
 
-    if (gql?.errors) {
-      return json({ errors: gql.errors }, 500);
-    }
+    // Debug: Alle Boards zeigen
+    if (debug === 'boards') return json(data);
 
-    const board = gql?.data?.boards?.[0];
-    const page = board?.items_page || { cursor: null, items: [] };
+    // Fehler durchreichen
+    if (data.errors) return json({ errors: data.errors }, 500);
 
-    // Map: columnId -> title
-    const idToTitle = new Map(
-      (board?.columns || []).map((c) => [c.id, c.title || ''])
-    );
+    // Normalisieren
+    const page = data?.data?.boards?.[0]?.items_page;
+    const items = (page?.items || []).map(mapItem);
+    const cursorOut = page?.cursor || null;
 
-    const items = (page.items || []).map((it) =>
-      toSlimItem(it, idToTitle)
-    );
+    // Optional: voller Dump für Debug
+    if (debug === '1') return json({ data: items, cursor: cursorOut });
 
-    return json({
-      items,
-      cursor: page.cursor
-    });
+    // „schlankes“ Format für das Frontend
+    return json({ items, cursor: cursorOut });
   } catch (err) {
-    console.error(err);
-    return json({ error: 'Fetch failed', detail: String(err) }, 500);
+    return json({ errors: [{ message: err.message || 'fetch error' }] }, 500);
   }
-}
+};
 
-/* ------------ helpers ------------ */
-
-function toSlimItem(item, idToTitle) {
-  // Spaltentitel-Normalisierung (case-insensitive, nur a-z0-9)
-  const normalize = (s) => (s || '').toLowerCase().replace(/[^a-z0-9]+/g, '');
-
-  // Gewünschte Titel (normalisiert)
-  const WANT = {
-    state: normalize('State'),
-    ranking: normalize('Ranking'),
-    final_cost_of_attendance: normalize('Final cost of attendance'),
-    major: normalize('Major'),
-    minimum_gpa_requirement: normalize('Minimum GPA requirement')
-  };
-
-  const values = {};
-  for (const cv of item.column_values || []) {
-    const title = idToTitle.get(cv.id) || '';
-    const key = normalize(title);
-
-    if (key === WANT.state) values.state = cv.text || '';
-    if (key === WANT.ranking) values.ranking = cv.text || '';
-    if (key === WANT.final_cost_of_attendance) values.final_cost_of_attendance = cv.text || '';
-    if (key === WANT.major) values.major = cv.text || '';
-    if (key === WANT.minimum_gpa_requirement) values.minimum_gpa_requirement = cv.text || '';
-  }
-
+// ---- Helpers ----
+function mapItem(raw) {
+  const cv = Object.fromEntries((raw.column_values || []).map(c => [c.id, (c.text ?? '').trim()]));
   return {
-    id: item.id,
-    name: item.name || '',
-    state: values.state || '',
-    ranking: values.ranking || '',
-    final_cost_of_attendance: values.final_cost_of_attendance || '',
-    major: values.major || '',
-    minimum_gpa_requirement: values.minimum_gpa_requirement || ''
+    id: raw.id,
+    name: raw.name || '',
+    state: cv.state || '',
+    ranking: cv.ranking || '',
+    final_cost_of_attendance: cv.final_cost_of_attendance || '',
+    major: cv.major || '',
+    minimum_gpa_requirement: cv.minimum_gpa_requirement || ''
   };
 }
 
-function clampInt(v, def, min, max) {
-  const n = parseInt(v, 10);
-  if (Number.isNaN(n)) return def;
-  return Math.max(min, Math.min(max, n));
-}
-
-function json(obj, status = 200) {
+function json(payload, status = 200) {
   return {
     statusCode: status,
     headers: {
       'Content-Type': 'application/json',
-      'Access-Control-Allow-Origin': '*'
+      'Access-Control-Allow-Origin': '*' // rein für Tests; bei Bedarf einschränken
     },
-    body: JSON.stringify(obj)
+    body: JSON.stringify(payload)
   };
 }
