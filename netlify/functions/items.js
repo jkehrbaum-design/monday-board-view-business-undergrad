@@ -1,210 +1,142 @@
 // netlify/functions/items.js
-// Holt Items + unterstützt: Pagination, Filter, und liefert bei dict=state alle State-Labels (Dropdown-Column settings)
+// Liest Monday-Items inkl. aller Spalten und gibt Cursor + Filter-Felder zurück
 
-const MONDAY_URL = 'https://api.monday.com/v2';
+export const handler = async (event) => {
+  const TOKEN   = process.env.MONDAY_API_TOKEN;
+  const BOARD_ID = process.env.MONDAY_BOARD_ID || '2761790925';
 
-const COL = {
-  STATE: 'dropdown',
-  RANKING: 'numbers0',
-  FINAL_COST: 'formula27',
-  TUITION: 'numbers72',
-  ROOM: 'numbers_11',
-  BOARD: 'numbers_24',
-  FEES: 'numbers_3',
-  MAJOR_PRIMARY: 'dropdown6',
-  MAJORS_EXTRA: [
-    'dropdown71',
-    'dup__of_architecture__b_',
-    'dup__of_arts__b_',
-    'dup__of_business__b_',
-    'dup__of_engineering__b_',
-    'dup__of_humanities__b_',
-    'dropdown9',
-    'dup__of_dropdown8',
-    'dup__of_dropdown',
-    'dup__of_dup__of_dropdown'
-  ],
-  GPA_LOW: 'numbers4',
-  GPA_MID: 'numbers_23',
-  GPA_HIGH: 'numbers43',
-};
-
-function parseNumber(text) {
-  if (!text) return null;
-  const cleaned = String(text).replace(/[,$\s]/g, '');
-  const n = parseFloat(cleaned);
-  return isNaN(n) ? null : n;
-}
-function pick(cvMap, id) { return cvMap.get(id)?.text ?? ''; }
-function pickN(cvMap, id) { return parseNumber(cvMap.get(id)?.text); }
-
-function mergeMajors(cvMap) {
-  const parts = [];
-  const prim = pick(cvMap, COL.MAJOR_PRIMARY);
-  if (prim) parts.push(prim);
-  for (const id of COL.MAJORS_EXTRA) {
-    const t = pick(cvMap, id);
-    if (t) parts.push(t);
+  if (event.queryStringParameters?.debug === 'env') {
+    return json({ hasToken: !!TOKEN, boardId: BOARD_ID });
   }
-  const out = new Set();
-  parts.join(',').split(',').map(s => s.trim()).filter(Boolean).forEach(s => out.add(s));
-  return [...out].join(', ');
-}
-function computeMinGpa(cvMap) {
-  const vals = [pickN(cvMap, COL.GPA_LOW), pickN(cvMap, COL.GPA_MID), pickN(cvMap, COL.GPA_HIGH)]
-    .filter(v => v != null && v > 0);
-  if (!vals.length) return null;
-  return Math.min(...vals);
-}
-function computeFinalCost(cvMap) {
-  const f = pickN(cvMap, COL.FINAL_COST);
-  if (f != null) return f;
-  const t = pickN(cvMap, COL.TUITION) ?? 0;
-  const r = pickN(cvMap, COL.ROOM) ?? 0;
-  const b = pickN(cvMap, COL.BOARD) ?? 0;
-  const fees = pickN(cvMap, COL.FEES) ?? 0;
-  const sum = t + r + b + fees;
-  return sum > 0 ? sum : null;
-}
+  if (!TOKEN) return json({ error: 'No MONDAY_API_TOKEN set' }, 500);
 
-function applyFilters(items, q, state, rMin, rMax, cMin, cMax, gMin, gMax) {
-  return items.filter(it => {
-    if (q) {
-      const qq = q.toLowerCase();
-      if (!(it.name?.toLowerCase().includes(qq) || it.major?.toLowerCase().includes(qq))) return false;
-    }
-    if (state && state !== 'all') {
-      const has = it.state?.split(',').map(s => s.trim().toLowerCase());
-      if (!has || !has.includes(state.toLowerCase())) return false;
-    }
-    if (rMin != null && it.ranking != null && it.ranking < rMin) return false;
-    if (rMax != null && it.ranking != null && it.ranking > rMax) return false;
-    if (cMin != null && it.final_cost != null && it.final_cost < cMin) return false;
-    if (cMax != null && it.final_cost != null && it.final_cost > cMax) return false;
-    if (gMin != null && it.min_gpa != null && it.min_gpa < gMin) return false;
-    if (gMax != null && it.min_gpa != null && it.min_gpa > gMax) return false;
-    return true;
-  });
-}
+  const p = event.queryStringParameters || {};
 
-async function fetchMonday(token, body) {
-  const resp = await fetch(MONDAY_URL, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', 'Authorization': token },
-    body: JSON.stringify(body),
-  });
-  const json = await resp.json();
-  return json;
-}
+  const limit   = clampInt(p.limit, 50, 1, 200);
+  const cursor  = p.cursor || null;
 
-exports.handler = async (event) => {
-  try {
-    const token = process.env.MONDAY_API_TOKEN;
-    const boardId = process.env.MONDAY_BOARD_ID;
-    if (!token || !boardId) {
-      return { statusCode: 500, body: JSON.stringify({ error: 'Missing env vars MONDAY_API_TOKEN / MONDAY_BOARD_ID' }) };
-    }
+  // Filterparameter aus dem Frontend
+  const q       = (p.q || '').trim().toLowerCase();
+  const stateF  = (p.state || '').trim();         // Label der State-Spalte
+  const rMin    = toNum(p.rankMin, -Infinity);
+  const rMax    = toNum(p.rankMax, +Infinity);
+  const cMin    = toNum(p.costMin, -Infinity);
+  const cMax    = toNum(p.costMax, +Infinity);
+  const gMin    = toNum(p.gpaMin, -Infinity);
+  const gMax    = toNum(p.gpaMax, +Infinity);
 
-    const params = event.queryStringParameters || {};
-
-    // --- Utility responses ---------------------------------------------------
-    if (params.debug === 'env') {
-      return { statusCode: 200, body: JSON.stringify({ ok: true, boardId, hasToken: !!token, approxTokenLength: token.length }) };
-    }
-
-    // --- Dictionary: all state labels from dropdown settings -----------------
-    if (params.dict === 'state') {
-      const q = `
-        query ($boardId:[ID!]) {
-          boards (ids:$boardId) {
-            columns (ids:["${COL.STATE}"]) { id title type settings_str }
-          }
-        }`;
-      const data = await fetchMonday(token, { query: q, variables: { boardId: [boardId] } });
-      if (data.errors) return { statusCode: 200, body: JSON.stringify({ errors: data.errors }) };
-
-      const col = data?.data?.boards?.[0]?.columns?.[0];
-      let labels = [];
-      try {
-        const s = JSON.parse(col?.settings_str || '{}');
-        if (Array.isArray(s.labels)) {
-          labels = s.labels.filter(Boolean);
-        } else if (s.labels && typeof s.labels === 'object') {
-          labels = Object.values(s.labels).filter(Boolean);
-        } else if (s.labels_positions && typeof s.labels_positions === 'object') {
-          labels = Object.values(s.labels_positions).map(x => x?.label || x?.title).filter(Boolean);
-        }
-      } catch (e) { /* ignore */ }
-
-      labels = [...new Set(labels)].sort((a,b)=>a.localeCompare(b));
-      return { statusCode: 200, body: JSON.stringify({ states: labels }) };
-    }
-
-    // --- Regular data fetch (items page) ------------------------------------
-    const limit = Math.min(parseInt(params.limit || '50', 10), 200);
-    const cursor = params.cursor || null;
-
-    const q = params.q || '';
-    const state = params.state || 'all';
-    const rMin = params.rMin ? parseNumber(params.rMin) : null;
-    const rMax = params.rMax ? parseNumber(params.rMax) : null;
-    const cMin = params.cMin ? parseNumber(params.cMin) : null;
-    const cMax = params.cMax ? parseNumber(params.cMax) : null;
-    const gMin = params.gMin ? parseNumber(params.gMin) : null;
-    const gMax = params.gMax ? parseNumber(params.gMax) : null;
-
-    const colIDs = [
-      COL.STATE, COL.RANKING, COL.FINAL_COST, COL.TUITION, COL.ROOM, COL.BOARD, COL.FEES,
-      COL.MAJOR_PRIMARY, ...COL.MAJORS_EXTRA, COL.GPA_LOW, COL.GPA_MID, COL.GPA_HIGH
-    ];
-
-    const query = `
-      query Fetch($boardId:[ID!], $limit:Int!, $cursor:String) {
-        boards (ids:$boardId) {
-          items_page (limit:$limit, cursor:$cursor) {
-            cursor
-            items {
+  // GraphQL Query: Items + alle Spalten
+  const query = `
+    query($boardId: [ID!], $limit: Int, $cursor: String){
+      boards(ids: $boardId){
+        items_page (limit: $limit, cursor: $cursor){
+          cursor
+          items {
+            id
+            name
+            column_values {
               id
-              name
-              column_values (ids:${JSON.stringify(colIDs)}) { id text type }
+              type
+              text
+              value
             }
           }
         }
-      }`;
+      }
+    }`;
 
-    const data = await fetchMonday(token, { query, variables: { boardId: [boardId], limit, cursor } });
-    if (data.errors) return { statusCode: 200, body: JSON.stringify({ errors: data.errors }) };
+  const variables = { boardId: BOARD_ID, limit, cursor };
+  const data = await gql(query, variables, TOKEN);
+  const page = data?.boards?.[0]?.items_page || {};
+  const items = Array.isArray(page.items) ? page.items : [];
 
-    const page = data?.data?.boards?.[0]?.items_page;
-    const nextCursor = page?.cursor || null;
+  // Hilfsfunktionen für Filter
+  const gv = (cols, id) => (cols.find(c => c.id === id)?.text || '').trim();
+  const gvNum = (cols, id) => numFromText(gv(cols, id));
 
-    const out = [];
-    for (const item of page.items || []) {
-      const cvMap = new Map();
-      for (const cv of item.column_values || []) cvMap.set(cv.id, cv);
+  // Wir mappen pro Item einige Convenience-Felder,
+  // den kompletten Spalten-Block reichen wir 1:1 weiter (cols)
+  const prepped = items.map(it => {
+    const cols = it.column_values || [];
 
-      out.push({
-        id: item.id,
-        name: item.name,
-        state: pick(cvMap, COL.STATE),
-        major: mergeMajors(cvMap),
-        ranking: pickN(cvMap, COL.RANKING),
-        final_cost: computeFinalCost(cvMap),
-        min_gpa: computeMinGpa(cvMap),
-      });
-    }
-
-    const filtered = applyFilters(out, q, state, rMin, rMax, cMin, cMax, gMin, gMax);
+    // Wichtige IDs (aus deiner Spaltenliste):
+    const stateText   = gv(cols, 'dropdown');         // State
+    const rankingNum  = gvNum(cols, 'numbers0');      // Ranking (Webometrics)
+    const totalCost   = gvNum(cols, 'formula27');     // TOTAL Approx Annual Cost
+    const minGpa      = gvNum(cols, 'numbers4');      // GPA Minimum (Lowest Scholarship)
+    const majorsText  = gv(cols, 'dropdown6');        // Bachelor’s Study Areas (Dropdown)
 
     return {
-      statusCode: 200,
-      body: JSON.stringify({
-        items: filtered,
-        cursor: nextCursor,
-        meta: { received: out.length, returned: filtered.length }
-      })
+      id: it.id,
+      name: it.name,
+      state: stateText,
+      ranking: isNaN(rankingNum) ? null : rankingNum,
+      totalCost: isNaN(totalCost) ? null : totalCost,
+      minGpa: isNaN(minGpa) ? null : minGpa,
+      majors: majorsText.toLowerCase(),
+      cols // alle Spalten roh weitergeben
     };
-  } catch (err) {
-    return { statusCode: 500, body: JSON.stringify({ error: String(err) }) };
-  }
+  });
+
+  // Filter anwenden (im Backend, damit Paginierung sinnvoll bleibt)
+  const filtered = prepped.filter(row => {
+    if (q) {
+      const hay = (row.name + ' ' + row.majors).toLowerCase();
+      if (!hay.includes(q)) return false;
+    }
+    if (stateF && stateF !== 'all') {
+      if ((row.state || '').toLowerCase() !== stateF.toLowerCase()) return false;
+    }
+    if (!between(row.ranking, rMin, rMax)) return false;
+    if (!between(row.totalCost, cMin, cMax)) return false;
+    if (!between(row.minGpa, gMin, gMax)) return false;
+    return true;
+  });
+
+  return json({
+    cursor: page.cursor || null,
+    totalLoaded: filtered.length,
+    items: filtered
+  });
 };
+
+// ---------- Helpers ----------
+function json(obj, status = 200){
+  return {
+    statusCode: status,
+    headers: { 'content-type': 'application/json; charset=utf-8' },
+    body: JSON.stringify(obj)
+  };
+}
+async function gql(query, variables, token){
+  const r = await fetch('https://api.monday.com/v2', {
+    method: 'POST',
+    headers: {
+      'Content-Type':'application/json',
+      'Authorization': token
+    },
+    body: JSON.stringify({ query, variables })
+  });
+  const j = await r.json();
+  if (j.errors) throw new Error(JSON.stringify(j.errors));
+  return j.data;
+}
+function clampInt(v, def, min, max){
+  const n = parseInt(v, 10);
+  if (isNaN(n)) return def;
+  return Math.max(min, Math.min(max, n));
+}
+function toNum(v, fallback){
+  if (v === undefined || v === '' || v === null) return fallback;
+  const n = +(`${v}`.replace(/[^\d.\-]/g, ''));
+  return isNaN(n) ? fallback : n;
+}
+function numFromText(t){
+  if (!t) return NaN;
+  const n = +(`${t}`.replace(/[, $€£]/g, ''));
+  return isNaN(n) ? NaN : n;
+}
+function between(n, min, max){
+  if (n === null || n === undefined || isNaN(n)) return true;
+  return n >= min && n <= max;
+}
