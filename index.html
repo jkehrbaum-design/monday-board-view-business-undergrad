@@ -1,66 +1,49 @@
 <!doctype html>
 <html lang="en">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
 <title>Epro 360 – Bachelor’s Programs (read-only)</title>
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.19.3/dist/xlsx.full.min.js"></script>
 <style>
   :root{
-    --bg:#f6f7fb;            /* monday hell */
-    --card:#ffffff;
-    --text:#323338;
-    --muted:#676879;
-    --border:#e6e9ef;
-    --accent:#0073ea;        /* monday blue */
-    --pill:#cce5ff;
+    --bg:#f6f7fb; --card:#fff; --text:#323338; --muted:#676879; --border:#e6e9ef;
+    --accent:#0073ea; --pill:#cce5ff; --hover:#fafbfe;
   }
   *{box-sizing:border-box}
-  body{
-    margin:0; font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial;
-    color:var(--text); background:var(--bg);
-  }
+  body{margin:0; font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial;
+       color:var(--text); background:var(--bg);}
   .wrap{max-width:1220px; margin:32px auto; padding:0 16px;}
   h1{font-size:24px; font-weight:700; margin:0 0 10px}
   .hint{color:var(--muted); font-size:13px; margin-bottom:16px}
 
-  .toolbar{
-    display:flex; gap:12px; flex-wrap:wrap;
-    background:var(--card); border:1px solid var(--border);
-    padding:12px; border-radius:10px; align-items:center;
-    margin-bottom:12px;
-  }
+  .toolbar{display:flex; gap:12px; flex-wrap:wrap; background:var(--card);
+    border:1px solid var(--border); padding:12px; border-radius:10px; align-items:center; margin-bottom:12px;}
   .tool{display:flex; gap:8px; align-items:center}
   label{font-size:12px; color:var(--muted)}
-  input, select{
-    height:34px; padding:0 10px; border:1px solid var(--border);
-    border-radius:8px; background:#fff; color:var(--text);
-    min-width:140px;
-  }
-  .btn{
-    height:34px; padding:0 12px; border:1px solid var(--accent);
-    background:var(--accent); color:#fff; border-radius:8px;
-    font-weight:600; cursor:pointer;
-  }
+  input, select{height:34px; padding:0 10px; border:1px solid var(--border);
+    border-radius:8px; background:#fff; color:var(--text); min-width:140px;}
+  .btn{height:34px; padding:0 12px; border:1px solid var(--accent);
+    background:var(--accent); color:#fff; border-radius:8px; font-weight:600; cursor:pointer;}
   .btn.sec{background:#fff; color:var(--accent)}
   .chips{display:flex; gap:8px; align-items:center; margin:8px 0 14px}
   .chip{padding:6px 10px; background:#eef6ff; color:#1f6feb; border-radius:999px; font-size:12px}
 
-  table{width:100%; border-collapse:collapse; background:var(--card);
-    border:1px solid var(--border); border-radius:12px; overflow:hidden}
-  thead th{
-    text-align:left; font-size:12px; text-transform:uppercase; letter-spacing:.02em;
-    color:var(--muted); background:#f8f9fb; padding:12px 14px; border-bottom:1px solid var(--border)
-  }
+  table{width:100%; border-collapse:collapse; background:var(--card); border:1px solid var(--border);
+    border-radius:12px; overflow:hidden}
+  thead th{user-select:none; cursor:pointer; text-align:left; font-size:12px; text-transform:uppercase;
+    letter-spacing:.02em; color:var(--muted); background:#f8f9fb; padding:12px 14px; border-bottom:1px solid var(--border)}
+  thead th.sortable::after{content:'⇅'; font-size:12px; padding-left:6px; color:#a0a3ad}
+  thead th.asc::after{content:'▲'; color:#607d8b}
+  thead th.desc::after{content:'▼'; color:#607d8b}
   tbody td{padding:14px; border-bottom:1px solid var(--border)}
-  tbody tr:hover{background:#fafbfe}
+  tbody tr:hover{background:var(--hover)}
   .name{font-weight:600}
   .pill{padding:4px 8px; background:var(--pill); color:#064d8c; border-radius:999px; font-size:12px}
   .num{text-align:right; font-variant-numeric:tabular-nums}
-  .footer{
-    display:flex; justify-content:space-between; align-items:center; margin-top:10px
-  }
+  .footer{display:flex; justify-content:space-between; align-items:center; margin-top:10px}
   .sp{color:var(--muted); font-size:12px}
 </style>
 </head>
@@ -78,7 +61,7 @@
         <label>State</label>
         <select id="state">
           <option value="all">Alle</option>
-          <!-- Wird dynamisch befüllt -->
+          <!-- wird mit allen States aus monday befüllt -->
         </select>
       </div>
       <div class="tool">
@@ -110,6 +93,10 @@
         </select>
         <button class="btn sec" id="loadMore">Mehr laden</button>
       </div>
+      <div class="tool" style="margin-left:auto">
+        <label>&nbsp;</label>
+        <button class="btn sec" id="exportXLSX">Export Excel</button>
+      </div>
     </div>
 
     <div class="chips">
@@ -121,19 +108,19 @@
     <table>
       <thead>
         <tr>
-          <th style="width:36%">Name</th>
-          <th style="width:14%">State</th>
-          <th style="width:22%">Major</th>
-          <th style="width:8%">Ranking</th>
-          <th style="width:10%">Final cost</th>
-          <th style="width:10%">Min GPA</th>
+          <th class="sortable" data-key="name" style="width:36%">Name</th>
+          <th class="sortable" data-key="state" style="width:14%">State</th>
+          <th class="sortable" data-key="major" style="width:22%">Major</th>
+          <th class="sortable" data-key="ranking" style="width:8%">Ranking</th>
+          <th class="sortable" data-key="final_cost" style="width:10%">Final cost</th>
+          <th class="sortable" data-key="min_gpa" style="width:10%">Min GPA</th>
         </tr>
       </thead>
       <tbody id="rows"></tbody>
     </table>
 
     <div class="footer">
-      <div class="sp">Tip: Suche durchsucht Name &amp; Major Labels.</div>
+      <div class="sp">Tip: Header klicken zum Sortieren · Export = aktueller Tabellenstand</div>
       <div class="sp">Powered by Netlify Functions &amp; monday GraphQL</div>
     </div>
   </div>
@@ -142,10 +129,11 @@
 const API = '/.netlify/functions/items';
 let cursor = null;
 let loaded = 0;
-let dataset = []; // jeweils letzte Page (gefiltert von der Function)!
+let dataset = []; // aktuell angezeigte Items (bereits serverseitig gefiltert)
+let sortKey = 'name';
+let sortDir = 'asc';
 
 const $ = sel => document.querySelector(sel);
-
 function fmtMoney(n){ return new Intl.NumberFormat('en-US',{style:'currency',currency:'USD',maximumFractionDigits:0}).format(n); }
 function fmtNum(n){ return new Intl.NumberFormat('en-US').format(n); }
 
@@ -167,6 +155,41 @@ function readFilters(asPageSizeOnly=false){
   return params;
 }
 
+async function loadStates(){
+  try{
+    const res = await fetch(`${API}?dict=state`);
+    const json = await res.json();
+    if(Array.isArray(json.states) && json.states.length){
+      const sel = $('#state');
+      const current = sel.value || 'all';
+      const opts = ['all', ...json.states];
+      sel.innerHTML = opts.map(v=>`<option value="${v}">${v}</option>`).join('');
+      sel.value = current;
+    }
+  }catch(e){ /* fallback bleibt einfach leer/all */ }
+}
+
+function applySort(data){
+  const arr = [...data];
+  const dir = sortDir === 'asc' ? 1 : -1;
+
+  arr.sort((a,b)=>{
+    const ka = a[sortKey]; const kb = b[sortKey];
+
+    // Zahlenfelder (ranking, final_cost, min_gpa)
+    if (['ranking','final_cost','min_gpa'].includes(sortKey)){
+      const na = (ka==null ? Number.POSITIVE_INFINITY : Number(ka));
+      const nb = (kb==null ? Number.POSITIVE_INFINITY : Number(kb));
+      return (na - nb) * dir;
+    }
+    // Strings
+    const sa = (ka || '').toString().toLowerCase();
+    const sb = (kb || '').toString().toLowerCase();
+    return sa.localeCompare(sb) * dir;
+  });
+  return arr;
+}
+
 async function fetchPage({ append=false } = {}){
   const p = readFilters();
   if (append && cursor) p.cursor = cursor;
@@ -183,54 +206,86 @@ async function fetchPage({ append=false } = {}){
   $('#cursor').textContent = `cursor: ${cursor ? 'more' : 'none'}`;
 
   render();
-  // States für Filter befüllen
-  initStateFilter(dataset);
-}
-
-function initStateFilter(items){
-  const sel = $('#state');
-  const current = sel.value || 'all';
-  const pool = new Set();
-  items.forEach(it => (it.state||'').split(',').map(s=>s.trim()).filter(Boolean).forEach(s=>pool.add(s)));
-  const opts = ['all', ...[...pool].sort()];
-  sel.innerHTML = opts.map(v => `<option value="${v}">${v}</option>`).join('');
-  sel.value = current;
 }
 
 function render(){
   const tbody = $('#rows');
-  tbody.innerHTML = dataset.map(it => `
+
+  // sortiert rendern
+  const rows = applySort(dataset).map(it => `
     <tr>
       <td class="name">${it.name ?? ''}</td>
       <td><span class="pill">${it.state || '-'}</span></td>
       <td>${it.major || '-'}</td>
       <td class="num">${it.ranking!=null? fmtNum(it.ranking): '-'}</td>
       <td class="num">${it.final_cost!=null? fmtMoney(it.final_cost): '-'}</td>
-      <td class="num">${it.min_gpa!=null? it.min_gpa.toFixed(2): '-'}</td>
+      <td class="num">${it.min_gpa!=null? Number(it.min_gpa).toFixed(2): '-'}</td>
     </tr>
   `).join('');
+
+  tbody.innerHTML = rows;
   $('#shown').textContent = `${dataset.length} angezeigt`;
+
+  // Header-Klasse für Sortindikator setzen
+  document.querySelectorAll('thead th').forEach(th=>{
+    th.classList.remove('asc','desc');
+    if (th.dataset.key === sortKey){
+      th.classList.add(sortDir);
+    }
+  });
 }
 
+// Header-Klick → Sortierung
+document.querySelectorAll('thead th.sortable').forEach(th=>{
+  th.addEventListener('click', ()=>{
+    const key = th.dataset.key;
+    if (sortKey === key){
+      sortDir = (sortDir === 'asc') ? 'desc' : 'asc';
+    } else {
+      sortKey = key;
+      sortDir = 'asc';
+    }
+    render();
+  });
+});
+
+// Export Excel (xlsx)
+$('#exportXLSX').addEventListener('click', ()=>{
+  const rows = applySort(dataset).map(it => ({
+    Name: it.name || '',
+    State: it.state || '',
+    Major: it.major || '',
+    Ranking: it.ranking ?? '',
+    'Final cost (USD)': it.final_cost ?? '',
+    'Min GPA': it.min_gpa ?? ''
+  }));
+  const ws = XLSX.utils.json_to_sheet(rows);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Programs');
+  XLSX.writeFile(wb, `bachelors_programs_${new Date().toISOString().slice(0,10)}.xlsx`);
+});
+
+// Buttons
 $('#reload').addEventListener('click', async () => {
   cursor = null; loaded = 0; dataset = [];
   await fetchPage({ append:false });
 });
-
 $('#reset').addEventListener('click', async () => {
   ['q','rMin','rMax','cMin','cMax','gMin','gMax'].forEach(id => $('#'+id).value = '');
   $('#state').value = 'all';
   cursor = null; loaded = 0; dataset = [];
   await fetchPage({ append:false });
 });
-
 $('#loadMore').addEventListener('click', async () => {
   if (!cursor) return;
   await fetchPage({ append:true });
 });
 
-// erste Ladung
-fetchPage();
+// Initial
+(async function init(){
+  await loadStates();      // alle States aus monday laden
+  await fetchPage();       // erste Seite
+})();
 </script>
 </body>
 </html>
