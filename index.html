@@ -6,46 +6,44 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <style>
     :root {
-      --bg: #fafafa; --border: #e6e9ef; --text: #2a2e34; --muted: #667085;
-      --primary: #1f76f0; --row-height: 36px; --shadow: 0 1px 2px rgba(16,24,40,.06);
+      --bg:#fafafa; --border:#e6e9ef; --text:#2a2e34; --muted:#667085; --primary:#1f76f0;
+      --row-h:36px; --shadow:0 1px 2px rgba(16,24,40,.06);
     }
-    *{box-sizing:border-box} body{margin:0;background:var(--bg);color:var(--text);
-      font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;}
-    header{position:sticky;top:0;z-index:30;background:#fff;border-bottom:1px solid var(--border);
-      padding:10px 16px;box-shadow:var(--shadow)}
+    *{box-sizing:border-box}
+    body{margin:0;background:var(--bg);color:var(--text);font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif}
+    header{position:sticky;top:0;z-index:30;background:#fff;border-bottom:1px solid var(--border);padding:10px 16px;box-shadow:var(--shadow)}
     h1{margin:0 0 6px 0;font-size:18px;font-weight:600}
     .controls{display:flex;gap:12px;flex-wrap:wrap;align-items:center}
     .control{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--muted)}
-    input[type="text"],input[type="number"],select,button{height:32px;padding:0 10px;border:1px solid var(--border);
-      border-radius:8px;background:#fff;color:var(--text)}
-    button{cursor:pointer} button.primary{border-color:var(--primary);color:#fff;background:var(--primary)}
+    input[type="text"],input[type="number"],button{height:32px;padding:0 10px;border:1px solid var(--border);border-radius:8px;background:#fff;color:var(--text)}
+    button{cursor:pointer} button.primary{border-color:var(--primary);background:var(--primary);color:#fff}
     .multiselect{position:relative}
     .multiselect button{min-width:220px;display:inline-flex;align-items:center;justify-content:space-between}
-    .dropdown{position:absolute;top:36px;left:0;z-index:40;background:#fff;width:320px;max-height:300px;overflow:auto;
-      border:1px solid var(--border);border-radius:10px;box-shadow:var(--shadow);display:none}
-    .dropdown.open{display:block} .dropdown .searchbox{padding:8px;border-bottom:1px solid var(--border)}
+    .dropdown{position:absolute;top:36px;left:0;z-index:40;background:#fff;width:320px;max-height:300px;overflow:auto;border:1px solid var(--border);border-radius:10px;box-shadow:var(--shadow);display:none}
+    .dropdown.open{display:block}
+    .dropdown .searchbox{padding:8px;border-bottom:1px solid var(--border)}
     .option{display:flex;align-items:center;gap:8px;padding:6px 10px;border-bottom:1px solid #f3f4f6}
     .opt-actions{display:flex;justify-content:space-between;gap:8px;padding:8px;border-top:1px solid var(--border)}
     .col-chooser{position:relative}
-    .col-panel{position:absolute;top:36px;right:0;width:360px;max-height:380px;overflow:auto;background:#fff;
-      border:1px solid var(--border);border-radius:10px;box-shadow:var(--shadow);padding:8px;display:none;z-index:40}
+    .col-panel{position:absolute;top:36px;right:0;width:360px;max-height:380px;overflow:auto;background:#fff;border:1px solid var(--border);border-radius:10px;box-shadow:var(--shadow);padding:8px;display:none;z-index:40}
     .col-panel.open{display:block} .col-item{display:flex;align-items:center;gap:8px;padding:6px 8px;border-bottom:1px solid #f3f4f6;font-size:13px}
-    .grid-wrap{padding:12px 16px} .grid{border:1px solid var(--border);border-radius:12px;background:#fff;overflow:hidden}
-    .grid-head{position:sticky;top:58px;z-index:20;background:#f7f9fc;border-bottom:1px solid var(--border);
-      font-weight:600;color:#3b4351;display:grid;align-items:center;min-height:36px}
+    .grid-wrap{padding:12px 16px}
+    .grid{border:1px solid var(--border);border-radius:12px;background:#fff;overflow:hidden}
+    .grid-head{position:sticky;top:58px;z-index:20;background:#f7f9fc;border-bottom:1px solid var(--border);font-weight:600;color:#3b4351;display:grid;align-items:center;min-height:36px}
     .grid-body{position:relative;height:calc(100vh - 210px);overflow:auto}
-    .row{position:absolute;left:0;right:0;display:grid;align-items:center;height:var(--row-height);border-bottom:1px solid #f6f7fb}
+    .row{position:absolute;left:0;right:0;display:grid;align-items:center;height:var(--row-h);border-bottom:1px solid #f6f7fb}
     .cell{padding:0 10px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;font-size:13px}
     .row:hover{background:#f9fbff} .stripe{background:#fcfcfd} .muted{color:var(--muted)}
+    .status{margin:8px 16px;font-size:13px;color:var(--muted)}
+    .spinner{display:inline-block;width:12px;height:12px;border:2px solid #cfd4dc;border-top-color:var(--primary);border-radius:50%;animation:spin .9s linear infinite;vertical-align:-2px}
+    @keyframes spin{to{transform:rotate(360deg)}}
   </style>
 </head>
 <body>
   <header>
     <h1>Bachelor’s Programs – Freshman Student (Read-only Mirror)</h1>
     <div class="controls">
-      <div class="control">
-        <input id="search" type="text" placeholder="Search by name or any cell…" />
-      </div>
+      <div class="control"><input id="search" type="text" placeholder="Search by name or any cell…" /></div>
 
       <!-- Multi-select: State -->
       <div class="control multiselect" id="ms-state">
@@ -84,11 +82,11 @@
         <div class="col-panel" id="col-panel"></div>
       </div>
 
-      <div class="control">
-        <button id="btn-reset" type="button">Reset filters</button>
-      </div>
+      <div class="control"><button id="btn-reset" type="button">Reset filters</button></div>
     </div>
   </header>
+
+  <div class="status" id="status"><span class="spinner"></span> Loading…</div>
 
   <div class="grid-wrap">
     <div class="grid">
@@ -103,81 +101,117 @@
   </div>
 
   <script>
-    const API = '/.netlify/functions/items?boardId=2761790925';
+    // --- CONFIG: endpoint & board ---
+    const BOARD_ID = '2761790925';
+    const ENDPOINT = '/.netlify/functions/items';
+    const PAGE_LIMIT_PER_CALL = 1;           // pro Call genau 1 Seite (sicher <10s)
+    const FETCH_TIMEOUT_MS = 9000;           // unter 10s, damit 504 vermieden wird
+    const RETRIES = 2;                       // sanftes Retry bei Netzwerkfehlern
 
-    // Fixed 50 US states
-    const US_STATES = [
-      "Alabama","Alaska","Arizona","Arkansas","California","Colorado","Connecticut","Delaware","Florida","Georgia",
-      "Hawaii","Idaho","Illinois","Indiana","Iowa","Kansas","Kentucky","Louisiana","Maine","Maryland",
-      "Massachusetts","Michigan","Minnesota","Mississippi","Missouri","Montana","Nebraska","Nevada","New Hampshire","New Jersey",
-      "New Mexico","New York","North Carolina","North Dakota","Ohio","Oklahoma","Oregon","Pennsylvania","Rhode Island","South Carolina",
-      "South Dakota","Tennessee","Texas","Utah","Vermont","Virginia","Washington","West Virginia","Wisconsin","Wyoming"
-    ];
+    // 50 US States
+    const US_STATES = ["Alabama","Alaska","Arizona","Arkansas","California","Colorado","Connecticut","Delaware","Florida","Georgia","Hawaii","Idaho","Illinois","Indiana","Iowa","Kansas","Kentucky","Louisiana","Maine","Maryland","Massachusetts","Michigan","Minnesota","Mississippi","Missouri","Montana","Nebraska","Nevada","New Hampshire","New Jersey","New Mexico","New York","North Carolina","North Dakota","Ohio","Oklahoma","Oregon","Pennsylvania","Rhode Island","South Carolina","South Dakota","Tennessee","Texas","Utah","Vermont","Virginia","Washington","West Virginia","Wisconsin","Wyoming"];
 
+    // State
     let columns = [], items = [], filtered = [], visibleColIds = [];
-
     let COL_ID_STATE = null, COL_ID_MAJOR = null, COL_ID_RANKING = null, COL_ID_COST = null, COL_ID_GPA = null;
 
-    const ROW_HEIGHT = 36, BUFFER = 8;
-    let startIndex = 0, endIndex = 0;
-
+    // DOM
     const headEl = document.getElementById('grid-head');
     const bodyEl = document.getElementById('grid-body');
     const spacerEl = document.getElementById('spacer');
     const countShown = document.getElementById('count-shown');
     const countTotal = document.getElementById('count-total');
+    const statusEl = document.getElementById('status');
 
     const searchInput = document.getElementById('search');
     const rankingMax = document.getElementById('f-ranking-max');
     const costMax = document.getElementById('f-cost-max');
     const gpaMin = document.getElementById('f-gpa-min');
-
     const msState = setupMultiselect(document.getElementById('ms-state'), US_STATES);
-    const msMajor = setupMultiselect(document.getElementById('ms-major'), []); // will fill after fetch
-
+    const msMajor = setupMultiselect(document.getElementById('ms-major'), []);
     const colBtn = document.getElementById('btn-cols');
     const colPanel = document.getElementById('col-panel');
     const resetBtn = document.getElementById('btn-reset');
 
-    init();
+    // Init
+    init().catch(err => showStatus('Error: ' + (err?.message || err), true));
 
     async function init() {
-      try {
-        const res = await fetch(API);
-        if (!res.ok) {
-          const text = await res.text();
-          alert(`Failed to fetch items. Details: ${text}`);
-          return;
+      showStatus('Loading…');
+      // progressiv laden
+      await fetchAllProgressive();
+
+      // Majors aus Daten bauen
+      const majors = unique(items.map(it => cellText(it, COL_ID_MAJOR)).filter(Boolean)).sort((a,b)=>a.localeCompare(b));
+      msMajor.setOptions(majors);
+
+      // UI
+      visibleColIds = JSON.parse(localStorage.getItem('visibleColIds') || 'null') || columns.map(c => c.id);
+      renderHeader();
+      applyFilters();
+      buildColumnChooser();
+      attachEvents();
+      showStatus('Loaded ' + items.length + ' rows', false, 2000);
+    }
+
+    // Progressive loader (holt Seite für Seite, ohne 504)
+    async function fetchAllProgressive() {
+      items = []; columns = []; countTotal.textContent = '0';
+
+      let cursor = null;
+      let firstRound = true;
+      let tries, done = false;
+
+      while (!done) {
+        const url = new URL(ENDPOINT, window.location.origin);
+        url.searchParams.set('boardId', BOARD_ID);
+        url.searchParams.set('pageLimit', String(PAGE_LIMIT_PER_CALL));
+        if (cursor) url.searchParams.set('cursor', cursor);
+
+        // fetch mit Timeout + Retry
+        tries = 0;
+        let data = null;
+        while (tries <= RETRIES) {
+          try {
+            data = await fetchWithTimeout(url.toString(), FETCH_TIMEOUT_MS);
+            break;
+          } catch (e) {
+            tries++;
+            if (tries > RETRIES) throw e;
+            await sleep(400 * tries);
+          }
         }
-        const data = await res.json();
 
-        columns = data.columns || [];
-        items = data.items || [];
+        if (!data.ok) {
+          const txt = await data.text();
+          throw new Error(`Function error ${data.status}: ${txt}`);
+        }
+        const json = await data.json();
+
+        if (firstRound) {
+          columns = json.columns || [];
+          // Spalten-IDs für Filter heuristisch bestimmen
+          const titleMap = indexTitles(columns);
+          COL_ID_STATE   = pickCol(titleMap, ["state"]);
+          COL_ID_MAJOR   = pickCol(titleMap, ["major","program","degree"]);
+          COL_ID_RANKING = pickCol(titleMap, ["ranking","rank"]);
+          COL_ID_COST    = pickCol(titleMap, ["final cost","cost of attendance","tuition","coa"]);
+          COL_ID_GPA     = pickCol(titleMap, ["minimum gpa","min gpa","gpa"]);
+          firstRound = false;
+        }
+
+        // Daten anhängen und schon anzeigen (so wirkt es „ohne Pagination“)
+        items = items.concat(json.items || []);
         countTotal.textContent = String(items.length);
+        applyFilters(); // zeigt schon teilgeladene Daten an
 
-        const titleMap = indexTitles(columns);
-        COL_ID_STATE   = pickCol(titleMap, ["state"]);
-        COL_ID_MAJOR   = pickCol(titleMap, ["major","program","degree"]);
-        COL_ID_RANKING = pickCol(titleMap, ["ranking","rank"]);
-        COL_ID_COST    = pickCol(titleMap, ["final cost","cost of attendance","tuition","coa"]);
-        COL_ID_GPA     = pickCol(titleMap, ["minimum gpa","min gpa","gpa"]);
-
-        // majors from data
-        const majors = unique(items.map(it => cellText(it, COL_ID_MAJOR)).filter(Boolean)).sort((a,b)=>a.localeCompare(b));
-        msMajor.setOptions(majors);
-
-        visibleColIds = JSON.parse(localStorage.getItem('visibleColIds') || 'null') || columns.map(c => c.id);
-
-        renderHeader();
-        applyFilters();
-        buildColumnChooser();
-        attachEvents();
-      } catch (e) {
-        console.error(e);
-        alert("Failed to fetch items. See console for details.");
+        // Nächste Seite?
+        cursor = json.cursor || null;
+        if (!cursor) done = true;
       }
     }
 
+    // ----- Rendering -----
     function renderHeader() {
       const cols = columns.filter(c => visibleColIds.includes(c.id));
       headEl.style.gridTemplateColumns = gridTemplate(cols);
@@ -188,35 +222,30 @@
       const cols = columns.filter(c => visibleColIds.includes(c.id));
       const total = filtered.length;
       const viewH = bodyEl.clientHeight || 400;
-      const rowsPerView = Math.ceil(viewH / ROW_HEIGHT) + BUFFER;
+      const rowsPerView = Math.ceil(viewH / parseInt(getComputedStyle(document.documentElement).getPropertyValue('--row-h'))) + 8;
 
-      startIndex = Math.max(0, Math.floor(bodyEl.scrollTop / ROW_HEIGHT) - BUFFER);
-      endIndex = Math.min(total, startIndex + rowsPerView);
+      const start = Math.max(0, Math.floor(bodyEl.scrollTop / 36) - 8);
+      const end = Math.min(total, start + rowsPerView);
 
-      spacerEl.style.height = `${total * ROW_HEIGHT}px`;
+      spacerEl.style.height = `${total * 36}px`;
       bodyEl.querySelectorAll('.row').forEach(n => n.remove());
 
       const frag = document.createDocumentFragment();
-      for (let i = startIndex; i < endIndex; i++) {
+      for (let i = start; i < end; i++) {
         const it = filtered[i];
         const row = document.createElement('div');
         row.className = 'row' + (i % 2 ? ' stripe' : '');
-        row.style.top = `${i * ROW_HEIGHT}px`;
+        row.style.top = `${i * 36}px`;
         row.style.display = 'grid';
         row.style.gridTemplateColumns = gridTemplate(cols);
-
         cols.forEach(col => {
           const txt = cellText(it, col.id) ?? '';
-          const d = document.createElement('div');
-          d.className = 'cell';
-          d.title = txt;
-          d.textContent = txt;
+          const d = document.createElement('div'); d.className = 'cell'; d.title = txt; d.textContent = txt;
           row.appendChild(d);
         });
         frag.appendChild(row);
       }
       bodyEl.appendChild(frag);
-
       countShown.textContent = String(filtered.length);
     }
 
@@ -259,7 +288,6 @@
         }
         return true;
       });
-
       renderBody();
     }
 
@@ -278,7 +306,6 @@
       window.addEventListener('resize', renderBody);
       [searchInput, rankingMax, costMax, gpaMin].forEach(el => el.addEventListener('input', debounce(applyFilters, 120)));
 
-      const colBtn = document.getElementById('btn-cols');
       colBtn.addEventListener('click', () => colPanel.classList.toggle('open'));
       document.addEventListener('click', (e) => {
         if (!colPanel.contains(e.target) && e.target !== colBtn) colPanel.classList.remove('open');
@@ -293,18 +320,17 @@
       });
 
       document.getElementById('btn-reset').addEventListener('click', () => {
-        searchInput.value = ''; rankingMax.value = ''; costMax.value = ''; gpaMin.value = '';
+        searchInput.value=''; rankingMax.value=''; costMax.value=''; gpaMin.value='';
         msState.clear(); msMajor.clear(); applyFilters();
       });
     }
 
-    // Utilities
+    // ----- Utils -----
     function indexTitles(cols){ const m={}; cols.forEach(c=>{ m[(c.title||c.id||'').toLowerCase()]=c.id; }); return m; }
-    function pickCol(map, needles){ const keys = Object.keys(map); for (const n of needles){ const k = keys.find(k=>k.includes(n)); if (k) return map[k]; } return null; }
+    function pickCol(map, needles){ const keys=Object.keys(map); for(const n of needles){ const k=keys.find(k=>k.includes(n)); if(k) return map[k]; } return null; }
     function cellText(it, colId){
       if (!colId) return null;
-      const v = it.column_values?.[colId];
-      if (!v) return null;
+      const v = it.column_values?.[colId]; if (!v) return null;
       if (v.text) return v.text;
       const val = v.value;
       if (val && typeof val === 'object') {
@@ -316,19 +342,23 @@
       return typeof val === 'string' ? val : '';
     }
     function gridTemplate(cols){
-      const first = cols[0]; // Monday zeigt die erste Spalte (Name) etwas breiter
-      return cols.map(c => c===first ? 'minmax(220px, 1.2fr)' : 'minmax(140px, 1fr)').join(' ');
+      const first = cols[0]; return cols.map(c => c===first ? 'minmax(220px,1.2fr)' : 'minmax(140px,1fr)').join(' ');
     }
     function toNum(x, allowFloat=false){
-      if (x===undefined||x===null) return null;
-      x = String(x);
+      if (x===undefined||x===null) return null; x=String(x);
       const m = x.replace(/[, $€£]|USD|EUR|US|K/gi,'').match(/-?\d+(\.\d+)?/);
-      if (!m) return null;
-      return allowFloat ? parseFloat(m[0]) : parseInt(m[0],10);
+      if (!m) return null; return allowFloat ? parseFloat(m[0]) : parseInt(m[0],10);
     }
     function unique(a){ return Array.from(new Set(a)); }
     function escapeHtml(s){ return (s||'').replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
-    function debounce(fn, ms){ let t; return (...args)=>{ clearTimeout(t); t=setTimeout(()=>fn(...args), ms); }; }
+    function debounce(fn,ms){ let t; return (...a)=>{ clearTimeout(t); t=setTimeout(()=>fn(...a),ms); }; }
+    function sleep(ms){ return new Promise(r=>setTimeout(r,ms)); }
+
+    async function fetchWithTimeout(url, timeoutMs){
+      const ctrl = new AbortController(); const t = setTimeout(()=>ctrl.abort(), timeoutMs);
+      try { return await fetch(url, { signal: ctrl.signal }); }
+      finally { clearTimeout(t); }
+    }
 
     // Multiselect component
     function setupMultiselect(rootEl, initialOptions){
@@ -338,9 +368,7 @@
       const list = dd.querySelector('.options');
       const clearBtn = dd.querySelector('[data-action="clear"]');
       const applyBtn = dd.querySelector('[data-action="apply"]');
-
-      let options = [...initialOptions];
-      let selection = new Set();
+      let options = [...initialOptions], selection = new Set();
 
       function renderList(filter=''){
         const f = filter.toLowerCase();
@@ -363,13 +391,19 @@
       clearBtn.addEventListener('click', ()=>{ selection.clear(); renderList(search.value); updateBtnLabel(); });
       applyBtn.addEventListener('click', ()=>{ dd.classList.remove('open'); updateBtnLabel(); applyFilters(); });
 
-      function setOptions(opts){ options = [...opts]; renderList(search.value); }
+      function setOptions(opts){ options=[...opts]; renderList(search.value); }
       function getSelection(){ return Array.from(selection); }
       function clear(){ selection.clear(); updateBtnLabel(); }
-      function updateBtnLabel(){ const n=selection.size; btn.textContent = (rootEl.id==='ms-state'?'State':'Major') + (n?` (${n}) ▾`:' ▾'); }
+      function updateBtnLabel(){ const n=selection.size; btn.textContent=(rootEl.id==='ms-state'?'State':'Major')+(n?` (${n}) ▾`:' ▾'); }
 
       renderList(''); updateBtnLabel();
       return { setOptions, getSelection, clear };
+    }
+
+    function showStatus(text, isError=false, autoHideMs=0){
+      statusEl.textContent = text;
+      statusEl.style.color = isError ? '#c62828' : 'var(--muted)';
+      if (autoHideMs) setTimeout(()=>{ statusEl.textContent=''; }, autoHideMs);
     }
   </script>
 </body>
