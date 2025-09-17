@@ -1,499 +1,715 @@
 <!doctype html>
-<html lang="de">
+<html lang="en">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Bachelor’s Programs – Freshman & Average Student</title>
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
-<style>
-  :root{
-    --bg:#f6f7fb;
-    --panel:#fff;
-    --text:#1f2430;
-    --muted:#707786;
-    --border:#e2e6ef;
-    --blue:#1976d2;
-    --tag:#eef3ff;
-    --tag-text:#2b4b9b;
-    --header:#f2f4f8;
-    --row-hover:#f8fafc;
-  }
-  *{box-sizing:border-box}
-  body{
-    margin:0; background:var(--bg);
-    font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Cantarell,'Helvetica Neue',Arial;
-    color:var(--text); line-height:1.4;
-  }
-  header{ padding:24px; }
-  h1{font-size:22px; margin:0 0 8px 0; font-weight:600}
-  p.sub{margin:0; color:var(--muted); font-size:14px}
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Bachelor’s Programs – Freshman & Average Student</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    :root{
+      --bg:#f6f7fb;
+      --card:#ffffff;
+      --text:#1f2430;
+      --muted:#6b7280;
+      --line:#e6e9f0;
+      --primary:#1f76ff;
+      --pill:#eef3ff;
+      --pillText:#1f4fbf;
+      --link:#1f76ff;
+      --thead:#f2f4f8;
+      --chip:#f4f6fa;
+      --chipText:#49506a;
+      --stickyW:280px;
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0;
+      background:var(--bg);
+      color:var(--text);
+      font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,"Helvetica Neue",Arial;
+    }
+    .wrap{
+      max-width:1200px; margin:24px auto; padding:0 20px;
+    }
+    .h1{
+      font-size:28px; font-weight:700; margin:8px 0 4px;
+    }
+    .sub{
+      color:var(--muted); font-size:13px; margin-bottom:18px;
+    }
+    .card{
+      background:var(--card); border:1px solid var(--line);
+      border-radius:10px; padding:14px; margin-bottom:16px;
+      box-shadow:0 1px 2px rgba(0,0,0,.03);
+    }
+    .row{display:flex; gap:10px; flex-wrap:wrap; align-items:flex-end}
+    .col{display:flex; flex-direction:column; gap:6px}
+    .label{font-size:12px; color:var(--muted)}
+    input,select{
+      height:36px; padding:0 10px; border:1px solid var(--line);
+      border-radius:8px; background:#fff; color:var(--text); min-width:120px;
+    }
+    .nums{width:110px; text-align:right}
+    .btn{
+      height:36px; padding:0 14px; border-radius:8px; border:1px solid var(--line);
+      background:#fff; cursor:pointer; font-weight:600;
+    }
+    .btn.primary{background:var(--primary);border-color:var(--primary);color:#fff}
+    .chips{display:flex; gap:8px; align-items:center; font-size:12px}
+    .chip{background:var(--chip); color:var(--chipText); padding:4px 8px; border-radius:999px}
+    .muted{color:var(--muted)}
+    .spacer{flex:1}
 
-  .card{
-    background:var(--panel);
-    border:1px solid var(--border);
-    border-radius:12px;
-    box-shadow:0 1px 2px rgba(0,0,0,.03);
-    margin:0 24px 24px 24px;
-  }
-  .controls{
-    display:flex; flex-wrap:wrap; gap:12px;
-    padding:16px; border-bottom:1px solid var(--border);
-  }
-  .ctrl{display:flex; flex-direction:column; gap:6px; min-width:220px}
-  .ctrl label{font-size:12px; color:var(--muted)}
-  .ctrl input[type="text"], .ctrl input[type="number"], .ctrl select{
-    padding:10px 12px; border:1px solid var(--border);
-    border-radius:8px; background:#fff; font-size:14px;
-    outline:none;
-  }
-  .btn{padding:10px 14px; border:1px solid var(--border);
-    background:#fff; color:var(--text);
-    border-radius:8px; cursor:pointer; font-size:14px;}
-  .btn.primary{background:var(--blue); color:#fff; border-color:var(--blue)}
-  .btn:disabled{opacity:.5; cursor:default}
-  .badges{margin-left:auto; display:flex; gap:10px; align-items:center}
-  .badge{background:#eef1f6; color:#333; padding:6px 10px; border-radius:999px; font-size:12px}
+    /* TABLE */
+    .tableWrap{
+      background:var(--card); border:1px solid var(--line); border-radius:10px;
+      overflow:auto; position:relative
+    }
+    table{border-collapse:separate; border-spacing:0; width:1400px; /* breite > viewport for horiz scroll */ }
+    thead th{
+      position:sticky; top:0; background:var(--thead); z-index:3;
+      font-size:12px; text-transform:uppercase; letter-spacing:.02em;
+      color:#49506a; padding:10px; border-bottom:1px solid var(--line);
+      user-select:none; cursor:pointer;
+    }
+    tbody td{
+      padding:12px 10px; border-top:1px solid var(--line); vertical-align:top; font-size:14px;
+    }
+    /* sticky first col (name) */
+    .sticky{
+      position:sticky; left:0; z-index:2; background:#fff; min-width:var(--stickyW); max-width:var(--stickyW);
+    }
+    tbody tr:hover td{background:#fafbff}
 
-  .table-wrap{overflow:auto}
-  table{border-collapse:separate; border-spacing:0; width:max-content; min-width:100%}
-  thead th{
-    position:sticky; top:0; background:var(--header); z-index:5;
-    font-weight:600; font-size:13px; color:#324256;
-    padding:12px; border-bottom:1px solid var(--border); border-right:1px solid var(--border);
-    white-space:nowrap; cursor:pointer;
-  }
-  tbody td{
-    padding:12px; font-size:14px; color:#1a1f2c;
-    border-bottom:1px solid var(--border); border-right:1px solid var(--border);
-    vertical-align:top; background:#fff;
-  }
-  tbody tr:hover td{ background:var(--row-hover) }
-  th:first-child, td:first-child{position:sticky; left:0; background:#fff; z-index:4}
-  thead th:first-child{z-index:6; background:var(--header)}
-  .pill{
-    display:inline-block; background:var(--tag); color:var(--tag-text);
-    padding:2px 8px; border-radius:999px; font-size:12px; margin:2px 4px 2px 0;
-  }
-  .mono{font-variant-numeric:tabular-nums}
-  .empty{color:var(--muted)}
-  .export{margin:8px 16px 16px 16px}
-</style>
+    .pill{display:inline-flex; align-items:center; gap:6px; padding:4px 10px;
+      border-radius:999px; background:var(--pill); color:var(--pillText); font-size:12px; }
+    .link{color:var(--link); text-decoration:none; font-weight:600}
+    .mono{font-family: ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,"Liberation Mono","Courier New",monospace; font-size:12px}
+    .right{text-align:right}
+  </style>
 </head>
 <body>
+  <div class="wrap">
+    <div class="h1">Bachelor’s Programs – Freshman & Average Student</div>
+    <div class="sub">Die Daten kommen aus einer sicheren Netlify-Funktion (read-only). Optik lehnt sich an Monday an.</div>
 
-<header>
-  <h1>Bachelor’s Programs – Freshman & Average Student</h1>
-  <p class="sub">Die Daten kommen aus einer sicheren Netlify-Funktion (read-only).</p>
-</header>
+    <!-- FILTERS -->
+    <div class="card">
+      <div class="row">
+        <div class="col" style="min-width:260px">
+          <label class="label">Suche (Name & Major)</label>
+          <input id="q" placeholder="Suche …" />
+        </div>
 
-<div class="card">
-  <div class="controls">
-    <div class="ctrl">
-      <label>Suche (Name & Major)</label>
-      <input id="q" type="text" placeholder="z. B. business, Rowan …">
-    </div>
+        <div class="col">
+          <label class="label">State</label>
+          <select id="state">
+            <option value="">alle</option>
+          </select>
+        </div>
 
-    <div class="ctrl">
-      <label>State</label>
-      <select id="state">
-        <option value="all">all</option>
-      </select>
-    </div>
+        <div class="col">
+          <label class="label">Ranking</label>
+          <div class="row" style="gap:6px">
+            <input id="rkMin" class="nums" placeholder="min" inputmode="numeric" />
+            <input id="rkMax" class="nums" placeholder="max" inputmode="numeric" />
+          </div>
+        </div>
 
-    <div class="ctrl">
-      <label>Ranking (min – max)</label>
-      <div style="display:flex; gap:8px">
-        <input id="rankMin" type="number" placeholder="min" style="width:100px">
-        <input id="rankMax" type="number" placeholder="max" style="width:100px">
+        <div class="col">
+          <label class="label">Final cost (USD)</label>
+          <div class="row" style="gap:6px">
+            <input id="fcMin" class="nums" placeholder="min $" inputmode="numeric" />
+            <input id="fcMax" class="nums" placeholder="max $" inputmode="numeric" />
+          </div>
+        </div>
+
+        <div class="col">
+          <label class="label">GPA</label>
+          <div class="row" style="gap:6px">
+            <input id="gpaMin" class="nums" placeholder="min" inputmode="decimal" />
+            <input id="gpaMax" class="nums" placeholder="max" inputmode="decimal" />
+          </div>
+        </div>
+
+        <div class="col">
+          <label class="label">Page size</label>
+          <select id="limit">
+            <option>20</option><option selected>50</option><option>100</option>
+          </select>
+        </div>
+
+        <div class="spacer"></div>
+
+        <button class="btn primary" id="reloadBtn">Neu laden</button>
+        <button class="btn" id="resetBtn">Reset Filter</button>
+        <button class="btn" id="exportBtn">Export CSV</button>
+      </div>
+
+      <div class="chips" style="margin-top:10px">
+        <span id="shown" class="chip">0 angezeigt</span>
+        <span id="loaded" class="chip">0 geladen</span>
+        <span id="cursorBadge" class="chip muted">cursor: –</span>
+        <button id="moreBtn" class="btn" style="height:28px;padding:0 10px">Mehr laden</button>
       </div>
     </div>
 
-    <div class="ctrl">
-      <label>Final cost (USD)</label>
-      <div style="display:flex; gap:8px">
-        <input id="costMin" type="number" placeholder="min $" style="width:110px">
-        <input id="costMax" type="number" placeholder="max $" style="width:110px">
-      </div>
-    </div>
+    <!-- TABLE -->
+    <div class="tableWrap">
+      <table id="tbl">
+        <thead>
+          <tr>
+            <th class="sticky" data-key="name">Name</th>
+            <th data-key="state">State</th>
+            <th data-key="major">Major</th>
+            <th data-key="ranking" class="right">Ranking</th>
+            <th data-key="final_cost" class="right">Final cost</th>
+            <th data-key="gpa" class="right">Min GPA</th>
 
-    <div class="ctrl">
-      <label>Min GPA</label>
-      <div style="display:flex; gap:8px">
-        <input id="gpaMin" type="number" step="0.01" placeholder="min" style="width:100px">
-        <input id="gpaMax" type="number" step="0.01" placeholder="max" style="width:100px">
-      </div>
-    </div>
+            <th data-key="city">City</th>
+            <th data-key="address">Full address</th>
+            <th data-key="virtual_tour">Virtual Campus Tour?</th>
+            <th data-key="fachabitur" >Fachabitur?</th>
+            <th data-key="fach_det">Fachabitur Details</th>
 
-    <div class="ctrl">
-      <label>Page size</label>
-      <select id="limit">
-        <option>20</option>
-        <option selected>50</option>
-        <option>100</option>
-        <option>200</option>
-      </select>
-    </div>
+            <th data-key="usnews_rank" class="right">U.S. News Ranking</th>
+            <th data-key="usnews_link">U.S. News Link</th>
+            <th data-key="type">Type of Institution</th>
+            <th data-key="enroll" class="right">Total Enrollment</th>
+            <th data-key="live_pct" class="right">% Live on Campus</th>
+            <th data-key="live_num" class="right"># Live on Campus</th>
+            <th data-key="ratio" class="right">Student-Faculty</th>
+            <th data-key="insurance">Insurance Required?</th>
+            <th data-key="insurance_info">Health Insurance details</th>
 
-    <div class="ctrl" style="align-self:end; gap:8px; flex-direction:row">
-      <button class="btn primary" id="reload">Neu laden</button>
-      <button class="btn" id="reset">Reset Filter</button>
-      <button class="btn" id="loadMore">Mehr laden</button>
-    </div>
+            <th data-key="app_fee" class="right">Application Fee</th>
+            <th data-key="how_apply">How to Apply</th>
+            <th data-key="cred_eval">Credential Eval Required</th>
+            <th data-key="cred_info">+ Info on Credential Evaluation</th>
+            <th data-key="spring_adm">Spring Admission?</th>
+            <th data-key="spring_sch">Spring Scholarships?</th>
+            <th data-key="clarify">Clarification</th>
 
-    <div class="badges">
-      <span class="badge" id="badgeShown">0 angezeigt</span>
-      <span class="badge" id="badgeLoaded">0 geladen</span>
-      <span class="badge" id="badgeCursor">cursor: —</span>
+            <th data-key="campus_acts">On Campus Activities</th>
+            <th data-key="sports">Sports Homepage</th>
+            <th data-key="uni_home">University Homepage</th>
+            <th data-key="intl_adm">International Admission</th>
+
+            <th data-key="majors">Bachelor’s Study Areas (B)</th>
+            <th data-key="degrees_link">Bachelor’s Degrees Link</th>
+            <th data-key="acad_year">Academic Year</th>
+
+            <th data-key="tuition" class="right">Tuition</th>
+            <th data-key="room" class="right">Room</th>
+            <th data-key="board" class="right">Board</th>
+            <th data-key="fees" class="right">Fees</th>
+            <th data-key="total" class="right">TOTAL</th>
+            <th data-key="cost_info">+ Info Annual Cost</th>
+
+            <th data-key="adm_req">Admission Requirements</th>
+
+            <th data-key="sch_low" class="right">Lowest $</th>
+            <th data-key="sch_low_type">Lowest: Type</th>
+            <th data-key="toefl_low" class="right">TOEFL Min (Lowest)</th>
+            <th data-key="gpa_low" class="right">GPA Min (Lowest)</th>
+            <th data-key="sat_low" class="right">SAT Min (Lowest)</th>
+            <th data-key="sch_low_info">Lowest: Info</th>
+
+            <th data-key="sch_mid" class="right">Mid $</th>
+            <th data-key="sch_mid_type">Mid: Type</th>
+            <th data-key="toefl_mid" class="right">TOEFL Min (Mid)</th>
+            <th data-key="gpa_mid" class="right">GPA Min (Mid)</th>
+            <th data-key="sat_mid" class="right">SAT Min (Mid)</th>
+            <th data-key="sch_mid_info">Mid: Info</th>
+
+            <th data-key="sch_hi" class="right">High $</th>
+            <th data-key="sch_hi_type">High: Type</th>
+            <th data-key="toefl_hi" class="right">TOEFL Min (High)</th>
+            <th data-key="gpa_hi" class="right">GPA Min (High)</th>
+            <th data-key="sat_hi" class="right">SAT Min (High)</th>
+            <th data-key="sch_hi_info">High: Info</th>
+
+            <th data-key="net_low" class="right">NetCost Low</th>
+            <th data-key="net_mid" class="right">NetCost Mid</th>
+            <th data-key="net_hi" class="right">NetCost High</th>
+
+            <th data-key="dead_fall">Fall Deadline</th>
+            <th data-key="dead_spring">Spring Deadline</th>
+            <th data-key="dead_link">Deadline Link</th>
+
+            <th data-key="campus_job">Campus Employment?</th>
+            <th data-key="min_wage" class="right">2025 Min Wage</th>
+            <th data-key="work_comp" class="right">Annual Work Compensation</th>
+          </tr>
+        </thead>
+        <tbody id="tbody"></tbody>
+      </table>
     </div>
   </div>
-
-  <div class="export">
-    <button class="btn" id="csv">Als CSV exportieren</button>
-  </div>
-
-  <div class="table-wrap">
-    <table id="tbl">
-      <thead><tr id="thead"></tr></thead>
-      <tbody id="tbody"></tbody>
-    </table>
-  </div>
-</div>
 
 <script>
-// ----------------- Spalten-Definition -----------------
-// title = Überschrift; id = Monday column id; type steuert Darstellung & Sortierung
-const COLUMNS = [
-  { source:'name', title:'Name', type:'text' },
+(() => {
+  // ---- mapping helper to read monday values by column id ----
+  function getTextCols(values, ids){
+    const map = {}; for(const v of values){ map[v.id] = v; }
+    const pick = id => {
+      const v = map[id]; if(!v) return "";
+      switch(v.type){
+        case "text": case "long-text": return v.text || "";
+        case "dropdown": return (v.text || "").replaceAll(";", ", ");
+        case "status": return v.text || "";
+        case "numbers": return v.text || v.value || "";
+        case "link": return v.text ? v.text : (v.url || "");
+        case "location": return v.text || "";
+        default: return v.text || "";
+      }
+    };
+    const o = {};
+    for(const [k,id] of Object.entries(ids)){ o[k] = pick(id); }
+    return o;
+  }
 
-  // ---- erster Block (aus Screenshot 1) ----
-  { id:'dropdown',   title:'State', type:'pill' },
-  { id:'dropdown4',  title:'Geographic Area', type:'pill' },
-  { id:'text5',      title:'City', type:'text' },
-  { id:'location4',  title:'Full Address (Map)', type:'text' },
-  { id:'link2',      title:'Virtual Campus Tour?', type:'link' },
-  { id:'status8',    title:'Fachabitur?', type:'pill' },
-  { id:'long_text68',title:'Fachabitur Details', type:'longtext' },
-  { id:'status70',   title:'Realschule?', type:'pill' },
-  { id:'long_text72',title:'Realschule Details', type:'longtext' },
+  // Column IDs as supplied
+  const COL = {
+    name:"name",
+    state:"dropdown",
+    city:"text5",
+    address:"location4",
+    virtual_tour:"link2",
+    fachabitur:"status8",
+    fach_det:"long_text68",
+    usnews_rank:"long_text2",
+    usnews_link:"link5",
+    type:"dropdown2",
+    enroll:"numbers57",
+    live_pct:"numbers_1",
+    live_num:"formula5",
+    ratio:"numbers_15",
+    insurance:"dropdown7",
+    insurance_info:"long_text91",
+    app_fee:"long_text23",
+    how_apply:"long_text73",
+    cred_eval:"status96",
+    cred_info:"long_text07",
+    spring_adm:"status14",
+    spring_sch:"status_1",
+    clarify:"long_text12",
+    campus_acts:"link23",
+    sports:"link9",
+    uni_home:"link29",
+    intl_adm:"dup__of_university_s_website",
+    majors:"dropdown6",
+    degrees_link:"link1",
+    acad_year:"dropdown57",
+    tuition:"numbers72",
+    room:"numbers_11",
+    board:"numbers_24",
+    fees:"numbers_3",
+    total:"formula27",
+    cost_info:"long_text62",
+    adm_req:"dropdown_mkvg9mv3",
+    sch_low:"numbers",
+    sch_low_type:"status1",
+    toefl_low:"numbers1",
+    gpa_low:"numbers4",
+    sat_low:"numbers7",
+    sch_low_info:"long_text",
+    sch_mid:"numbers14",
+    sch_mid_type:"status68",
+    toefl_mid:"numbers_14",
+    gpa_mid:"numbers_23",
+    sat_mid:"numbers_39",
+    sch_mid_info:"long_text06",
+    sch_hi:"numbers48",
+    sch_hi_type:"status6",
+    toefl_hi:"numbers9",
+    gpa_hi:"numbers43",
+    sat_hi:"numbers3",
+    sch_hi_info:"long_text4",
+    net_low:"formula0",
+    net_mid:"formula20",
+    net_hi:"formula52",
+    dead_fall:"long_text7",
+    dead_spring:"long_text1",
+    dead_link:"link",
+    final_cost:"formula27", // alias for filter
+    ranking:"numbers0",
+    gpa:"numbers_23" // most probable scholarship GPA as "Min GPA" (Annahme)
+  };
 
-  // ---- Ranking-Block ----
-  { id:'numbers0',   title:'Ranking (Webometrics)', type:'number' },
-  { id:'long_text2', title:'U.S. News Ranking', type:'text' },
-  { id:'link5',      title:'U.S. News Link', type:'link' },
-  { id:'dropdown2',  title:'Type of Institution', type:'pill' },
+  // UI refs
+  const q = document.querySelector('#q');
+  const stateSel = document.querySelector('#state');
+  const rkMin = document.querySelector('#rkMin');
+  const rkMax = document.querySelector('#rkMax');
+  const fcMin = document.querySelector('#fcMin');
+  const fcMax = document.querySelector('#fcMax');
+  const gpaMin = document.querySelector('#gpaMin');
+  const gpaMax = document.querySelector('#gpaMax');
+  const limitSel = document.querySelector('#limit');
 
-  // ---- Enrollment/Ratio ----
-  { id:'numbers57',  title:'Total Enrollment (# of students)', type:'number' },
-  { id:'numbers_1',  title:'% Enrollment living on Campus', type:'text' },
-  { id:'formula5',   title:'Number Students living on Campus', type:'number' },
-  { id:'numbers_15', title:'Student-to-Faculty Ratio', type:'number' },
+  const reloadBtn = document.querySelector('#reloadBtn');
+  const resetBtn = document.querySelector('#resetBtn');
+  const moreBtn = document.querySelector('#moreBtn');
+  const exportBtn = document.querySelector('#exportBtn');
 
-  // ---- Insurance/Fees/Apply ----
-  { id:'dropdown7',  title:'University’s Sponsored Insurance Required?', type:'pill' },
-  { id:'long_text91',title:'More details Health Insurance', type:'longtext' },
-  { id:'long_text23',title:'Application Fee (USD)', type:'text' },
-  { id:'long_text73',title:'How to Apply', type:'longtext' },
-  { id:'long_text__1',title:'Transfer Pathway Info', type:'longtext' },
-  { id:'status96',   title:'Credential Eval Required', type:'pill' },
-  { id:'long_text07',title:'+ Info Credential Evaluation', type:'longtext' },
+  const tbody = document.querySelector('#tbody');
+  const shown = document.querySelector('#shown');
+  const loaded = document.querySelector('#loaded');
+  const cursorBadge = document.querySelector('#cursorBadge');
 
-  // ---- Links & Sports ----
-  { id:'status14',   title:'Spring Admission?', type:'pill' },
-  { id:'status_1',   title:'Spring Scholarships?', type:'pill' },
-  { id:'long_text12',title:'Clarification on Add. Information', type:'longtext' },
-  { id:'link23',     title:'On Campus Activities', type:'link' },
-  { id:'link9',      title:'Sports Homepage', type:'link' },
-  { id:'dropdown5',  title:'Athletic Association', type:'pill' },
-  { id:'dropdown0',  title:"Men’s Sports", type:'pill' },
-  { id:'dup__of_men_sports1', title:"Women’s Sports", type:'pill' },
+  let items = [];          // loaded raw
+  let cursor = null;       // next cursor
+  let allStates = new Set();
 
-  // ---- Study Areas / Costs ----
-  { id:'link29',     title:'University Homepage', type:'link' },
-  { id:'dup__of_university_s_website', title:'International Admission Office', type:'link' },
-  { id:'dropdown6',  title:"Bachelor’s Study Areas", type:'pill' },
-  { id:'link1',      title:"Bachelor’s Degrees Link", type:'link' },
-  { id:'dropdown57', title:'Academic Year', type:'pill' },
-  { id:'numbers72',  title:'Tuition (Annual USD)', type:'currency' },
-  { id:'numbers_11', title:'Room (Annual USD)', type:'currency' },
-  { id:'numbers_24', title:'Board (Annual USD)', type:'currency' },
-  { id:'numbers_3',  title:'Required Fees (Annual USD)', type:'currency' },
-  { id:'formula27',  title:'TOTAL (Approx Annual USD)', type:'currency' },
-  { id:'long_text62',title:'Additional Cost Info', type:'longtext' },
+  // Fetch helper
+  async function fetchBatch({limit, cursorParam}){
+    const url = new URL('/.netlify/functions/items', location.origin);
+    url.searchParams.set('limit', limit||'50');
+    if(cursorParam) url.searchParams.set('cursor', cursorParam);
+    const resp = await fetch(url);
+    if(!resp.ok){ console.error('fetch failed'); return {items:[], cursor:null}; }
+    const data = await resp.json();
+    // expectation: { items:[{id,name,column_values:[...]}], cursor }
+    return data;
+  }
 
-  // ---- Scholarships (lowest/mid/highest) ----
-  { id:'dropdown_mkvg9mv3', title:'Admission Requirements', type:'pill' },
-  { id:'numbers',   title:'Lowest Scholarship (USD)', type:'currency' },
-  { id:'status1',   title:'Competitive vs Guaranteed (Lowest)', type:'pill' },
-  { id:'numbers1',  title:'TOEFL min (Lowest)', type:'number' },
-  { id:'numbers4',  title:'GPA min (Lowest)', type:'number' },
-  { id:'numbers7',  title:'SAT min (Lowest)', type:'number' },
-  { id:'long_text', title:'More Info (Lowest)', type:'longtext' },
+  function numberFrom(a){
+    if(a==null) return null;
+    const s = (""+a).replace(/[^\d.\-]/g,'');
+    if(!s) return null;
+    const n = parseFloat(s);
+    return Number.isFinite(n)?n:null;
+  }
 
-  { id:'numbers14', title:'Mid-Range Scholarship (USD)', type:'currency' },
-  { id:'status68',  title:'Competitive vs Guaranteed (Mid)', type:'pill' },
-  { id:'numbers_14',title:'TOEFL min (Mid)', type:'number' },
-  { id:'numbers_23',title:'GPA min (Mid)', type:'number' },
-  { id:'numbers_39',title:'SAT min (Mid)', type:'number' },
-  { id:'long_text06',title:'More Info (Mid)', type:'longtext' },
+  function buildStateOptions(){
+    // fill all US states ever seen (from Monday you listed)
+    const states = [
+      "", "Alabama","California","Colorado","Delaware","Florida","Georgia","Idaho","Illinois","Louisiana","Maine","Michigan",
+      "Mississippi","Missouri","Nebraska","New Mexico","Ohio","Oklahoma","Texas","Utah","Washington","Wisconsin","New Jersey"
+    ];
+    stateSel.innerHTML = states.map(s=> `<option value="${s}">${s||'alle'}</option>`).join('');
+  }
 
-  { id:'numbers48', title:'Highest Scholarship (USD)', type:'currency' },
-  { id:'status6',   title:'Competitive vs Guaranteed (High)', type:'pill' },
-  { id:'numbers9',  title:'TOEFL min (High)', type:'number' },
-  { id:'numbers43', title:'GPA min (High)', type:'number' },
-  { id:'numbers3',  title:'SAT min (High)', type:'number' },
-  { id:'long_text4',title:'More Info (High)', type:'longtext' },
+  buildStateOptions();
 
-  // ---- Net Cost, Deadlines, Work ----
-  { id:'formula0',  title:'(Lowest) Possible Net Cost', type:'currency' },
-  { id:'formula20', title:'(Mid) Possible Net Cost', type:'currency' },
-  { id:'formula52', title:'(Highest) Possible Net Cost', type:'currency' },
-  { id:'dropdown_mkvgfq5y', title:'Estimated Annual Cost - Vlookup', type:'pill' },
-  { id:'long_text7', title:'Fall Application Deadline', type:'longtext' },
-  { id:'long_text1', title:'Spring Application Deadline', type:'longtext' },
-  { id:'link',       title:'Deadline Link', type:'link' },
-  { id:'long_text6', title:'Add. Requirements Info', type:'longtext' },
-  { id:'status3',    title:"Campus Employment Opportunities?", type:'pill' },
-  { id:'numbers25',  title:'2025 Minimum Wage', type:'currency' },
-  { id:'formula6',   title:'Annual Work on Campus Compensation', type:'currency' },
-  { id:'long_text05',title:"Work on Campus Details", type:'longtext' },
+  async function initialLoad(){
+    items = []; cursor = null; allStates.clear();
+    const {items:batch, cursor:cur} = await fetchBatch({limit:limitSel.value});
+    items.push(...batch);
+    cursor = cur||null;
+    mergeStates(batch);
+    render();
+  }
 
-  // ---- Meta ----
-  { id:'last_updated__1', title:'Last updated', type:'text' },
-  { id:'status__1', title:'Partner', type:'pill' },
-  { id:'dropdown_mkvtfch4', title:'Estimated Annual Cost', type:'pill' },
-];
+  function mergeStates(batch){
+    for(const it of batch){
+      const st = readCell(it, COL.state);
+      if(st) allStates.add(st);
+    }
+  }
 
-// --------------- Globals ---------------
-let rows = [];           // alle geladenen Items (akkumuliert)
-let cursor = null;       // nächster Cursor
-let sort = { key: 'name', dir: 'asc' }; // Default
+  function readCell(item, colId){
+    const v = item.column_values?.find(c=>c.id===colId);
+    if(!v) return "";
+    switch(v.type){
+      case "text": case "long-text": return v.text||"";
+      case "dropdown": return (v.text||"").replaceAll(";",", ");
+      case "status": return v.text||"";
+      case "numbers": return v.text || v.value || "";
+      case "link": return v.text || v.url || "";
+      case "location": return v.text || "";
+      default: return v.text || "";
+    }
+  }
 
-// --------------- UI-Elemente ---------------
-const $q = $('#q'), $state = $('#state');
-const $rankMin = $('#rankMin'), $rankMax = $('#rankMax');
-const $costMin = $('#costMin'), $costMax = $('#costMax');
-const $gpaMin  = $('#gpaMin'),  $gpaMax  = $('#gpaMax');
-const $limit = $('#limit');
+  function toRow(item){
+    const cv = item.column_values||[];
+    const pick = id => readCell(item,id);
 
-$('#reload').addEventListener('click', reload);
-$('#reset').addEventListener('click', resetFilters);
-$('#loadMore').addEventListener('click', loadMore);
-$('#csv').addEventListener('click', exportCSV);
+    // build one unified majors string
+    const majors = pick(COL.majors);
 
-buildHeader();
-reload();   // erste Ladung
+    return {
+      name: item.name || "",
+      state: pick(COL.state),
+      major: majors,
+      ranking: numberFrom(pick(COL.ranking)),
+      final_cost: numberFrom(pick(COL.final_cost)),
+      gpa: numberFrom(pick(COL.gpa)),
 
-// ---------------- kleine Helfer ----------------
-function $(sel){ return document.querySelector(sel); }
-function el(tag, attrs={}, ...children){
-  const n=document.createElement(tag);
-  Object.entries(attrs).forEach(([k,v])=>{
-    if (k==='class') n.className=v;
-    else if (k==='html') n.innerHTML=v;
-    else n.setAttribute(k,v);
-  });
-  children.forEach(c=> n.append(c));
-  return n;
-}
+      city: pick(COL.city),
+      address: pick(COL.address),
+      virtual_tour: pick(COL.virtual_tour),
+      fachabitur: pick(COL.fachabitur),
+      fach_det: pick(COL.fach_det),
 
-// ---------------- Lade-Logik ----------------
-async function reload(){
-  rows=[]; cursor=null;
-  await loadMore(true);            // erste Seite
-  // States komplett einsammeln (wir holen still im Hintergrund nach und füllen Select)
-  collectAllStates();
-}
-async function loadMore(){
-  const params = new URLSearchParams({
-    limit: $limit.value,
-    cursor: cursor || '',
-    q: $q.value,
-    state: $state.value,
-    rankMin: $rankMin.value,
-    rankMax: $rankMax.value,
-    costMin: $costMin.value,
-    costMax: $costMax.value,
-    gpaMin:  $gpaMin.value,
-    gpaMax:  $gpaMax.value
-  });
+      usnews_rank: pick(COL.usnews_rank),
+      usnews_link: pick(COL.usnews_link),
+      type: pick(COL.type),
+      enroll: numberFrom(pick(COL.enroll)),
+      live_pct: pick(COL.live_pct),
+      live_num: numberFrom(pick(COL.live_num)),
+      ratio: numberFrom(pick(COL.ratio)),
+      insurance: pick(COL.insurance),
+      insurance_info: pick(COL.insurance_info),
 
-  const url = '/.netlify/functions/items?' + params.toString();
-  const r = await fetch(url);
-  const j = await r.json();
+      app_fee: pick(COL.app_fee),
+      how_apply: pick(COL.how_apply),
+      cred_eval: pick(COL.cred_eval),
+      cred_info: pick(COL.cred_info),
+      spring_adm: pick(COL.spring_adm),
+      spring_sch: pick(COL.spring_sch),
+      clarify: pick(COL.clarify),
 
-  cursor = j.cursor || null;
-  rows = rows.concat(j.items || []);
-  updateBadges();
-  render();
-}
-function resetFilters(){
-  $q.value=''; $state.value='all';
-  $rankMin.value=''; $rankMax.value='';
-  $costMin.value=''; $costMax.value='';
-  $gpaMin.value='';  $gpaMax.value='';
-  reload();
-}
-function updateBadges(){
-  $('#badgeLoaded').textContent = rows.length + ' geladen';
-  $('#badgeCursor').textContent = 'cursor: ' + (cursor ? 'more' : '—');
-}
-function buildHeader(){
-  const tr = $('#thead'); tr.innerHTML='';
-  COLUMNS.forEach(col=>{
-    const th = el('th',{});
-    th.textContent = col.title;
+      campus_acts: pick(COL.campus_acts),
+      sports: pick(COL.sports),
+      uni_home: pick(COL.uni_home),
+      intl_adm: pick(COL.intl_adm),
+
+      degrees_link: pick(COL.degrees_link),
+      acad_year: pick(COL.acad_year),
+
+      tuition: numberFrom(pick(COL.tuition)),
+      room: numberFrom(pick(COL.room)),
+      board: numberFrom(pick(COL.board)),
+      fees: numberFrom(pick(COL.fees)),
+      total: numberFrom(pick(COL.total)),
+      cost_info: pick(COL.cost_info),
+      adm_req: pick(COL.adm_req),
+
+      sch_low: numberFrom(pick(COL.sch_low)),
+      sch_low_type: pick(COL.sch_low_type),
+      toefl_low: numberFrom(pick(COL.toefl_low)),
+      gpa_low: numberFrom(pick(COL.gpa_low)),
+      sat_low: numberFrom(pick(COL.sat_low)),
+      sch_low_info: pick(COL.sch_low_info),
+
+      sch_mid: numberFrom(pick(COL.sch_mid)),
+      sch_mid_type: pick(COL.sch_mid_type),
+      toefl_mid: numberFrom(pick(COL.toefl_mid)),
+      gpa_mid: numberFrom(pick(COL.gpa_mid)),
+      sat_mid: numberFrom(pick(COL.sat_mid)),
+      sch_mid_info: pick(COL.sch_mid_info),
+
+      sch_hi: numberFrom(pick(COL.sch_hi)),
+      sch_hi_type: pick(COL.sch_hi_type),
+      toefl_hi: numberFrom(pick(COL.toefl_hi)),
+      gpa_hi: numberFrom(pick(COL.gpa_hi)),
+      sat_hi: numberFrom(pick(COL.sat_hi)),
+      sch_hi_info: pick(COL.sch_hi_info),
+
+      net_low: pick(COL.net_low),
+      net_mid: pick(COL.net_mid),
+      net_hi: pick(COL.net_hi),
+
+      dead_fall: pick(COL.dead_fall),
+      dead_spring: pick(COL.dead_spring),
+      dead_link: pick(COL.dead_link),
+
+      campus_job: pick(COL.campus_job),
+      min_wage: numberFrom(pick(COL.min_wage)),
+      work_comp: numberFrom(pick(COL.work_comp))
+    };
+  }
+
+  function formatMoney(n){
+    if(n==null || n==="") return "";
+    try{ return new Intl.NumberFormat('en-US',{style:'currency',currency:'USD',maximumFractionDigits:0}).format(n); }
+    catch{ return "$"+n; }
+  }
+
+  function render(){
+    const rows = items.map(toRow);
+
+    // filter
+    const qv = q.value.trim().toLowerCase();
+    const st = stateSel.value;
+    const rkMinV = numberFrom(rkMin.value), rkMaxV = numberFrom(rkMax.value);
+    const fcMinV = numberFrom(fcMin.value), fcMaxV = numberFrom(fcMax.value);
+    const gpaMinV = numberFrom(gpaMin.value), gpaMaxV = numberFrom(gpaMax.value);
+
+    const filtered = rows.filter(r=>{
+      if(qv){
+        const inText = (r.name+" "+(r.major||"")).toLowerCase();
+        if(!inText.includes(qv)) return false;
+      }
+      if(st && r.state!==st) return false;
+      if(rkMinV!=null && (r.ranking==null || r.ranking<rkMinV)) return false;
+      if(rkMaxV!=null && (r.ranking!=null && r.ranking>rkMaxV)) return false;
+      if(fcMinV!=null && (r.final_cost==null || r.final_cost<fcMinV)) return false;
+      if(fcMaxV!=null && (r.final_cost!=null && r.final_cost>fcMaxV)) return false;
+      if(gpaMinV!=null && (r.gpa==null || r.gpa<gpaMinV)) return false;
+      if(gpaMaxV!=null && (r.gpa!=null && r.gpa>gpaMaxV)) return false;
+      return true;
+    });
+
+    // sort (header click)
+    applySort(filtered);
+
+    // paint
+    tbody.innerHTML = filtered.map(r=>`
+      <tr>
+        <td class="sticky"><strong>${esc(r.name)}</strong></td>
+        <td>${esc(r.state)}</td>
+        <td>${esc(r.major)}</td>
+        <td class="right">${r.ranking??""}</td>
+        <td class="right">${formatMoney(r.final_cost)}</td>
+        <td class="right">${r.gpa??""}</td>
+
+        <td>${esc(r.city)}</td>
+        <td class="mono">${esc(r.address)}</td>
+        <td>${linkify(r.virtual_tour)}</td>
+        <td>${pill(r.fachabitur)}</td>
+        <td>${esc(r.fach_det)}</td>
+
+        <td class="right mono">${esc(r.usnews_rank)}</td>
+        <td>${linkify(r.usnews_link)}</td>
+        <td>${esc(r.type)}</td>
+        <td class="right">${r.enroll??""}</td>
+        <td class="right">${esc(r.live_pct)}</td>
+        <td class="right">${r.live_num??""}</td>
+        <td class="right">${r.ratio??""}</td>
+        <td>${esc(r.insurance)}</td>
+        <td>${esc(r.insurance_info)}</td>
+
+        <td class="right">${esc(r.app_fee)}</td>
+        <td>${esc(r.how_apply)}</td>
+        <td>${pill(r.cred_eval)}</td>
+        <td>${esc(r.cred_info)}</td>
+        <td>${pill(r.spring_adm)}</td>
+        <td>${pill(r.spring_sch)}</td>
+        <td>${esc(r.clarify)}</td>
+
+        <td>${linkify(r.campus_acts)}</td>
+        <td>${linkify(r.sports)}</td>
+        <td>${linkify(r.uni_home)}</td>
+        <td>${linkify(r.intl_adm)}</td>
+
+        <td>${esc(r.majors)}</td>
+        <td>${linkify(r.degrees_link)}</td>
+        <td>${esc(r.acad_year)}</td>
+
+        <td class="right">${formatMoney(r.tuition)}</td>
+        <td class="right">${formatMoney(r.room)}</td>
+        <td class="right">${formatMoney(r.board)}</td>
+        <td class="right">${formatMoney(r.fees)}</td>
+        <td class="right"><strong>${formatMoney(r.total)}</strong></td>
+        <td>${esc(r.cost_info)}</td>
+
+        <td>${esc(r.adm_req)}</td>
+
+        <td class="right">${formatMoney(r.sch_low)}</td>
+        <td>${esc(r.sch_low_type)}</td>
+        <td class="right">${r.toefl_low??""}</td>
+        <td class="right">${r.gpa_low??""}</td>
+        <td class="right">${r.sat_low??""}</td>
+        <td>${esc(r.sch_low_info)}</td>
+
+        <td class="right">${formatMoney(r.sch_mid)}</td>
+        <td>${esc(r.sch_mid_type)}</td>
+        <td class="right">${r.toefl_mid??""}</td>
+        <td class="right">${r.gpa_mid??""}</td>
+        <td class="right">${r.sat_mid??""}</td>
+        <td>${esc(r.sch_mid_info)}</td>
+
+        <td class="right">${formatMoney(r.sch_hi)}</td>
+        <td>${esc(r.sch_hi_type)}</td>
+        <td class="right">${r.toefl_hi??""}</td>
+        <td class="right">${r.gpa_hi??""}</td>
+        <td class="right">${r.sat_hi??""}</td>
+        <td>${esc(r.sch_hi_info)}</td>
+
+        <td class="right">${esc(r.net_low)}</td>
+        <td class="right">${esc(r.net_mid)}</td>
+        <td class="right">${esc(r.net_hi)}</td>
+
+        <td>${esc(r.dead_fall)}</td>
+        <td>${esc(r.dead_spring)}</td>
+        <td>${linkify(r.dead_link)}</td>
+
+        <td>${pill(r.campus_job)}</td>
+        <td class="right">${r.min_wage??""}</td>
+        <td class="right">${formatMoney(r.work_comp)}</td>
+      </tr>
+    `).join('');
+
+    shown.textContent = `${filtered.length} angezeigt`;
+    loaded.textContent = `${items.length} geladen`;
+    cursorBadge.textContent = `cursor: ${cursor ? 'more' : '–'}`;
+  }
+
+  function esc(s){ return (s??"").toString().replace(/[&<>"']/g, m=>({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[m])); }
+  function linkify(s){ if(!s) return ""; return `<a class="link" href="${esc(s)}" target="_blank" rel="noopener">Link</a>`; }
+  function pill(txt){ if(!txt) return ""; return `<span class="pill">${esc(txt)}</span>`; }
+
+  // Sort
+  let sort = {key:null, dir:1};
+  function applySort(arr){
+    if(!sort.key) return;
+    const k = sort.key, d = sort.dir;
+    arr.sort((a,b)=>{
+      const va = a[k], vb=b[k];
+      const na = (typeof va === 'number')?va:numberFrom(va);
+      const nb = (typeof vb === 'number')?vb:numberFrom(vb);
+      if(na!=null && nb!=null) return (na-nb)*d;
+      return (String(va||'').localeCompare(String(vb||'')))*d;
+    });
+  }
+  document.querySelectorAll('thead th').forEach(th=>{
     th.addEventListener('click', ()=>{
-      sort.key = col.source || col.id || 'name';
-      sort.dir = (sort.dir==='asc'?'desc':'asc');
+      const key = th.dataset.key;
+      if(!key) return;
+      if(sort.key===key) sort.dir *= -1; else { sort.key=key; sort.dir=1; }
       render();
     });
-    tr.append(th);
-  });
-}
-
-// ---------------- Rendering ----------------
-function render(){
-  const tbody = $('#tbody'); tbody.innerHTML='';
-
-  // sortierte Kopie
-  const sorted = rows.slice().sort((a,b)=>{
-    const key = sort.key;
-    let av = getCellSortValue(a, key);
-    let bv = getCellSortValue(b, key);
-    if (typeof av === 'number' && typeof bv === 'number'){
-      return sort.dir==='asc' ? (av-bv) : (bv-av);
-    }
-    av = (av+'').toLowerCase(); bv=(bv+'').toLowerCase();
-    return sort.dir==='asc' ? (av>bv?1:av<bv?-1:0) : (av<bv?1:av>bv?-1:0);
   });
 
-  sorted.forEach(row=>{
-    const tr = el('tr');
-    COLUMNS.forEach(c=>{
-      tr.append( renderCell(row, c) );
-    });
-    tbody.append(tr);
-  });
-  $('#badgeShown').textContent = sorted.length + ' angezeigt';
-}
-function getCellSortValue(row, key){
-  if (key==='name') return row.name || '';
-  const col = (row.cols || []).find(c=> c.id === key);
-  if (!col) return '';
-  const n = parseFloat((col.text || '').replace(/[, $€£]/g,''));
-  return isNaN(n) ? (col.text || '') : n;
-}
-function renderCell(row, c){
-  const td = el('td');
-  if (c.source==='name'){ td.textContent = row.name || ''; return td; }
-
-  const col = (row.cols || []).find(k=> k.id === c.id);
-  if (!col || (!col.text && !col.value)){
-    td.innerHTML = '<span class="empty">—</span>'; return td;
+  // Events
+  reloadBtn.onclick = initialLoad;
+  resetBtn.onclick = ()=>{
+    q.value=''; stateSel.value='';
+    rkMin.value=''; rkMax.value='';
+    fcMin.value=''; fcMax.value='';
+    gpaMin.value=''; gpaMax.value='';
+    sort = {key:null, dir:1}; initialLoad();
   }
-
-  const text = col.text || '';
-
-  switch (c.type){
-    case 'pill': {
-      const parts = text.split(',').map(s=>s.trim()).filter(Boolean);
-      if (!parts.length){ td.innerHTML='<span class="empty">—</span>'; break; }
-      parts.forEach(p=> td.append(el('span',{class:'pill'}, p)));
-      break;
-    }
-    case 'link': {
-      // Monday link-value: {"url":"...","text":"..."}
-      let url = '';
-      try { url = JSON.parse(col.value||'{}').url || ''; } catch(e){}
-      if (!url) url = text;
-      if (!url){ td.innerHTML='<span class="empty">—</span>'; break; }
-      td.append(el('a', { href:url, target:'_blank' }, text||'Link'));
-      break;
-    }
-    case 'currency': {
-      const n = parseFloat(text.replace(/[, $€£]/g,''));
-      td.textContent = isNaN(n) ? text : new Intl.NumberFormat('en-US',{style:'currency',currency:'USD'}).format(n);
-      td.classList.add('mono');
-      break;
-    }
-    case 'number': {
-      const n = parseFloat(text.replace(/,/g,''));
-      td.textContent = isNaN(n) ? text : n;
-      td.classList.add('mono');
-      break;
-    }
-    case 'longtext': {
-      td.textContent = text; break;
-    }
-    default: {
-      td.textContent = text || ''; break;
-    }
-  }
-  return td;
-}
-
-// ---- States vollständig nachladen und Dropdown auffüllen
-async function collectAllStates(){
-  const all = new Set( [...statesFromRows(rows)] );
-  let cur = cursor;       // start von aktuellem Cursor
-  let guard = 0;
-  while(cur && guard++ < 20){     // Schutz: max 20 weitere Seiten
-    const params = new URLSearchParams({
-      limit: 200, cursor: cur,
-      q:'', state:'', rankMin:'', rankMax:'', costMin:'', costMax:'', gpaMin:'', gpaMax:''
-    });
-    const r = await fetch('/.netlify/functions/items?'+params.toString());
-    const j = await r.json();
-    (j.items||[]).forEach(it=>{
-      statesFromRows([it]).forEach(s => all.add(s));
-    });
-    cur = j.cursor || null;
-  }
-  fillStateSelect([...all].sort());
-}
-function statesFromRows(list){
-  const states = new Set();
-  list.forEach(row=>{
-    const st = row.state && row.state.trim();
-    if (st) states.add(st);
-  });
-  return states;
-}
-function fillStateSelect(states){
-  const cur = $state.value;
-  $state.innerHTML = '<option value="all">all</option>';
-  states.forEach(s=>{
-    const opt = el('option',{value:s}, s);
-    $state.append(opt);
-  });
-  $state.value = cur || 'all';
-}
-
-// ---- CSV Export (Excel-kompatibel)
-function exportCSV(){
-  const cols = COLUMNS;
-  let csv = '';
-  csv += cols.map(c=> `"${(c.title||'').replace(/"/g,'""')}"`).join(',') + '\n';
-
-  // aktuell gerenderte Reihenfolge übernehmen
-  const trs = $('#tbody').querySelectorAll('tr');
-  trs.forEach(tr=>{
-    const cells = Array.from(tr.children);
-    const row = cells.map(td => `"${td.textContent.replace(/"/g,'""')}"`);
-    csv += row.join(',') + '\n';
+  moreBtn.onclick = async ()=>{
+    if(!cursor) return;
+    const {items:batch, cursor:cur} = await fetchBatch({limit:limitSel.value, cursorParam:cursor});
+    items.push(...batch);
+    cursor = cur||null;
+    mergeStates(batch);
+    render();
+  };
+  [q,stateSel,rkMin,rkMax,fcMin,fcMax,gpaMin,gpaMax,limitSel].forEach(el=>{
+    el.addEventListener('change', render);
+    el.addEventListener('keyup', e=>{ if(e.key==='Enter') render(); });
   });
 
-  const blob = new Blob([csv], {type:'text/csv;charset=utf-8'});
-  const url  = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = 'bachelors-programs.csv';
-  document.body.appendChild(a);
-  a.click();
-  a.remove();
-  URL.revokeObjectURL(url);
-}
+  // Export CSV
+  exportBtn.onclick = ()=>{
+    const rows = Array.from(tbody.querySelectorAll('tr')).map(tr =>
+      Array.from(tr.children).map(td => td.textContent.replace(/\s+/g,' ').trim())
+    );
+    const headers = Array.from(document.querySelectorAll('thead th')).map(th=>th.textContent.trim());
+    const csv = [headers, ...rows].map(r=>r.map(x=>{
+      const s = x.replace(/"/g,'""'); return `"${s}"`;
+    }).join(',')).join('\n');
+
+    const blob = new Blob([csv], {type:'text/csv;charset=utf-8;'});
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'monday-board-export.csv';
+    document.body.appendChild(a); a.click(); a.remove();
+  };
+
+  // Start
+  initialLoad();
+})();
 </script>
 </body>
 </html>
