@@ -1,178 +1,356 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="de">
 <head>
   <meta charset="utf-8" />
-  <title>Monday Board – Gefilterte Ansicht (mit Pagination)</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Monday Board View – Gefilterte Ansicht</title>
   <style>
-    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif; margin: 24px; }
-    h1 { font-size: 22px; margin-bottom: 8px; }
-    .hint { color: #666; font-size: 14px; margin-bottom: 16px; }
-    .toolbar { display: flex; gap: 8px; align-items: center; margin-bottom: 12px; flex-wrap: wrap; }
-    input, select, button { padding: 6px 10px; font-size: 14px; }
-    button { cursor: pointer; }
-    table { width: 100%; border-collapse: collapse; }
-    th, td { border-bottom: 1px solid #eee; padding: 8px; vertical-align: top; }
-    th { text-align: left; background: #fafafa; position: sticky; top: 0; }
-    .muted { color: #888; }
-    .status { font-size: 13px; color: #555; margin: 6px 0 16px; }
-    .right { margin-left: auto; }
+    :root{
+      --bg:#0b0f14; --card:#121821; --muted:#8aa0b5; --text:#E7EEF6; --accent:#37d0ff; --line:#1f2b3a;
+      --pill:#0f2533; --pill-text:#9bdcff; --btn:#0f2a3a; --btn-b:#184159;
+    }
+    *{box-sizing:border-box}
+    body{margin:0;background:var(--bg);color:var(--text);font:16px/1.45 system-ui,Segoe UI,Roboto,Helvetica,Arial}
+    header{padding:22px 20px 10px;max-width:1200px;margin:0 auto}
+    h1{font-size:22px;margin:0 0 6px}
+    p.hint{margin:0;color:var(--muted);font-size:13px}
+    .bar{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px}
+    .bar input,.bar select{
+      background:var(--card);border:1px solid var(--line);color:var(--text);
+      padding:10px 12px;border-radius:8px;outline:none;min-width:120px;
+    }
+    .bar .group{display:flex;gap:6px;align-items:center}
+    .bar .group label{font-size:12px;color:var(--muted);margin-right:4px}
+    button{
+      background:linear-gradient(180deg,var(--btn),var(--btn-b));border:1px solid #2c526b;
+      color:#dff4ff;padding:10px 12px;border-radius:8px;cursor:pointer
+    }
+    button.secondary{background:var(--card);border:1px solid var(--line);color:var(--text)}
+    button:disabled{opacity:.55;cursor:default}
+    .status{margin-left:auto;font-size:12px;color:var(--muted);display:flex;gap:10px;align-items:center}
+    .pill{background:var(--pill);color:var(--pill-text);padding:3px 8px;border-radius:999px;font-size:12px}
+    main{max-width:1200px;margin:12px auto 40px;border:1px solid var(--line);border-radius:12px;overflow:hidden;background:var(--card)}
+    table{width:100%;border-collapse:collapse}
+    thead th{background:#0f1520;color:#9fb3c6;font-weight:600;text-align:left;font-size:12px;padding:12px;border-bottom:1px solid var(--line);letter-spacing:.02em}
+    tbody td{padding:12px;border-bottom:1px solid var(--line);vertical-align:top}
+    tbody tr:hover{background:#0e1520}
+    .empty{padding:28px;text-align:center;color:var(--muted)}
+    .footerbar{display:flex;gap:8px;align-items:center;justify-content:space-between;padding:12px 14px;border-top:1px solid var(--line);background:#0f1520}
+    .nowrap{white-space:nowrap}
+    .mono{font-family: ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace}
+    @media (max-width:860px){
+      .opt-hide{display:none}
+      .bar{gap:6px}
+      .status{flex-basis:100%;margin-left:0;margin-top:4px}
+    }
   </style>
 </head>
 <body>
-  <h1>Gefilterte Ansicht (read-only)</h1>
-  <div class="hint">
-    Die Daten kommen aus einer sicheren Netlify-Funktion. Du kannst suchen/„Load more“ nutzen, aber nichts ändern.
-  </div>
+  <header>
+    <h1>Gefilterte Ansicht (read-only)</h1>
+    <p class="hint">Die Daten kommen aus einer sicheren Netlify-Funktion. Du kannst hier filtern/suchen, aber nichts ändern.</p>
 
-  <!-- Toolbar: Suche + Limit + Load more -->
-  <div class="toolbar">
-    <input id="q" type="search" placeholder="Suche im Namen…" />
-    <label>
-      Limit&nbsp;
-      <select id="limit">
-        <option value="10">10</option>
-        <option value="20" selected>20</option>
-        <option value="50">50</option>
+    <!-- Filter-/Steuerleiste -->
+    <div class="bar" id="toolbar">
+      <input id="q" type="search" placeholder="Suche in Namen & Major…" />
+
+      <select id="state">
+        <option value="">State (alle)</option>
       </select>
-    </label>
-    <button id="reload">Neu laden</button>
-    <span class="right"></span>
-    <button id="loadMore">Load more</button>
-  </div>
 
-  <div id="status" class="status"></div>
+      <div class="group">
+        <label for="rankMin">Ranking</label>
+        <input id="rankMin" type="number" inputmode="numeric" placeholder="min" style="width:95px">
+        <span style="color:var(--muted)">–</span>
+        <input id="rankMax" type="number" inputmode="numeric" placeholder="max" style="width:95px">
+      </div>
 
-  <table>
-    <thead>
-      <tr>
-        <th style="width: 28%">Name</th>
-        <th style="width: 10%">State</th>
-        <th style="width: 12%">Ranking</th>
-        <th style="width: 18%">Final cost of attendance</th>
-        <th style="width: 20%">Major</th>
-        <th style="width: 12%">Min. GPA</th>
-      </tr>
-    </thead>
-    <tbody id="rows"></tbody>
-  </table>
+      <div class="group">
+        <label for="costMin">Final cost</label>
+        <input id="costMin" type="number" inputmode="numeric" placeholder="min $" style="width:110px">
+        <span style="color:var(--muted)">–</span>
+        <input id="costMax" type="number" inputmode="numeric" placeholder="max $" style="width:110px">
+      </div>
 
-  <script>
-    // --- Einstellungen / API-Endpunkt ---
-    const API_BASE = '/.netlify/functions/items';
+      <div class="group">
+        <label for="gpaMin">GPA</label>
+        <input id="gpaMin" type="number" step="0.01" inputmode="decimal" placeholder="min" style="width:90px">
+        <span style="color:var(--muted)">–</span>
+        <input id="gpaMax" type="number" step="0.01" inputmode="decimal" placeholder="max" style="width:90px">
+      </div>
 
-    // --- "State" im Frontend ---
-    let nextCursor = null;        // vom Server für "Load more"
-    let isLoading  = false;       // verhindert Doppel-Requests
-    let items      = [];          // bisher geladene Datensätze
+      <select id="pageSize" title="API-Limit">
+        <option value="20">Load 20</option>
+        <option value="50" selected>Load 50</option>
+        <option value="100">Load 100</option>
+      </select>
 
-    // --- DOM-Elemente ---
-    const elRows     = document.getElementById('rows');
-    const elQ        = document.getElementById('q');
-    const elLimit    = document.getElementById('limit');
-    const elReload   = document.getElementById('reload');
-    const elMore     = document.getElementById('loadMore');
-    const elStatus   = document.getElementById('status');
+      <button id="reloadBtn" title="Erneut laden">Neu laden</button>
+      <button id="resetBtn" class="secondary" title="Filter zurücksetzen">Reset Filter</button>
 
-    // --- Helpers ---
-    function td(v) { return (v ?? '').toString().trim() || '<span class="muted">–</span>'; }
+      <div class="status">
+        <span id="countPill" class="pill">0 angezeigt</span>
+        <span id="loadedPill" class="pill">0 geladen</span>
+        <span id="cursorPill" class="pill">cursor: n/a</span>
+      </div>
+    </div>
+  </header>
 
-    function render() {
-      // Client-seitige Suche (optional)
-      const q = elQ.value.trim().toLowerCase();
-      const filtered = !q ? items : items.filter(it => (it.name || '').toLowerCase().includes(q));
-      // Tabelle schreiben
-      elRows.innerHTML = filtered.map(it => `
+  <main>
+    <table>
+      <thead>
         <tr>
-          <td>${td(it.name)}</td>
-          <td>${td(it.state)}</td>
-          <td>${td(it.ranking)}</td>
-          <td>${td(it.final_cost_of_attendance)}</td>
-          <td>${td(it.major)}</td>
-          <td>${td(it.minimum_gpa_requirement)}</td>
+          <th style="width:32%">Name</th>
+          <th class="opt-hide">State</th>
+          <th class="opt-hide">Major</th>
+          <th class="nowrap">Ranking</th>
+          <th class="nowrap">Final cost</th>
+          <th class="nowrap">Min GPA</th>
         </tr>
-      `).join('');
-      // Statuszeile
-      elStatus.textContent = `${filtered.length} Einträge angezeigt · insgesamt geladen: ${items.length}` + (nextCursor ? ' · weitere Seiten verfügbar' : ' · keine weiteren Seiten');
-      // Button aktivieren/deaktivieren
-      elMore.disabled = isLoading || !nextCursor;
-      elMore.textContent = nextCursor ? (isLoading ? 'Lade…' : 'Load more') : 'Keine weiteren Einträge';
+      </thead>
+      <tbody id="rows">
+        <tr><td colspan="6" class="empty">Lade Daten…</td></tr>
+      </tbody>
+    </table>
+
+    <!-- Fußleiste mit Pagination -->
+    <div class="footerbar">
+      <div class="mono" id="statusLine">Bereit.</div>
+      <div style="display:flex;gap:8px">
+        <button id="loadMoreBtn">Load more</button>
+        <button id="loadAllBtn" class="secondary">Load all</button>
+      </div>
+    </div>
+  </main>
+
+<script>
+(() => {
+  // ========= Helpers =========
+  const $ = (sel) => document.querySelector(sel);
+  const rowsEl      = $('#rows');
+  const stateSel    = $('#state');
+  const qInput      = $('#q');
+  const rankMin     = $('#rankMin');
+  const rankMax     = $('#rankMax');
+  const costMin     = $('#costMin');
+  const costMax     = $('#costMax');
+  const gpaMin      = $('#gpaMin');
+  const gpaMax      = $('#gpaMax');
+  const pageSizeSel = $('#pageSize');
+  const reloadBtn   = $('#reloadBtn');
+  const resetBtn    = $('#resetBtn');
+  const loadMoreBtn = $('#loadMoreBtn');
+  const loadAllBtn  = $('#loadAllBtn');
+
+  const countPill   = $('#countPill');
+  const loadedPill  = $('#loadedPill');
+  const cursorPill  = $('#cursorPill');
+  const statusLine  = $('#statusLine');
+
+  let allItems = [];      // Alles was geladen wurde (roh)
+  let nextCursor = null;  // Cursor für nächsten Page-Request
+  let isLoading = false;
+
+  const toNumber = (v) => {
+    if (v == null) return NaN;
+    // Entfernt $, Kommas, # usw. – behält Ziffern & Punkt
+    const s = String(v).replace(/[^0-9.]+/g,'').trim();
+    if (!s) return NaN;
+    return Number(s);
+  };
+
+  const normalize = (it) => {
+    // Sicherstellen, dass unsere Keys existieren
+    const majorText = (it.major || '').toString();
+    return {
+      id: String(it.id ?? ''),
+      name: it.name ?? '',
+      state: it.state ?? '',
+      major: majorText,
+      ranking: it.ranking ?? '',
+      final_cost_of_attendance: it.final_cost_of_attendance ?? '',
+      minimum_gpa_requirement: it.minimum_gpa_requirement ?? '',
+      // abgeleitete numerische Felder
+      rankingNum: toNumber(it.ranking),
+      costNum: toNumber(it.final_cost_of_attendance),
+      gpaNum: toNumber(it.minimum_gpa_requirement)
+    };
+  };
+
+  const unique = (arr, key = 'id') => {
+    const m = new Map();
+    for (const x of arr) m.set(x[key], x);
+    return [...m.values()];
+  };
+
+  const fmtMoney = (n) => isNaN(n) ? '' : '$' + n.toLocaleString('en-US');
+  const fmtNum   = (n) => isNaN(n) ? '' : String(n);
+
+  // ========= Rendering =========
+  function renderTable(items){
+    if (!items.length){
+      rowsEl.innerHTML = `<tr><td colspan="6" class="empty">Keine Treffer (Filter zu streng?)</td></tr>`;
+      return;
     }
+    const html = items.map(it => `
+      <tr>
+        <td><strong>${escapeHtml(it.name)}</strong></td>
+        <td class="opt-hide">${escapeHtml(it.state)}</td>
+        <td class="opt-hide">${escapeHtml(it.major)}</td>
+        <td class="nowrap">${fmtNum(it.rankingNum)}</td>
+        <td class="nowrap">${fmtMoney(it.costNum)}</td>
+        <td class="nowrap">${fmtNum(it.gpaNum)}</td>
+      </tr>
+    `).join('');
+    rowsEl.innerHTML = html;
+  }
 
-    async function fetchPage({cursor = null, limit = 20} = {}) {
-      if (isLoading) return;
-      isLoading = true;
-      render();
+  function escapeHtml(s){
+    return String(s).replace(/[&<>"']/g, c => ({
+      '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
+    })[c]);
+  }
 
-      const url = new URL(API_BASE, location.origin);
-      url.searchParams.set('limit', limit);
-      if (cursor) url.searchParams.set('cursor', cursor);
+  function applyFilters(){
+    const q = qInput.value.trim().toLowerCase();
+    const st = stateSel.value;
+    const rMin = Number(rankMin.value) || NaN;
+    const rMax = Number(rankMax.value) || NaN;
+    const cMin = Number(costMin.value) || NaN;
+    const cMax = Number(costMax.value) || NaN;
+    const gMin = Number(gpaMin.value) || NaN;
+    const gMax = Number(gpaMax.value) || NaN;
 
-      let data;
-      try {
-        const resp = await fetch(url.toString(), { headers: { 'Accept': 'application/json' }});
-        const text = await resp.text();
-        try { data = JSON.parse(text); }
-        catch (e) { throw new Error('Antwort ist kein JSON: ' + text.slice(0, 300)); }
-      } catch (e) {
-        console.error(e);
-        alert('Fehler beim Laden: ' + e.message);
-        isLoading = false;
-        render();
-        return;
+    let filtered = allItems
+      .map(normalize)
+      .filter(it => {
+        // Textsuche in Name ODER Major
+        if (q){
+          const hay = (it.name + ' ' + it.major).toLowerCase();
+          if (!hay.includes(q)) return false;
+        }
+        // State-Filter
+        if (st && it.state !== st) return false;
+
+        // Ranking in Range
+        if (!isNaN(rMin) && !(it.rankingNum >= rMin)) return false;
+        if (!isNaN(rMax) && !(it.rankingNum <= rMax)) return false;
+
+        // Cost in Range
+        if (!isNaN(cMin) && !(it.costNum >= cMin)) return false;
+        if (!isNaN(cMax) && !(it.costNum <= cMax)) return false;
+
+        // GPA in Range
+        if (!isNaN(gMin) && !(it.gpaNum >= gMin)) return false;
+        if (!isNaN(gMax) && !(it.gpaNum <= gMax)) return false;
+
+        return true;
+      });
+
+    renderTable(filtered);
+    countPill.textContent  = `${filtered.length} angezeigt`;
+    loadedPill.textContent = `${allItems.length} geladen`;
+    cursorPill.textContent = `cursor: ${nextCursor ? 'more' : 'end'}`;
+  }
+
+  function populateStateFilter(){
+    const states = [...new Set(allItems.map(it => (it.state || '').trim()).filter(Boolean))].sort();
+    stateSel.innerHTML = `<option value="">State (alle)</option>` +
+      states.map(s => `<option value="${escapeHtml(s)}">${escapeHtml(s)}</option>`).join('');
+  }
+
+  // ========= API =========
+  async function fetchPage(limit=50, cursor=null){
+    const params = new URLSearchParams();
+    if (limit) params.set('limit', String(limit));
+    if (cursor) params.set('cursor', cursor);
+
+    const url = `/.netlify/functions/items?${params.toString()}`;
+    const t0 = performance.now();
+    isLoading = true;
+    statusLine.textContent = `Lade… ${url}`;
+    try{
+      const res = await fetch(url);
+      if (!res.ok){
+        const txt = await res.text();
+        throw new Error(`HTTP ${res.status}: ${txt}`);
       }
+      const json = await res.json(); // {items:[], cursor:""}
+      const {items = [], cursor: newCursor = null} = json || {};
+      // mergen & deduplizieren
+      const merged = unique([...allItems, ...items.map(x => normalize(x))], 'id');
+      allItems = merged;
+      nextCursor = newCursor;
 
-      // Mögliche Antwortformen robust abfangen
-      // Erwartete Form (von deiner Function): { items: [...], cursor: "..." }
-      let pageItems = [];
-      let cursorOut = null;
-      if (Array.isArray(data)) {
-        pageItems = data;
-      } else if (data.items) {
-        pageItems = data.items;
-        cursorOut = data.cursor ?? null;
-      } else if (data.data && Array.isArray(data.data)) { // Fallback
-        pageItems = data.data;
-        cursorOut = data.cursor ?? null;
-      } else {
-        console.warn('Unerwartetes Antwortformat:', data);
-      }
+      // UI aktualisieren
+      if (stateSel.options.length <= 1) populateStateFilter();
+      applyFilters();
 
-      // An Liste anhängen
-      items = items.concat(pageItems);
-      nextCursor = cursorOut;
+      const ms = Math.round(performance.now()-t0);
+      statusLine.textContent = `+${items.length} in ${ms}ms, total ${allItems.length} – cursor: ${nextCursor ? 'more' : 'end'}`;
+      loadMoreBtn.disabled = !nextCursor;
+      loadAllBtn.disabled  = !nextCursor;
+    }catch(err){
+      console.error(err);
+      statusLine.textContent = `Fehler: ${err.message}`;
+      alert(`Fehler beim Laden:\n${err.message}`);
+    }finally{
       isLoading = false;
-      render();
     }
+  }
 
-    // --- Events ---
-    elMore.addEventListener('click', () => {
-      if (!nextCursor) return;
-      fetchPage({ cursor: nextCursor, limit: Number(elLimit.value) || 20 });
-    });
+  async function loadAll(){
+    // Holt alle Pages mit aktuellem Limit ab
+    const limit = Number(pageSizeSel.value) || 50;
+    while(nextCursor && !isLoading){
+      await fetchPage(limit, nextCursor);
+      // kleine Pause verhindert UI-Lag
+      await new Promise(r => setTimeout(r, 80));
+    }
+  }
 
-    elReload.addEventListener('click', () => {
-      // komplett neu laden (ohne Cursor)
-      items = [];
-      nextCursor = null;
-      fetchPage({ cursor: null, limit: Number(elLimit.value) || 20 });
-    });
+  function resetFilters(){
+    qInput.value = '';
+    stateSel.value = '';
+    rankMin.value = rankMax.value = '';
+    costMin.value = costMax.value = '';
+    gpaMin.value  = gpaMax.value  = '';
+    applyFilters();
+  }
 
-    elQ.addEventListener('input', render);
-    elLimit.addEventListener('change', () => {
-      // bei neuem Limit neu starten
-      items = [];
-      nextCursor = null;
-      fetchPage({ cursor: null, limit: Number(elLimit.value) || 20 });
-    });
+  async function reloadAll(){
+    allItems = [];
+    nextCursor = null;
+    populateStateFilter(); // leert auf State (alle)
+    renderTable([]);
+    countPill.textContent = `0 angezeigt`;
+    loadedPill.textContent = `0 geladen`;
+    cursorPill.textContent = `cursor: n/a`;
+    await fetchPage(Number(pageSizeSel.value) || 50, null);
+  }
 
-    // --- Initial: erste Seite laden ---
-    (function init() {
-      // Limit aus URL ?limit=… optional übernehmen
-      const urlLimit = Number(new URLSearchParams(location.search).get('limit'));
-      if (urlLimit) elLimit.value = String(urlLimit);
-      fetchPage({ limit: Number(elLimit.value) || 20 });
-    })();
-  </script>
+  // ========= Events =========
+  qInput.addEventListener('input', applyFilters);
+  stateSel.addEventListener('change', applyFilters);
+  for (const el of [rankMin,rankMax,costMin,costMax,gpaMin,gpaMax]){
+    el.addEventListener('input', applyFilters);
+  }
+  pageSizeSel.addEventListener('change', async () => {
+    // nur zukünftige Loads betreffen – bereits Geladenes bleibt
+    statusLine.textContent = `Limit geändert auf ${pageSizeSel.value}.`;
+  });
+  resetBtn.addEventListener('click', resetFilters);
+  reloadBtn.addEventListener('click', reloadAll);
+  loadMoreBtn.addEventListener('click', async () => {
+    if (!nextCursor) return;
+    await fetchPage(Number(pageSizeSel.value) || 50, nextCursor);
+  });
+  loadAllBtn.addEventListener('click', loadAll);
+
+  // ========= Initial Load =========
+  reloadAll();
+
+})();
+</script>
 </body>
 </html>
