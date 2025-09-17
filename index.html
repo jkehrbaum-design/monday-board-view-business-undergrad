@@ -1,415 +1,236 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <title>Bachelor’s Programs – Read-only</title>
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Epro 360 – Bachelor’s Programs (read-only)</title>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#f6f7fb;            /* monday hell */
+    --card:#ffffff;
+    --text:#323338;
+    --muted:#676879;
+    --border:#e6e9ef;
+    --accent:#0073ea;        /* monday blue */
+    --pill:#cce5ff;
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0; font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial;
+    color:var(--text); background:var(--bg);
+  }
+  .wrap{max-width:1220px; margin:32px auto; padding:0 16px;}
+  h1{font-size:24px; font-weight:700; margin:0 0 10px}
+  .hint{color:var(--muted); font-size:13px; margin-bottom:16px}
 
-  <!-- Inter wie bei monday (Fallback Arial) -->
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  .toolbar{
+    display:flex; gap:12px; flex-wrap:wrap;
+    background:var(--card); border:1px solid var(--border);
+    padding:12px; border-radius:10px; align-items:center;
+    margin-bottom:12px;
+  }
+  .tool{display:flex; gap:8px; align-items:center}
+  label{font-size:12px; color:var(--muted)}
+  input, select{
+    height:34px; padding:0 10px; border:1px solid var(--border);
+    border-radius:8px; background:#fff; color:var(--text);
+    min-width:140px;
+  }
+  .btn{
+    height:34px; padding:0 12px; border:1px solid var(--accent);
+    background:var(--accent); color:#fff; border-radius:8px;
+    font-weight:600; cursor:pointer;
+  }
+  .btn.sec{background:#fff; color:var(--accent)}
+  .chips{display:flex; gap:8px; align-items:center; margin:8px 0 14px}
+  .chip{padding:6px 10px; background:#eef6ff; color:#1f6feb; border-radius:999px; font-size:12px}
 
-  <style>
-    :root{
-      --bg: #f6f7fb;
-      --panel: #ffffff;
-      --border:#e6e9ef;
-      --text:#323338;
-      --muted:#6b6f76;
-      --blue:#1f76ff;
-      --blue-600:#116cff;
-      --pill:#eef2ff;
-      --row-hover:#f5f7fa;
-    }
-    *{box-sizing:border-box}
-    body{
-      margin:0;
-      font-family:Inter, system-ui, -apple-system, "Segoe UI", Roboto, Arial, "Noto Sans", "Helvetica Neue", sans-serif;
-      color:var(--text);
-      background:var(--bg);
-    }
-    .container{
-      max-width:1180px;
-      margin:28px auto;
-      padding:0 16px;
-    }
-    header{
-      margin-bottom:12px;
-    }
-    h1{
-      font-size:22px;
-      font-weight:600;
-      margin:0 0 6px;
-    }
-    .hint{
-      color:var(--muted);
-      font-size:13px;
-      margin-bottom:12px;
-    }
-
-    /* --- Controls --- */
-    .toolbar{
-      background:var(--panel);
-      border:1px solid var(--border);
-      border-radius:8px;
-      padding:12px;
-      display:flex;
-      flex-wrap:wrap;
-      gap:10px;
-      align-items:center;
-      margin-bottom:12px;
-    }
-    .ctl{
-      display:flex;
-      align-items:center;
-      gap:8px;
-    }
-    input[type="text"], input[type="number"], select{
-      height:34px;
-      padding:0 10px;
-      border:1px solid var(--border);
-      border-radius:8px;
-      background:#fff;
-      min-width:140px;
-      color:var(--text);
-    }
-    input[type="number"]{ width:100px; }
-    .sep{color:var(--muted);padding:0 4px;}
-    button{
-      height:34px;
-      padding:0 12px;
-      border-radius:8px;
-      border:1px solid var(--blue);
-      background:var(--blue);
-      color:#fff;
-      font-weight:600;
-      cursor:pointer;
-    }
-    button.secondary{
-      background:#fff;
-      color:var(--blue);
-    }
-    button:disabled{
-      opacity:.6;
-      cursor:default;
-    }
-
-    /* --- Table --- */
-    .table{
-      background:var(--panel);
-      border:1px solid var(--border);
-      border-radius:10px;
-      overflow:hidden;
-    }
-    table{
-      width:100%;
-      border-collapse:separate;
-      border-spacing:0;
-    }
-    thead th{
-      text-align:left;
-      font-weight:600;
-      font-size:13px;
-      color:var(--muted);
-      background:#fafbfe;
-      border-bottom:1px solid var(--border);
-      padding:12px 14px;
-    }
-    tbody td{
-      padding:14px;
-      border-bottom:1px solid var(--border);
-      font-size:14px;
-      vertical-align:top;
-    }
-    tbody tr:hover{ background:var(--row-hover); }
-    .name{
-      font-weight:600;
-      color:#111;
-    }
-    .pill{
-      display:inline-block;
-      padding:2px 8px;
-      border-radius:100px;
-      background:var(--pill);
-      border:1px solid var(--border);
-      font-size:12px;
-    }
-    .meta{
-      display:flex;
-      gap:8px;
-      align-items:center;
-      flex-wrap:wrap;
-      margin-top:4px;
-      color:var(--muted);
-      font-size:12px;
-    }
-
-    .footer{
-      display:flex;
-      align-items:center;
-      gap:10px;
-      padding:10px 0;
-      color:var(--muted);
-      font-size:13px;
-    }
-  </style>
+  table{width:100%; border-collapse:collapse; background:var(--card);
+    border:1px solid var(--border); border-radius:12px; overflow:hidden}
+  thead th{
+    text-align:left; font-size:12px; text-transform:uppercase; letter-spacing:.02em;
+    color:var(--muted); background:#f8f9fb; padding:12px 14px; border-bottom:1px solid var(--border)
+  }
+  tbody td{padding:14px; border-bottom:1px solid var(--border)}
+  tbody tr:hover{background:#fafbfe}
+  .name{font-weight:600}
+  .pill{padding:4px 8px; background:var(--pill); color:#064d8c; border-radius:999px; font-size:12px}
+  .num{text-align:right; font-variant-numeric:tabular-nums}
+  .footer{
+    display:flex; justify-content:space-between; align-items:center; margin-top:10px
+  }
+  .sp{color:var(--muted); font-size:12px}
+</style>
 </head>
 <body>
-  <div class="container">
-    <header>
-      <h1>Bachelor’s Programs – Freshman &amp; Average Student</h1>
-      <div class="hint">Die Daten kommen über eine sichere Netlify-Funktion direkt von monday.com. Du kannst hier filtern/suchen, aber nichts ändern.</div>
-    </header>
+  <div class="wrap">
+    <h1>Bachelor’s Programs – Freshman &amp; Average Student</h1>
+    <div class="hint">Die Daten kommen aus einer sicheren Netlify-Funktion (read-only).</div>
 
-    <!-- Controls -->
     <div class="toolbar">
-      <div class="ctl">
-        <input id="q" type="text" placeholder="Suche in Name &amp; Major…" />
+      <div class="tool">
+        <label>Suche (Name &amp; Major)</label>
+        <input id="q" placeholder="Search…" />
       </div>
-
-      <div class="ctl">
-        <select id="state"></select>
-      </div>
-
-      <div class="ctl">
-        <span style="color:var(--muted);font-size:13px;">Ranking</span>
-        <input id="rmin" type="number" placeholder="min" />
-        <span class="sep">–</span>
-        <input id="rmax" type="number" placeholder="max" />
-      </div>
-
-      <div class="ctl">
-        <span style="color:var(--muted);font-size:13px;">Final cost</span>
-        <input id="cmin" type="number" placeholder="min $" />
-        <span class="sep">–</span>
-        <input id="cmax" type="number" placeholder="max $" />
-      </div>
-
-      <div class="ctl">
-        <span style="color:var(--muted);font-size:13px;">Min GPA</span>
-        <input id="gmin" type="number" step="0.1" placeholder="min" />
-        <span class="sep">–</span>
-        <input id="gmax" type="number" step="0.1" placeholder="max" />
-      </div>
-
-      <div class="ctl">
-        <select id="limit">
-          <option value="20">Load 20</option>
-          <option value="50" selected>Load 50</option>
-          <option value="100">Load 100</option>
+      <div class="tool">
+        <label>State</label>
+        <select id="state">
+          <option value="all">Alle</option>
+          <!-- Wird dynamisch befüllt -->
         </select>
-        <button id="reload">Neu laden</button>
-        <button class="secondary" id="reset">Reset Filter</button>
+      </div>
+      <div class="tool">
+        <label>Ranking</label>
+        <input id="rMin" type="number" placeholder="min">
+        <input id="rMax" type="number" placeholder="max">
+      </div>
+      <div class="tool">
+        <label>Final cost (USD)</label>
+        <input id="cMin" type="number" placeholder="min $">
+        <input id="cMax" type="number" placeholder="max $">
+      </div>
+      <div class="tool">
+        <label>Min GPA</label>
+        <input id="gMin" type="number" step="0.01" placeholder="min">
+        <input id="gMax" type="number" step="0.01" placeholder="max">
+      </div>
+      <div class="tool">
+        <label>&nbsp;</label>
+        <button class="btn" id="reload">Neu laden</button>
+        <button class="btn sec" id="reset">Reset Filter</button>
+      </div>
+      <div class="tool">
+        <label>Page size</label>
+        <select id="pageSize">
+          <option>20</option>
+          <option selected>50</option>
+          <option>100</option>
+        </select>
+        <button class="btn sec" id="loadMore">Mehr laden</button>
       </div>
     </div>
 
-    <!-- Table -->
-    <div class="table">
-      <table>
-        <thead>
-          <tr>
-            <th style="width:34%;">Name</th>
-            <th style="width:14%;">State</th>
-            <th style="width:24%;">Major</th>
-            <th style="width:8%;">Ranking</th>
-            <th style="width:12%;">Final cost</th>
-            <th style="width:8%;">Min GPA</th>
-          </tr>
-        </thead>
-        <tbody id="rows"></tbody>
-      </table>
+    <div class="chips">
+      <span class="chip" id="shown">0 angezeigt</span>
+      <span class="chip" id="loaded">0 geladen</span>
+      <span class="chip" id="cursor">cursor: none</span>
     </div>
+
+    <table>
+      <thead>
+        <tr>
+          <th style="width:36%">Name</th>
+          <th style="width:14%">State</th>
+          <th style="width:22%">Major</th>
+          <th style="width:8%">Ranking</th>
+          <th style="width:10%">Final cost</th>
+          <th style="width:10%">Min GPA</th>
+        </tr>
+      </thead>
+      <tbody id="rows"></tbody>
+    </table>
 
     <div class="footer">
-      <button id="more">Mehr laden</button>
-      <span id="count"></span>
-      <span id="cursor"></span>
+      <div class="sp">Tip: Suche durchsucht Name &amp; Major Labels.</div>
+      <div class="sp">Powered by Netlify Functions &amp; monday GraphQL</div>
     </div>
   </div>
 
-  <script>
-    const API = '/.netlify/functions/items';
+<script>
+const API = '/.netlify/functions/items';
+let cursor = null;
+let loaded = 0;
+let dataset = []; // jeweils letzte Page (gefiltert von der Function)!
 
-    let all = [];       // geladene Datensätze (alle Seiten)
-    let filtered = [];  // nach UI-Filtern
-    let nextCursor = null;
+const $ = sel => document.querySelector(sel);
 
-    const $ = (id) => document.getElementById(id);
-    const elRows  = $('rows');
-    const elCount = $('count');
-    const elCursor= $('cursor');
+function fmtMoney(n){ return new Intl.NumberFormat('en-US',{style:'currency',currency:'USD',maximumFractionDigits:0}).format(n); }
+function fmtNum(n){ return new Intl.NumberFormat('en-US').format(n); }
 
-    const elQ     = $('q');
-    const elState = $('state');
-    const elRmin  = $('rmin');
-    const elRmax  = $('rmax');
-    const elCmin  = $('cmin');
-    const elCmax  = $('cmax');
-    const elGmin  = $('gmin');
-    const elGmax  = $('gmax');
-    const elLimit = $('limit');
+function readFilters(asPageSizeOnly=false){
+  const limit = parseInt($('#pageSize').value, 10);
+  if (asPageSizeOnly) return { limit };
+  const params = {
+    limit,
+    q: $('#q').value.trim(),
+    state: $('#state').value,
+    rMin: $('#rMin').value,
+    rMax: $('#rMax').value,
+    cMin: $('#cMin').value,
+    cMax: $('#cMax').value,
+    gMin: $('#gMin').value,
+    gMax: $('#gMax').value
+  };
+  Object.keys(params).forEach(k => { if (params[k]==='') delete params[k]; });
+  return params;
+}
 
-    $('reload').onclick = () => reload();
-    $('reset').onclick  = () => { resetFilters(); render(); };
-    $('more').onclick   = () => loadMore();
+async function fetchPage({ append=false } = {}){
+  const p = readFilters();
+  if (append && cursor) p.cursor = cursor;
 
-    // Filter live anwenden
-    [elQ, elState, elRmin, elRmax, elCmin, elCmax, elGmin, elGmax].forEach(el => {
-      el.addEventListener('input', () => render());
-    });
+  const qs = new URLSearchParams(p).toString();
+  const res = await fetch(`${API}?${qs}`);
+  const json = await res.json();
 
-    init();
-    async function init(){
-      await reload(); // initial erster load
-    }
+  cursor = json.cursor || null;
+  dataset = append ? dataset.concat(json.items) : json.items;
+  loaded += json.meta?.received ?? json.items.length;
 
-    function resetFilters(){
-      elQ.value = '';
-      elState.value = '';
-      elRmin.value = '';
-      elRmax.value = '';
-      elCmin.value = '';
-      elCmax.value = '';
-      elGmin.value = '';
-      elGmax.value = '';
-    }
+  $('#loaded').textContent = `${loaded} geladen`;
+  $('#cursor').textContent = `cursor: ${cursor ? 'more' : 'none'}`;
 
-    async function reload(){
-      all = [];
-      nextCursor = null;
-      elRows.innerHTML = '';
-      await fetchPage(true);
-    }
+  render();
+  // States für Filter befüllen
+  initStateFilter(dataset);
+}
 
-    async function loadMore(){
-      if (!nextCursor) return;
-      await fetchPage(false);
-    }
+function initStateFilter(items){
+  const sel = $('#state');
+  const current = sel.value || 'all';
+  const pool = new Set();
+  items.forEach(it => (it.state||'').split(',').map(s=>s.trim()).filter(Boolean).forEach(s=>pool.add(s)));
+  const opts = ['all', ...[...pool].sort()];
+  sel.innerHTML = opts.map(v => `<option value="${v}">${v}</option>`).join('');
+  sel.value = current;
+}
 
-    async function fetchPage(first){
-      const params = new URLSearchParams();
-      params.set('limit', elLimit.value || '50');
-      if (!first && nextCursor) params.set('cursor', nextCursor);
+function render(){
+  const tbody = $('#rows');
+  tbody.innerHTML = dataset.map(it => `
+    <tr>
+      <td class="name">${it.name ?? ''}</td>
+      <td><span class="pill">${it.state || '-'}</span></td>
+      <td>${it.major || '-'}</td>
+      <td class="num">${it.ranking!=null? fmtNum(it.ranking): '-'}</td>
+      <td class="num">${it.final_cost!=null? fmtMoney(it.final_cost): '-'}</td>
+      <td class="num">${it.min_gpa!=null? it.min_gpa.toFixed(2): '-'}</td>
+    </tr>
+  `).join('');
+  $('#shown').textContent = `${dataset.length} angezeigt`;
+}
 
-      const res = await fetch(`${API}?${params.toString()}`);
-      const data = await res.json();
+$('#reload').addEventListener('click', async () => {
+  cursor = null; loaded = 0; dataset = [];
+  await fetchPage({ append:false });
+});
 
-      if (data.errors) {
-        alert(data.errors[0].message || 'API error');
-        return;
-      }
-      const items = (data.items || []);
-      all = all.concat(items);
-      nextCursor = data.cursor || null;
+$('#reset').addEventListener('click', async () => {
+  ['q','rMin','rMax','cMin','cMax','gMin','gMax'].forEach(id => $('#'+id).value = '');
+  $('#state').value = 'all';
+  cursor = null; loaded = 0; dataset = [];
+  await fetchPage({ append:false });
+});
 
-      buildStateOptions(all);
-      render();
-    }
+$('#loadMore').addEventListener('click', async () => {
+  if (!cursor) return;
+  await fetchPage({ append:true });
+});
 
-    function buildStateOptions(list){
-      // einmalig aus allen Items die States sammeln
-      const chosen = elState.value;
-      const states = Array.from(new Set(list.map(x => x.state).filter(Boolean))).sort();
-      elState.innerHTML = `<option value="">State (alle)</option>` + states.map(s => `<option value="${escapeHtml(s)}">${escapeHtml(s)}</option>`).join('');
-      elState.value = chosen; // beibehalten
-    }
-
-    function render(){
-      // Anwendung aller Filter
-      const q     = (elQ.value || '').toLowerCase().trim();
-      const state = elState.value || '';
-
-      const rmin = numOrNull(elRmin.value);
-      const rmax = numOrNull(elRmax.value);
-      const cmin = numOrNull(elCmin.value);
-      const cmax = numOrNull(elCmax.value);
-      const gmin = floatOrNull(elGmin.value);
-      const gmax = floatOrNull(elGmax.value);
-
-      filtered = all.filter(row => {
-        if (state && row.state !== state) return false;
-
-        // Textsuche in Name + Major
-        const hay = `${row.name} ${row.major}`.toLowerCase();
-        if (q && !hay.includes(q)) return false;
-
-        // Ranking: kleinere Zahl = besser; wir interpretieren die textlichen Zahlen
-        const rank = toNumber(row.ranking);
-        if (rmin !== null && (rank === null || rank < rmin)) return false;
-        if (rmax !== null && (rank === null || rank > rmax)) return false;
-
-        // Final cost (USD)
-        const cost = toNumber(row.final_cost_of_attendance);
-        if (cmin !== null && (cost === null || cost < cmin)) return false;
-        if (cmax !== null && (cost === null || cost > cmax)) return false;
-
-        // GPA
-        const gpa = toFloat(row.minimum_gpa_requirement);
-        if (gmin !== null && (gpa === null || gpa < gmin)) return false;
-        if (gmax !== null && (gpa === null || gpa > gmax)) return false;
-
-        return true;
-      });
-
-      // Tabelle zeichnen
-      elRows.innerHTML = filtered.map(row => tr(row)).join('');
-
-      // Footer info
-      elCount.textContent = `${filtered.length} angezeigt · ${all.length} geladen`;
-      elCursor.textContent = nextCursor ? 'cursor: more' : 'cursor: end';
-      $('more').disabled = !nextCursor;
-    }
-
-    function tr(row){
-      return `
-        <tr>
-          <td>
-            <div class="name">${escapeHtml(row.name || '')}</div>
-            <div class="meta">
-              ${row.major ? `<span class="pill">${escapeHtml(row.major)}</span>` : ``}
-            </div>
-          </td>
-          <td>${escapeHtml(row.state || '')}</td>
-          <td>${escapeHtml(row.major || '')}</td>
-          <td>${formatNumber(row.ranking)}</td>
-          <td>${formatCurrency(row.final_cost_of_attendance)}</td>
-          <td>${formatGpa(row.minimum_gpa_requirement)}</td>
-        </tr>
-      `;
-    }
-
-    // ------ Format & Parse Helper ------
-    function escapeHtml(s){ return (s||'').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
-    function numOrNull(v){ const n = parseInt(v,10); return Number.isFinite(n) ? n : null; }
-    function floatOrNull(v){ const n = parseFloat(v); return Number.isFinite(n) ? n : null; }
-
-    // extrahiert die erste Zahl aus einem freien Text ("$34,500 (est.)" -> 34500)
-    function toNumber(text){
-      if (!text) return null;
-      const m = String(text).replace(/,/g,'').match(/-?\d+(\.\d+)?/);
-      if (!m) return null;
-      const n = Number(m[0]);
-      return Number.isFinite(n) ? Math.round(n) : null;
-    }
-    function toFloat(text){
-      if (!text) return null;
-      const m = String(text).replace(/,/g,'').match(/-?\d+(\.\d+)?/);
-      if (!m) return null;
-      const n = Number(m[0]);
-      return Number.isFinite(n) ? n : null;
-    }
-    function formatNumber(text){
-      const n = toNumber(text);
-      return n === null ? '' : n.toLocaleString();
-    }
-    function formatCurrency(text){
-      const n = toNumber(text);
-      return n === null ? '' : '$ ' + n.toLocaleString();
-    }
-    function formatGpa(text){
-      const n = toFloat(text);
-      return n === null ? '' : n.toFixed(2);
-    }
-  </script>
+// erste Ladung
+fetchPage();
+</script>
 </body>
 </html>
