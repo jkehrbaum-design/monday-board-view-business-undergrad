@@ -1,291 +1,499 @@
 <!doctype html>
-<html lang="en">
+<html lang="de">
 <head>
-<meta charset="utf-8"/>
-<meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>Epro 360 – Bachelor’s Programs (read-only)</title>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Bachelor’s Programs – Freshman & Average Student</title>
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
-<script src="https://cdn.jsdelivr.net/npm/xlsx@0.19.3/dist/xlsx.full.min.js"></script>
 <style>
   :root{
-    --bg:#f6f7fb; --card:#fff; --text:#323338; --muted:#676879; --border:#e6e9ef;
-    --accent:#0073ea; --pill:#cce5ff; --hover:#fafbfe;
+    --bg:#f6f7fb;
+    --panel:#fff;
+    --text:#1f2430;
+    --muted:#707786;
+    --border:#e2e6ef;
+    --blue:#1976d2;
+    --tag:#eef3ff;
+    --tag-text:#2b4b9b;
+    --header:#f2f4f8;
+    --row-hover:#f8fafc;
   }
   *{box-sizing:border-box}
-  body{margin:0; font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial;
-       color:var(--text); background:var(--bg);}
-  .wrap{max-width:1220px; margin:32px auto; padding:0 16px;}
-  h1{font-size:24px; font-weight:700; margin:0 0 10px}
-  .hint{color:var(--muted); font-size:13px; margin-bottom:16px}
+  body{
+    margin:0; background:var(--bg);
+    font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Cantarell,'Helvetica Neue',Arial;
+    color:var(--text); line-height:1.4;
+  }
+  header{ padding:24px; }
+  h1{font-size:22px; margin:0 0 8px 0; font-weight:600}
+  p.sub{margin:0; color:var(--muted); font-size:14px}
 
-  .toolbar{display:flex; gap:12px; flex-wrap:wrap; background:var(--card);
-    border:1px solid var(--border); padding:12px; border-radius:10px; align-items:center; margin-bottom:12px;}
-  .tool{display:flex; gap:8px; align-items:center}
-  label{font-size:12px; color:var(--muted)}
-  input, select{height:34px; padding:0 10px; border:1px solid var(--border);
-    border-radius:8px; background:#fff; color:var(--text); min-width:140px;}
-  .btn{height:34px; padding:0 12px; border:1px solid var(--accent);
-    background:var(--accent); color:#fff; border-radius:8px; font-weight:600; cursor:pointer;}
-  .btn.sec{background:#fff; color:var(--accent)}
-  .chips{display:flex; gap:8px; align-items:center; margin:8px 0 14px}
-  .chip{padding:6px 10px; background:#eef6ff; color:#1f6feb; border-radius:999px; font-size:12px}
+  .card{
+    background:var(--panel);
+    border:1px solid var(--border);
+    border-radius:12px;
+    box-shadow:0 1px 2px rgba(0,0,0,.03);
+    margin:0 24px 24px 24px;
+  }
+  .controls{
+    display:flex; flex-wrap:wrap; gap:12px;
+    padding:16px; border-bottom:1px solid var(--border);
+  }
+  .ctrl{display:flex; flex-direction:column; gap:6px; min-width:220px}
+  .ctrl label{font-size:12px; color:var(--muted)}
+  .ctrl input[type="text"], .ctrl input[type="number"], .ctrl select{
+    padding:10px 12px; border:1px solid var(--border);
+    border-radius:8px; background:#fff; font-size:14px;
+    outline:none;
+  }
+  .btn{padding:10px 14px; border:1px solid var(--border);
+    background:#fff; color:var(--text);
+    border-radius:8px; cursor:pointer; font-size:14px;}
+  .btn.primary{background:var(--blue); color:#fff; border-color:var(--blue)}
+  .btn:disabled{opacity:.5; cursor:default}
+  .badges{margin-left:auto; display:flex; gap:10px; align-items:center}
+  .badge{background:#eef1f6; color:#333; padding:6px 10px; border-radius:999px; font-size:12px}
 
-  table{width:100%; border-collapse:collapse; background:var(--card); border:1px solid var(--border);
-    border-radius:12px; overflow:hidden}
-  thead th{user-select:none; cursor:pointer; text-align:left; font-size:12px; text-transform:uppercase;
-    letter-spacing:.02em; color:var(--muted); background:#f8f9fb; padding:12px 14px; border-bottom:1px solid var(--border)}
-  thead th.sortable::after{content:'⇅'; font-size:12px; padding-left:6px; color:#a0a3ad}
-  thead th.asc::after{content:'▲'; color:#607d8b}
-  thead th.desc::after{content:'▼'; color:#607d8b}
-  tbody td{padding:14px; border-bottom:1px solid var(--border)}
-  tbody tr:hover{background:var(--hover)}
-  .name{font-weight:600}
-  .pill{padding:4px 8px; background:var(--pill); color:#064d8c; border-radius:999px; font-size:12px}
-  .num{text-align:right; font-variant-numeric:tabular-nums}
-  .footer{display:flex; justify-content:space-between; align-items:center; margin-top:10px}
-  .sp{color:var(--muted); font-size:12px}
+  .table-wrap{overflow:auto}
+  table{border-collapse:separate; border-spacing:0; width:max-content; min-width:100%}
+  thead th{
+    position:sticky; top:0; background:var(--header); z-index:5;
+    font-weight:600; font-size:13px; color:#324256;
+    padding:12px; border-bottom:1px solid var(--border); border-right:1px solid var(--border);
+    white-space:nowrap; cursor:pointer;
+  }
+  tbody td{
+    padding:12px; font-size:14px; color:#1a1f2c;
+    border-bottom:1px solid var(--border); border-right:1px solid var(--border);
+    vertical-align:top; background:#fff;
+  }
+  tbody tr:hover td{ background:var(--row-hover) }
+  th:first-child, td:first-child{position:sticky; left:0; background:#fff; z-index:4}
+  thead th:first-child{z-index:6; background:var(--header)}
+  .pill{
+    display:inline-block; background:var(--tag); color:var(--tag-text);
+    padding:2px 8px; border-radius:999px; font-size:12px; margin:2px 4px 2px 0;
+  }
+  .mono{font-variant-numeric:tabular-nums}
+  .empty{color:var(--muted)}
+  .export{margin:8px 16px 16px 16px}
 </style>
 </head>
 <body>
-  <div class="wrap">
-    <h1>Bachelor’s Programs – Freshman &amp; Average Student</h1>
-    <div class="hint">Die Daten kommen aus einer sicheren Netlify-Funktion (read-only).</div>
 
-    <div class="toolbar">
-      <div class="tool">
-        <label>Suche (Name &amp; Major)</label>
-        <input id="q" placeholder="Search…" />
-      </div>
-      <div class="tool">
-        <label>State</label>
-        <select id="state">
-          <option value="all">Alle</option>
-          <!-- wird mit allen States aus monday befüllt -->
-        </select>
-      </div>
-      <div class="tool">
-        <label>Ranking</label>
-        <input id="rMin" type="number" placeholder="min">
-        <input id="rMax" type="number" placeholder="max">
-      </div>
-      <div class="tool">
-        <label>Final cost (USD)</label>
-        <input id="cMin" type="number" placeholder="min $">
-        <input id="cMax" type="number" placeholder="max $">
-      </div>
-      <div class="tool">
-        <label>Min GPA</label>
-        <input id="gMin" type="number" step="0.01" placeholder="min">
-        <input id="gMax" type="number" step="0.01" placeholder="max">
-      </div>
-      <div class="tool">
-        <label>&nbsp;</label>
-        <button class="btn" id="reload">Neu laden</button>
-        <button class="btn sec" id="reset">Reset Filter</button>
-      </div>
-      <div class="tool">
-        <label>Page size</label>
-        <select id="pageSize">
-          <option>20</option>
-          <option selected>50</option>
-          <option>100</option>
-        </select>
-        <button class="btn sec" id="loadMore">Mehr laden</button>
-      </div>
-      <div class="tool" style="margin-left:auto">
-        <label>&nbsp;</label>
-        <button class="btn sec" id="exportXLSX">Export Excel</button>
+<header>
+  <h1>Bachelor’s Programs – Freshman & Average Student</h1>
+  <p class="sub">Die Daten kommen aus einer sicheren Netlify-Funktion (read-only).</p>
+</header>
+
+<div class="card">
+  <div class="controls">
+    <div class="ctrl">
+      <label>Suche (Name & Major)</label>
+      <input id="q" type="text" placeholder="z. B. business, Rowan …">
+    </div>
+
+    <div class="ctrl">
+      <label>State</label>
+      <select id="state">
+        <option value="all">all</option>
+      </select>
+    </div>
+
+    <div class="ctrl">
+      <label>Ranking (min – max)</label>
+      <div style="display:flex; gap:8px">
+        <input id="rankMin" type="number" placeholder="min" style="width:100px">
+        <input id="rankMax" type="number" placeholder="max" style="width:100px">
       </div>
     </div>
 
-    <div class="chips">
-      <span class="chip" id="shown">0 angezeigt</span>
-      <span class="chip" id="loaded">0 geladen</span>
-      <span class="chip" id="cursor">cursor: none</span>
+    <div class="ctrl">
+      <label>Final cost (USD)</label>
+      <div style="display:flex; gap:8px">
+        <input id="costMin" type="number" placeholder="min $" style="width:110px">
+        <input id="costMax" type="number" placeholder="max $" style="width:110px">
+      </div>
     </div>
 
-    <table>
-      <thead>
-        <tr>
-          <th class="sortable" data-key="name" style="width:36%">Name</th>
-          <th class="sortable" data-key="state" style="width:14%">State</th>
-          <th class="sortable" data-key="major" style="width:22%">Major</th>
-          <th class="sortable" data-key="ranking" style="width:8%">Ranking</th>
-          <th class="sortable" data-key="final_cost" style="width:10%">Final cost</th>
-          <th class="sortable" data-key="min_gpa" style="width:10%">Min GPA</th>
-        </tr>
-      </thead>
-      <tbody id="rows"></tbody>
-    </table>
+    <div class="ctrl">
+      <label>Min GPA</label>
+      <div style="display:flex; gap:8px">
+        <input id="gpaMin" type="number" step="0.01" placeholder="min" style="width:100px">
+        <input id="gpaMax" type="number" step="0.01" placeholder="max" style="width:100px">
+      </div>
+    </div>
 
-    <div class="footer">
-      <div class="sp">Tip: Header klicken zum Sortieren · Export = aktueller Tabellenstand</div>
-      <div class="sp">Powered by Netlify Functions &amp; monday GraphQL</div>
+    <div class="ctrl">
+      <label>Page size</label>
+      <select id="limit">
+        <option>20</option>
+        <option selected>50</option>
+        <option>100</option>
+        <option>200</option>
+      </select>
+    </div>
+
+    <div class="ctrl" style="align-self:end; gap:8px; flex-direction:row">
+      <button class="btn primary" id="reload">Neu laden</button>
+      <button class="btn" id="reset">Reset Filter</button>
+      <button class="btn" id="loadMore">Mehr laden</button>
+    </div>
+
+    <div class="badges">
+      <span class="badge" id="badgeShown">0 angezeigt</span>
+      <span class="badge" id="badgeLoaded">0 geladen</span>
+      <span class="badge" id="badgeCursor">cursor: —</span>
     </div>
   </div>
 
+  <div class="export">
+    <button class="btn" id="csv">Als CSV exportieren</button>
+  </div>
+
+  <div class="table-wrap">
+    <table id="tbl">
+      <thead><tr id="thead"></tr></thead>
+      <tbody id="tbody"></tbody>
+    </table>
+  </div>
+</div>
+
 <script>
-const API = '/.netlify/functions/items';
-let cursor = null;
-let loaded = 0;
-let dataset = []; // aktuell angezeigte Items (bereits serverseitig gefiltert)
-let sortKey = 'name';
-let sortDir = 'asc';
+// ----------------- Spalten-Definition -----------------
+// title = Überschrift; id = Monday column id; type steuert Darstellung & Sortierung
+const COLUMNS = [
+  { source:'name', title:'Name', type:'text' },
 
-const $ = sel => document.querySelector(sel);
-function fmtMoney(n){ return new Intl.NumberFormat('en-US',{style:'currency',currency:'USD',maximumFractionDigits:0}).format(n); }
-function fmtNum(n){ return new Intl.NumberFormat('en-US').format(n); }
+  // ---- erster Block (aus Screenshot 1) ----
+  { id:'dropdown',   title:'State', type:'pill' },
+  { id:'dropdown4',  title:'Geographic Area', type:'pill' },
+  { id:'text5',      title:'City', type:'text' },
+  { id:'location4',  title:'Full Address (Map)', type:'text' },
+  { id:'link2',      title:'Virtual Campus Tour?', type:'link' },
+  { id:'status8',    title:'Fachabitur?', type:'pill' },
+  { id:'long_text68',title:'Fachabitur Details', type:'longtext' },
+  { id:'status70',   title:'Realschule?', type:'pill' },
+  { id:'long_text72',title:'Realschule Details', type:'longtext' },
 
-function readFilters(asPageSizeOnly=false){
-  const limit = parseInt($('#pageSize').value, 10);
-  if (asPageSizeOnly) return { limit };
-  const params = {
-    limit,
-    q: $('#q').value.trim(),
-    state: $('#state').value,
-    rMin: $('#rMin').value,
-    rMax: $('#rMax').value,
-    cMin: $('#cMin').value,
-    cMax: $('#cMax').value,
-    gMin: $('#gMin').value,
-    gMax: $('#gMax').value
-  };
-  Object.keys(params).forEach(k => { if (params[k]==='') delete params[k]; });
-  return params;
-}
+  // ---- Ranking-Block ----
+  { id:'numbers0',   title:'Ranking (Webometrics)', type:'number' },
+  { id:'long_text2', title:'U.S. News Ranking', type:'text' },
+  { id:'link5',      title:'U.S. News Link', type:'link' },
+  { id:'dropdown2',  title:'Type of Institution', type:'pill' },
 
-async function loadStates(){
-  try{
-    const res = await fetch(`${API}?dict=state`);
-    const json = await res.json();
-    if(Array.isArray(json.states) && json.states.length){
-      const sel = $('#state');
-      const current = sel.value || 'all';
-      const opts = ['all', ...json.states];
-      sel.innerHTML = opts.map(v=>`<option value="${v}">${v}</option>`).join('');
-      sel.value = current;
-    }
-  }catch(e){ /* fallback bleibt einfach leer/all */ }
-}
+  // ---- Enrollment/Ratio ----
+  { id:'numbers57',  title:'Total Enrollment (# of students)', type:'number' },
+  { id:'numbers_1',  title:'% Enrollment living on Campus', type:'text' },
+  { id:'formula5',   title:'Number Students living on Campus', type:'number' },
+  { id:'numbers_15', title:'Student-to-Faculty Ratio', type:'number' },
 
-function applySort(data){
-  const arr = [...data];
-  const dir = sortDir === 'asc' ? 1 : -1;
+  // ---- Insurance/Fees/Apply ----
+  { id:'dropdown7',  title:'University’s Sponsored Insurance Required?', type:'pill' },
+  { id:'long_text91',title:'More details Health Insurance', type:'longtext' },
+  { id:'long_text23',title:'Application Fee (USD)', type:'text' },
+  { id:'long_text73',title:'How to Apply', type:'longtext' },
+  { id:'long_text__1',title:'Transfer Pathway Info', type:'longtext' },
+  { id:'status96',   title:'Credential Eval Required', type:'pill' },
+  { id:'long_text07',title:'+ Info Credential Evaluation', type:'longtext' },
 
-  arr.sort((a,b)=>{
-    const ka = a[sortKey]; const kb = b[sortKey];
+  // ---- Links & Sports ----
+  { id:'status14',   title:'Spring Admission?', type:'pill' },
+  { id:'status_1',   title:'Spring Scholarships?', type:'pill' },
+  { id:'long_text12',title:'Clarification on Add. Information', type:'longtext' },
+  { id:'link23',     title:'On Campus Activities', type:'link' },
+  { id:'link9',      title:'Sports Homepage', type:'link' },
+  { id:'dropdown5',  title:'Athletic Association', type:'pill' },
+  { id:'dropdown0',  title:"Men’s Sports", type:'pill' },
+  { id:'dup__of_men_sports1', title:"Women’s Sports", type:'pill' },
 
-    // Zahlenfelder (ranking, final_cost, min_gpa)
-    if (['ranking','final_cost','min_gpa'].includes(sortKey)){
-      const na = (ka==null ? Number.POSITIVE_INFINITY : Number(ka));
-      const nb = (kb==null ? Number.POSITIVE_INFINITY : Number(kb));
-      return (na - nb) * dir;
-    }
-    // Strings
-    const sa = (ka || '').toString().toLowerCase();
-    const sb = (kb || '').toString().toLowerCase();
-    return sa.localeCompare(sb) * dir;
+  // ---- Study Areas / Costs ----
+  { id:'link29',     title:'University Homepage', type:'link' },
+  { id:'dup__of_university_s_website', title:'International Admission Office', type:'link' },
+  { id:'dropdown6',  title:"Bachelor’s Study Areas", type:'pill' },
+  { id:'link1',      title:"Bachelor’s Degrees Link", type:'link' },
+  { id:'dropdown57', title:'Academic Year', type:'pill' },
+  { id:'numbers72',  title:'Tuition (Annual USD)', type:'currency' },
+  { id:'numbers_11', title:'Room (Annual USD)', type:'currency' },
+  { id:'numbers_24', title:'Board (Annual USD)', type:'currency' },
+  { id:'numbers_3',  title:'Required Fees (Annual USD)', type:'currency' },
+  { id:'formula27',  title:'TOTAL (Approx Annual USD)', type:'currency' },
+  { id:'long_text62',title:'Additional Cost Info', type:'longtext' },
+
+  // ---- Scholarships (lowest/mid/highest) ----
+  { id:'dropdown_mkvg9mv3', title:'Admission Requirements', type:'pill' },
+  { id:'numbers',   title:'Lowest Scholarship (USD)', type:'currency' },
+  { id:'status1',   title:'Competitive vs Guaranteed (Lowest)', type:'pill' },
+  { id:'numbers1',  title:'TOEFL min (Lowest)', type:'number' },
+  { id:'numbers4',  title:'GPA min (Lowest)', type:'number' },
+  { id:'numbers7',  title:'SAT min (Lowest)', type:'number' },
+  { id:'long_text', title:'More Info (Lowest)', type:'longtext' },
+
+  { id:'numbers14', title:'Mid-Range Scholarship (USD)', type:'currency' },
+  { id:'status68',  title:'Competitive vs Guaranteed (Mid)', type:'pill' },
+  { id:'numbers_14',title:'TOEFL min (Mid)', type:'number' },
+  { id:'numbers_23',title:'GPA min (Mid)', type:'number' },
+  { id:'numbers_39',title:'SAT min (Mid)', type:'number' },
+  { id:'long_text06',title:'More Info (Mid)', type:'longtext' },
+
+  { id:'numbers48', title:'Highest Scholarship (USD)', type:'currency' },
+  { id:'status6',   title:'Competitive vs Guaranteed (High)', type:'pill' },
+  { id:'numbers9',  title:'TOEFL min (High)', type:'number' },
+  { id:'numbers43', title:'GPA min (High)', type:'number' },
+  { id:'numbers3',  title:'SAT min (High)', type:'number' },
+  { id:'long_text4',title:'More Info (High)', type:'longtext' },
+
+  // ---- Net Cost, Deadlines, Work ----
+  { id:'formula0',  title:'(Lowest) Possible Net Cost', type:'currency' },
+  { id:'formula20', title:'(Mid) Possible Net Cost', type:'currency' },
+  { id:'formula52', title:'(Highest) Possible Net Cost', type:'currency' },
+  { id:'dropdown_mkvgfq5y', title:'Estimated Annual Cost - Vlookup', type:'pill' },
+  { id:'long_text7', title:'Fall Application Deadline', type:'longtext' },
+  { id:'long_text1', title:'Spring Application Deadline', type:'longtext' },
+  { id:'link',       title:'Deadline Link', type:'link' },
+  { id:'long_text6', title:'Add. Requirements Info', type:'longtext' },
+  { id:'status3',    title:"Campus Employment Opportunities?", type:'pill' },
+  { id:'numbers25',  title:'2025 Minimum Wage', type:'currency' },
+  { id:'formula6',   title:'Annual Work on Campus Compensation', type:'currency' },
+  { id:'long_text05',title:"Work on Campus Details", type:'longtext' },
+
+  // ---- Meta ----
+  { id:'last_updated__1', title:'Last updated', type:'text' },
+  { id:'status__1', title:'Partner', type:'pill' },
+  { id:'dropdown_mkvtfch4', title:'Estimated Annual Cost', type:'pill' },
+];
+
+// --------------- Globals ---------------
+let rows = [];           // alle geladenen Items (akkumuliert)
+let cursor = null;       // nächster Cursor
+let sort = { key: 'name', dir: 'asc' }; // Default
+
+// --------------- UI-Elemente ---------------
+const $q = $('#q'), $state = $('#state');
+const $rankMin = $('#rankMin'), $rankMax = $('#rankMax');
+const $costMin = $('#costMin'), $costMax = $('#costMax');
+const $gpaMin  = $('#gpaMin'),  $gpaMax  = $('#gpaMax');
+const $limit = $('#limit');
+
+$('#reload').addEventListener('click', reload);
+$('#reset').addEventListener('click', resetFilters);
+$('#loadMore').addEventListener('click', loadMore);
+$('#csv').addEventListener('click', exportCSV);
+
+buildHeader();
+reload();   // erste Ladung
+
+// ---------------- kleine Helfer ----------------
+function $(sel){ return document.querySelector(sel); }
+function el(tag, attrs={}, ...children){
+  const n=document.createElement(tag);
+  Object.entries(attrs).forEach(([k,v])=>{
+    if (k==='class') n.className=v;
+    else if (k==='html') n.innerHTML=v;
+    else n.setAttribute(k,v);
   });
-  return arr;
+  children.forEach(c=> n.append(c));
+  return n;
 }
 
-async function fetchPage({ append=false } = {}){
-  const p = readFilters();
-  if (append && cursor) p.cursor = cursor;
+// ---------------- Lade-Logik ----------------
+async function reload(){
+  rows=[]; cursor=null;
+  await loadMore(true);            // erste Seite
+  // States komplett einsammeln (wir holen still im Hintergrund nach und füllen Select)
+  collectAllStates();
+}
+async function loadMore(){
+  const params = new URLSearchParams({
+    limit: $limit.value,
+    cursor: cursor || '',
+    q: $q.value,
+    state: $state.value,
+    rankMin: $rankMin.value,
+    rankMax: $rankMax.value,
+    costMin: $costMin.value,
+    costMax: $costMax.value,
+    gpaMin:  $gpaMin.value,
+    gpaMax:  $gpaMax.value
+  });
 
-  const qs = new URLSearchParams(p).toString();
-  const res = await fetch(`${API}?${qs}`);
-  const json = await res.json();
+  const url = '/.netlify/functions/items?' + params.toString();
+  const r = await fetch(url);
+  const j = await r.json();
 
-  cursor = json.cursor || null;
-  dataset = append ? dataset.concat(json.items) : json.items;
-  loaded += json.meta?.received ?? json.items.length;
-
-  $('#loaded').textContent = `${loaded} geladen`;
-  $('#cursor').textContent = `cursor: ${cursor ? 'more' : 'none'}`;
-
+  cursor = j.cursor || null;
+  rows = rows.concat(j.items || []);
+  updateBadges();
   render();
 }
-
-function render(){
-  const tbody = $('#rows');
-
-  // sortiert rendern
-  const rows = applySort(dataset).map(it => `
-    <tr>
-      <td class="name">${it.name ?? ''}</td>
-      <td><span class="pill">${it.state || '-'}</span></td>
-      <td>${it.major || '-'}</td>
-      <td class="num">${it.ranking!=null? fmtNum(it.ranking): '-'}</td>
-      <td class="num">${it.final_cost!=null? fmtMoney(it.final_cost): '-'}</td>
-      <td class="num">${it.min_gpa!=null? Number(it.min_gpa).toFixed(2): '-'}</td>
-    </tr>
-  `).join('');
-
-  tbody.innerHTML = rows;
-  $('#shown').textContent = `${dataset.length} angezeigt`;
-
-  // Header-Klasse für Sortindikator setzen
-  document.querySelectorAll('thead th').forEach(th=>{
-    th.classList.remove('asc','desc');
-    if (th.dataset.key === sortKey){
-      th.classList.add(sortDir);
-    }
+function resetFilters(){
+  $q.value=''; $state.value='all';
+  $rankMin.value=''; $rankMax.value='';
+  $costMin.value=''; $costMax.value='';
+  $gpaMin.value='';  $gpaMax.value='';
+  reload();
+}
+function updateBadges(){
+  $('#badgeLoaded').textContent = rows.length + ' geladen';
+  $('#badgeCursor').textContent = 'cursor: ' + (cursor ? 'more' : '—');
+}
+function buildHeader(){
+  const tr = $('#thead'); tr.innerHTML='';
+  COLUMNS.forEach(col=>{
+    const th = el('th',{});
+    th.textContent = col.title;
+    th.addEventListener('click', ()=>{
+      sort.key = col.source || col.id || 'name';
+      sort.dir = (sort.dir==='asc'?'desc':'asc');
+      render();
+    });
+    tr.append(th);
   });
 }
 
-// Header-Klick → Sortierung
-document.querySelectorAll('thead th.sortable').forEach(th=>{
-  th.addEventListener('click', ()=>{
-    const key = th.dataset.key;
-    if (sortKey === key){
-      sortDir = (sortDir === 'asc') ? 'desc' : 'asc';
-    } else {
-      sortKey = key;
-      sortDir = 'asc';
+// ---------------- Rendering ----------------
+function render(){
+  const tbody = $('#tbody'); tbody.innerHTML='';
+
+  // sortierte Kopie
+  const sorted = rows.slice().sort((a,b)=>{
+    const key = sort.key;
+    let av = getCellSortValue(a, key);
+    let bv = getCellSortValue(b, key);
+    if (typeof av === 'number' && typeof bv === 'number'){
+      return sort.dir==='asc' ? (av-bv) : (bv-av);
     }
-    render();
+    av = (av+'').toLowerCase(); bv=(bv+'').toLowerCase();
+    return sort.dir==='asc' ? (av>bv?1:av<bv?-1:0) : (av<bv?1:av>bv?-1:0);
   });
-});
 
-// Export Excel (xlsx)
-$('#exportXLSX').addEventListener('click', ()=>{
-  const rows = applySort(dataset).map(it => ({
-    Name: it.name || '',
-    State: it.state || '',
-    Major: it.major || '',
-    Ranking: it.ranking ?? '',
-    'Final cost (USD)': it.final_cost ?? '',
-    'Min GPA': it.min_gpa ?? ''
-  }));
-  const ws = XLSX.utils.json_to_sheet(rows);
-  const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, ws, 'Programs');
-  XLSX.writeFile(wb, `bachelors_programs_${new Date().toISOString().slice(0,10)}.xlsx`);
-});
+  sorted.forEach(row=>{
+    const tr = el('tr');
+    COLUMNS.forEach(c=>{
+      tr.append( renderCell(row, c) );
+    });
+    tbody.append(tr);
+  });
+  $('#badgeShown').textContent = sorted.length + ' angezeigt';
+}
+function getCellSortValue(row, key){
+  if (key==='name') return row.name || '';
+  const col = (row.cols || []).find(c=> c.id === key);
+  if (!col) return '';
+  const n = parseFloat((col.text || '').replace(/[, $€£]/g,''));
+  return isNaN(n) ? (col.text || '') : n;
+}
+function renderCell(row, c){
+  const td = el('td');
+  if (c.source==='name'){ td.textContent = row.name || ''; return td; }
 
-// Buttons
-$('#reload').addEventListener('click', async () => {
-  cursor = null; loaded = 0; dataset = [];
-  await fetchPage({ append:false });
-});
-$('#reset').addEventListener('click', async () => {
-  ['q','rMin','rMax','cMin','cMax','gMin','gMax'].forEach(id => $('#'+id).value = '');
-  $('#state').value = 'all';
-  cursor = null; loaded = 0; dataset = [];
-  await fetchPage({ append:false });
-});
-$('#loadMore').addEventListener('click', async () => {
-  if (!cursor) return;
-  await fetchPage({ append:true });
-});
+  const col = (row.cols || []).find(k=> k.id === c.id);
+  if (!col || (!col.text && !col.value)){
+    td.innerHTML = '<span class="empty">—</span>'; return td;
+  }
 
-// Initial
-(async function init(){
-  await loadStates();      // alle States aus monday laden
-  await fetchPage();       // erste Seite
-})();
+  const text = col.text || '';
+
+  switch (c.type){
+    case 'pill': {
+      const parts = text.split(',').map(s=>s.trim()).filter(Boolean);
+      if (!parts.length){ td.innerHTML='<span class="empty">—</span>'; break; }
+      parts.forEach(p=> td.append(el('span',{class:'pill'}, p)));
+      break;
+    }
+    case 'link': {
+      // Monday link-value: {"url":"...","text":"..."}
+      let url = '';
+      try { url = JSON.parse(col.value||'{}').url || ''; } catch(e){}
+      if (!url) url = text;
+      if (!url){ td.innerHTML='<span class="empty">—</span>'; break; }
+      td.append(el('a', { href:url, target:'_blank' }, text||'Link'));
+      break;
+    }
+    case 'currency': {
+      const n = parseFloat(text.replace(/[, $€£]/g,''));
+      td.textContent = isNaN(n) ? text : new Intl.NumberFormat('en-US',{style:'currency',currency:'USD'}).format(n);
+      td.classList.add('mono');
+      break;
+    }
+    case 'number': {
+      const n = parseFloat(text.replace(/,/g,''));
+      td.textContent = isNaN(n) ? text : n;
+      td.classList.add('mono');
+      break;
+    }
+    case 'longtext': {
+      td.textContent = text; break;
+    }
+    default: {
+      td.textContent = text || ''; break;
+    }
+  }
+  return td;
+}
+
+// ---- States vollständig nachladen und Dropdown auffüllen
+async function collectAllStates(){
+  const all = new Set( [...statesFromRows(rows)] );
+  let cur = cursor;       // start von aktuellem Cursor
+  let guard = 0;
+  while(cur && guard++ < 20){     // Schutz: max 20 weitere Seiten
+    const params = new URLSearchParams({
+      limit: 200, cursor: cur,
+      q:'', state:'', rankMin:'', rankMax:'', costMin:'', costMax:'', gpaMin:'', gpaMax:''
+    });
+    const r = await fetch('/.netlify/functions/items?'+params.toString());
+    const j = await r.json();
+    (j.items||[]).forEach(it=>{
+      statesFromRows([it]).forEach(s => all.add(s));
+    });
+    cur = j.cursor || null;
+  }
+  fillStateSelect([...all].sort());
+}
+function statesFromRows(list){
+  const states = new Set();
+  list.forEach(row=>{
+    const st = row.state && row.state.trim();
+    if (st) states.add(st);
+  });
+  return states;
+}
+function fillStateSelect(states){
+  const cur = $state.value;
+  $state.innerHTML = '<option value="all">all</option>';
+  states.forEach(s=>{
+    const opt = el('option',{value:s}, s);
+    $state.append(opt);
+  });
+  $state.value = cur || 'all';
+}
+
+// ---- CSV Export (Excel-kompatibel)
+function exportCSV(){
+  const cols = COLUMNS;
+  let csv = '';
+  csv += cols.map(c=> `"${(c.title||'').replace(/"/g,'""')}"`).join(',') + '\n';
+
+  // aktuell gerenderte Reihenfolge übernehmen
+  const trs = $('#tbody').querySelectorAll('tr');
+  trs.forEach(tr=>{
+    const cells = Array.from(tr.children);
+    const row = cells.map(td => `"${td.textContent.replace(/"/g,'""')}"`);
+    csv += row.join(',') + '\n';
+  });
+
+  const blob = new Blob([csv], {type:'text/csv;charset=utf-8'});
+  const url  = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'bachelors-programs.csv';
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+}
 </script>
 </body>
 </html>
