@@ -7,6 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
   <style>
     :root{
       --bg:#f6f7fb;
@@ -31,32 +32,20 @@
       color:var(--text);
       font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,"Helvetica Neue",Arial;
     }
-    .wrap{
-      max-width:1200px; margin:24px auto; padding:0 20px;
-    }
-    .h1{
-      font-size:28px; font-weight:700; margin:8px 0 4px;
-    }
-    .sub{
-      color:var(--muted); font-size:13px; margin-bottom:18px;
-    }
-    .card{
-      background:var(--card); border:1px solid var(--line);
+    .wrap{ max-width:1200px; margin:24px auto; padding:0 20px; }
+    .h1{ font-size:28px; font-weight:700; margin:8px 0 4px; }
+    .sub{ color:var(--muted); font-size:13px; margin-bottom:18px; }
+    .card{ background:var(--card); border:1px solid var(--line);
       border-radius:10px; padding:14px; margin-bottom:16px;
-      box-shadow:0 1px 2px rgba(0,0,0,.03);
-    }
+      box-shadow:0 1px 2px rgba(0,0,0,.03);}
     .row{display:flex; gap:10px; flex-wrap:wrap; align-items:flex-end}
     .col{display:flex; flex-direction:column; gap:6px}
     .label{font-size:12px; color:var(--muted)}
-    input,select{
-      height:36px; padding:0 10px; border:1px solid var(--line);
-      border-radius:8px; background:#fff; color:var(--text); min-width:120px;
-    }
+    input,select{ height:36px; padding:0 10px; border:1px solid var(--line);
+      border-radius:8px; background:#fff; color:var(--text); min-width:120px;}
     .nums{width:110px; text-align:right}
-    .btn{
-      height:36px; padding:0 14px; border-radius:8px; border:1px solid var(--line);
-      background:#fff; cursor:pointer; font-weight:600;
-    }
+    .btn{ height:36px; padding:0 14px; border-radius:8px; border:1px solid var(--line);
+      background:#fff; cursor:pointer; font-weight:600;}
     .btn.primary{background:var(--primary);border-color:var(--primary);color:#fff}
     .chips{display:flex; gap:8px; align-items:center; font-size:12px}
     .chip{background:var(--chip); color:var(--chipText); padding:4px 8px; border-radius:999px}
@@ -64,652 +53,151 @@
     .spacer{flex:1}
 
     /* TABLE */
-    .tableWrap{
-      background:var(--card); border:1px solid var(--line); border-radius:10px;
-      overflow:auto; position:relative
-    }
-    table{border-collapse:separate; border-spacing:0; width:1400px; /* breite > viewport for horiz scroll */ }
-    thead th{
-      position:sticky; top:0; background:var(--thead); z-index:3;
+    .tableWrap{ background:var(--card); border:1px solid var(--line); border-radius:10px; overflow:auto; position:relative }
+    table{border-collapse:separate; border-spacing:0; width:1400px;}
+    thead th{ position:sticky; top:0; background:var(--thead); z-index:3;
       font-size:12px; text-transform:uppercase; letter-spacing:.02em;
       color:#49506a; padding:10px; border-bottom:1px solid var(--line);
-      user-select:none; cursor:pointer;
-    }
-    tbody td{
-      padding:12px 10px; border-top:1px solid var(--line); vertical-align:top; font-size:14px;
-    }
-    /* sticky first col (name) */
-    .sticky{
-      position:sticky; left:0; z-index:2; background:#fff; min-width:var(--stickyW); max-width:var(--stickyW);
-    }
+      user-select:none; cursor:pointer;}
+    thead th.sortable::after{ content:" ⇅"; font-size:10px; color:#999; margin-left:4px; }
+    tbody td{ padding:12px 10px; border-top:1px solid var(--line); vertical-align:top; font-size:14px;
+      max-width:280px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; cursor:pointer;}
+    .sticky{ position:sticky; left:0; z-index:2; background:#fff; min-width:var(--stickyW); max-width:var(--stickyW);}
     tbody tr:hover td{background:#fafbff}
-
     .pill{display:inline-flex; align-items:center; gap:6px; padding:4px 10px;
       border-radius:999px; background:var(--pill); color:var(--pillText); font-size:12px; }
     .link{color:var(--link); text-decoration:none; font-weight:600}
-    .mono{font-family: ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,"Liberation Mono","Courier New",monospace; font-size:12px}
+    .mono{font-family: ui-monospace,monospace; font-size:12px}
     .right{text-align:right}
+
+    /* Loader */
+    #loader{ position:fixed; top:0; left:0; width:100%; height:100%; background:#fff;
+      display:flex; align-items:center; justify-content:center; font-size:20px; z-index:1000;}
+    /* Popup */
+    #popup{ display:none; position:fixed; top:50%; left:50%; transform:translate(-50%,-50%);
+      background:#fff; padding:20px; border:1px solid #ccc; border-radius:8px;
+      box-shadow:0 2px 8px rgba(0,0,0,.2); z-index:2000; max-width:600px; max-height:400px; overflow:auto;}
+    #popupClose{ float:right; cursor:pointer; font-weight:bold; }
   </style>
 </head>
 <body>
-  <div class="wrap">
-    <div class="h1">Bachelor’s Programs – Freshman & Average Student</div>
-    <div class="sub">Die Daten kommen aus einer sicheren Netlify-Funktion (read-only). Optik lehnt sich an Monday an.</div>
+<div id="loader">Loading data...</div>
+<div class="wrap" style="display:none" id="mainWrap">
+  <div class="h1">Bachelor’s Programs – Freshman & Average Student</div>
+  <div class="sub">The data is coming from a secure Netlify function (read-only). The layout is inspired by Monday.</div>
 
-    <!-- FILTERS -->
-    <div class="card">
-      <div class="row">
-        <div class="col" style="min-width:260px">
-          <label class="label">Suche (Name & Major)</label>
-          <input id="q" placeholder="Suche …" />
-        </div>
-
-        <div class="col">
-          <label class="label">State</label>
-          <select id="state">
-            <option value="">alle</option>
-          </select>
-        </div>
-
-        <div class="col">
-          <label class="label">Ranking</label>
-          <div class="row" style="gap:6px">
-            <input id="rkMin" class="nums" placeholder="min" inputmode="numeric" />
-            <input id="rkMax" class="nums" placeholder="max" inputmode="numeric" />
-          </div>
-        </div>
-
-        <div class="col">
-          <label class="label">Final cost (USD)</label>
-          <div class="row" style="gap:6px">
-            <input id="fcMin" class="nums" placeholder="min $" inputmode="numeric" />
-            <input id="fcMax" class="nums" placeholder="max $" inputmode="numeric" />
-          </div>
-        </div>
-
-        <div class="col">
-          <label class="label">GPA</label>
-          <div class="row" style="gap:6px">
-            <input id="gpaMin" class="nums" placeholder="min" inputmode="decimal" />
-            <input id="gpaMax" class="nums" placeholder="max" inputmode="decimal" />
-          </div>
-        </div>
-
-        <div class="col">
-          <label class="label">Page size</label>
-          <select id="limit">
-            <option>20</option><option selected>50</option><option>100</option>
-          </select>
-        </div>
-
-        <div class="spacer"></div>
-
-        <button class="btn primary" id="reloadBtn">Neu laden</button>
-        <button class="btn" id="resetBtn">Reset Filter</button>
-        <button class="btn" id="exportBtn">Export CSV</button>
+  <!-- FILTERS -->
+  <div class="card">
+    <div class="row">
+      <div class="col" style="min-width:260px">
+        <label class="label">Search (Name & Major)</label>
+        <input id="q" placeholder="Search …" />
       </div>
-
-      <div class="chips" style="margin-top:10px">
-        <span id="shown" class="chip">0 angezeigt</span>
-        <span id="loaded" class="chip">0 geladen</span>
-        <span id="cursorBadge" class="chip muted">cursor: –</span>
-        <button id="moreBtn" class="btn" style="height:28px;padding:0 10px">Mehr laden</button>
+      <div class="col">
+        <label class="label">State</label>
+        <select id="state"><option value="">All</option></select>
       </div>
+      <div class="col">
+        <label class="label">Ranking</label>
+        <div class="row" style="gap:6px">
+          <input id="rkMin" class="nums" placeholder="min" inputmode="numeric" />
+          <input id="rkMax" class="nums" placeholder="max" inputmode="numeric" />
+        </div>
+      </div>
+      <div class="col">
+        <label class="label">Final cost (USD)</label>
+        <div class="row" style="gap:6px">
+          <input id="fcMin" class="nums" placeholder="min $" inputmode="numeric" />
+          <input id="fcMax" class="nums" placeholder="max $" inputmode="numeric" />
+        </div>
+      </div>
+      <div class="col">
+        <label class="label">GPA</label>
+        <div class="row" style="gap:6px">
+          <input id="gpaMin" class="nums" placeholder="min" inputmode="decimal" />
+          <input id="gpaMax" class="nums" placeholder="max" inputmode="decimal" />
+        </div>
+      </div>
+      <div class="col">
+        <label class="label">Page size</label>
+        <select id="limit"><option>20</option><option selected>50</option><option>100</option></select>
+      </div>
+      <div class="spacer"></div>
+      <button class="btn primary" id="reloadBtn">Reload</button>
+      <button class="btn" id="resetBtn">Reset Filters</button>
+      <button class="btn" id="exportBtn">Export Excel</button>
     </div>
-
-    <!-- TABLE -->
-    <div class="tableWrap">
-      <table id="tbl">
-        <thead>
-          <tr>
-            <th class="sticky" data-key="name">Name</th>
-            <th data-key="state">State</th>
-            <th data-key="major">Major</th>
-            <th data-key="ranking" class="right">Ranking</th>
-            <th data-key="final_cost" class="right">Final cost</th>
-            <th data-key="gpa" class="right">Min GPA</th>
-
-            <th data-key="city">City</th>
-            <th data-key="address">Full address</th>
-            <th data-key="virtual_tour">Virtual Campus Tour?</th>
-            <th data-key="fachabitur" >Fachabitur?</th>
-            <th data-key="fach_det">Fachabitur Details</th>
-
-            <th data-key="usnews_rank" class="right">U.S. News Ranking</th>
-            <th data-key="usnews_link">U.S. News Link</th>
-            <th data-key="type">Type of Institution</th>
-            <th data-key="enroll" class="right">Total Enrollment</th>
-            <th data-key="live_pct" class="right">% Live on Campus</th>
-            <th data-key="live_num" class="right"># Live on Campus</th>
-            <th data-key="ratio" class="right">Student-Faculty</th>
-            <th data-key="insurance">Insurance Required?</th>
-            <th data-key="insurance_info">Health Insurance details</th>
-
-            <th data-key="app_fee" class="right">Application Fee</th>
-            <th data-key="how_apply">How to Apply</th>
-            <th data-key="cred_eval">Credential Eval Required</th>
-            <th data-key="cred_info">+ Info on Credential Evaluation</th>
-            <th data-key="spring_adm">Spring Admission?</th>
-            <th data-key="spring_sch">Spring Scholarships?</th>
-            <th data-key="clarify">Clarification</th>
-
-            <th data-key="campus_acts">On Campus Activities</th>
-            <th data-key="sports">Sports Homepage</th>
-            <th data-key="uni_home">University Homepage</th>
-            <th data-key="intl_adm">International Admission</th>
-
-            <th data-key="majors">Bachelor’s Study Areas (B)</th>
-            <th data-key="degrees_link">Bachelor’s Degrees Link</th>
-            <th data-key="acad_year">Academic Year</th>
-
-            <th data-key="tuition" class="right">Tuition</th>
-            <th data-key="room" class="right">Room</th>
-            <th data-key="board" class="right">Board</th>
-            <th data-key="fees" class="right">Fees</th>
-            <th data-key="total" class="right">TOTAL</th>
-            <th data-key="cost_info">+ Info Annual Cost</th>
-
-            <th data-key="adm_req">Admission Requirements</th>
-
-            <th data-key="sch_low" class="right">Lowest $</th>
-            <th data-key="sch_low_type">Lowest: Type</th>
-            <th data-key="toefl_low" class="right">TOEFL Min (Lowest)</th>
-            <th data-key="gpa_low" class="right">GPA Min (Lowest)</th>
-            <th data-key="sat_low" class="right">SAT Min (Lowest)</th>
-            <th data-key="sch_low_info">Lowest: Info</th>
-
-            <th data-key="sch_mid" class="right">Mid $</th>
-            <th data-key="sch_mid_type">Mid: Type</th>
-            <th data-key="toefl_mid" class="right">TOEFL Min (Mid)</th>
-            <th data-key="gpa_mid" class="right">GPA Min (Mid)</th>
-            <th data-key="sat_mid" class="right">SAT Min (Mid)</th>
-            <th data-key="sch_mid_info">Mid: Info</th>
-
-            <th data-key="sch_hi" class="right">High $</th>
-            <th data-key="sch_hi_type">High: Type</th>
-            <th data-key="toefl_hi" class="right">TOEFL Min (High)</th>
-            <th data-key="gpa_hi" class="right">GPA Min (High)</th>
-            <th data-key="sat_hi" class="right">SAT Min (High)</th>
-            <th data-key="sch_hi_info">High: Info</th>
-
-            <th data-key="net_low" class="right">NetCost Low</th>
-            <th data-key="net_mid" class="right">NetCost Mid</th>
-            <th data-key="net_hi" class="right">NetCost High</th>
-
-            <th data-key="dead_fall">Fall Deadline</th>
-            <th data-key="dead_spring">Spring Deadline</th>
-            <th data-key="dead_link">Deadline Link</th>
-
-            <th data-key="campus_job">Campus Employment?</th>
-            <th data-key="min_wage" class="right">2025 Min Wage</th>
-            <th data-key="work_comp" class="right">Annual Work Compensation</th>
-          </tr>
-        </thead>
-        <tbody id="tbody"></tbody>
-      </table>
+    <div class="chips" style="margin-top:10px">
+      <span id="shown" class="chip">0 shown</span>
+      <span id="loaded" class="chip">0 loaded</span>
+      <button id="moreBtn" class="btn" style="height:28px;padding:0 10px">Load more</button>
     </div>
   </div>
 
+  <!-- TABLE -->
+  <div class="tableWrap">
+    <table id="tbl">
+      <thead>
+        <tr>
+          <th class="sticky sortable" data-key="name">Name</th>
+          <th class="sortable" data-key="state">State</th>
+          <th class="sortable" data-key="major">Major</th>
+          <th class="sortable right" data-key="ranking">Ranking</th>
+          <th class="sortable right" data-key="final_cost">Final cost</th>
+          <th class="sortable right" data-key="gpa">Min GPA</th>
+        </tr>
+      </thead>
+      <tbody id="tbody"></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Popup -->
+<div id="popup"><span id="popupClose">X</span><div id="popupContent"></div></div>
+
 <script>
 (() => {
-  // ---- mapping helper to read monday values by column id ----
-  function getTextCols(values, ids){
-    const map = {}; for(const v of values){ map[v.id] = v; }
-    const pick = id => {
-      const v = map[id]; if(!v) return "";
-      switch(v.type){
-        case "text": case "long-text": return v.text || "";
-        case "dropdown": return (v.text || "").replaceAll(";", ", ");
-        case "status": return v.text || "";
-        case "numbers": return v.text || v.value || "";
-        case "link": return v.text ? v.text : (v.url || "");
-        case "location": return v.text || "";
-        default: return v.text || "";
-      }
-    };
-    const o = {};
-    for(const [k,id] of Object.entries(ids)){ o[k] = pick(id); }
-    return o;
+  const loader = document.getElementById('loader');
+  const mainWrap = document.getElementById('mainWrap');
+  const popup = document.getElementById('popup');
+  const popupContent = document.getElementById('popupContent');
+  const popupClose = document.getElementById('popupClose');
+
+  function showPopup(txt){ popupContent.textContent=txt; popup.style.display='block'; }
+  popupClose.onclick=()=>popup.style.display='none';
+
+  function numberFrom(a){ if(a==null) return null; const s=(""+a).replace(/[^\d.\-]/g,''); if(!s) return null; const n=parseFloat(s); return Number.isFinite(n)?n:null; }
+
+  async function fetchBatch({limit,cursorParam}){
+    const url=new URL('/.netlify/functions/items',location.origin);
+    url.searchParams.set('limit',limit||'50');
+    if(cursorParam) url.searchParams.set('cursor',cursorParam);
+    const resp=await fetch(url); if(!resp.ok) return {items:[],cursor:null};
+    return await resp.json();
   }
 
-  // Column IDs as supplied
-  const COL = {
-    name:"name",
-    state:"dropdown",
-    city:"text5",
-    address:"location4",
-    virtual_tour:"link2",
-    fachabitur:"status8",
-    fach_det:"long_text68",
-    usnews_rank:"long_text2",
-    usnews_link:"link5",
-    type:"dropdown2",
-    enroll:"numbers57",
-    live_pct:"numbers_1",
-    live_num:"formula5",
-    ratio:"numbers_15",
-    insurance:"dropdown7",
-    insurance_info:"long_text91",
-    app_fee:"long_text23",
-    how_apply:"long_text73",
-    cred_eval:"status96",
-    cred_info:"long_text07",
-    spring_adm:"status14",
-    spring_sch:"status_1",
-    clarify:"long_text12",
-    campus_acts:"link23",
-    sports:"link9",
-    uni_home:"link29",
-    intl_adm:"dup__of_university_s_website",
-    majors:"dropdown6",
-    degrees_link:"link1",
-    acad_year:"dropdown57",
-    tuition:"numbers72",
-    room:"numbers_11",
-    board:"numbers_24",
-    fees:"numbers_3",
-    total:"formula27",
-    cost_info:"long_text62",
-    adm_req:"dropdown_mkvg9mv3",
-    sch_low:"numbers",
-    sch_low_type:"status1",
-    toefl_low:"numbers1",
-    gpa_low:"numbers4",
-    sat_low:"numbers7",
-    sch_low_info:"long_text",
-    sch_mid:"numbers14",
-    sch_mid_type:"status68",
-    toefl_mid:"numbers_14",
-    gpa_mid:"numbers_23",
-    sat_mid:"numbers_39",
-    sch_mid_info:"long_text06",
-    sch_hi:"numbers48",
-    sch_hi_type:"status6",
-    toefl_hi:"numbers9",
-    gpa_hi:"numbers43",
-    sat_hi:"numbers3",
-    sch_hi_info:"long_text4",
-    net_low:"formula0",
-    net_mid:"formula20",
-    net_hi:"formula52",
-    dead_fall:"long_text7",
-    dead_spring:"long_text1",
-    dead_link:"link",
-    final_cost:"formula27", // alias for filter
-    ranking:"numbers0",
-    gpa:"numbers_23" // most probable scholarship GPA as "Min GPA" (Annahme)
-  };
-
-  // UI refs
-  const q = document.querySelector('#q');
-  const stateSel = document.querySelector('#state');
-  const rkMin = document.querySelector('#rkMin');
-  const rkMax = document.querySelector('#rkMax');
-  const fcMin = document.querySelector('#fcMin');
-  const fcMax = document.querySelector('#fcMax');
-  const gpaMin = document.querySelector('#gpaMin');
-  const gpaMax = document.querySelector('#gpaMax');
-  const limitSel = document.querySelector('#limit');
-
-  const reloadBtn = document.querySelector('#reloadBtn');
-  const resetBtn = document.querySelector('#resetBtn');
-  const moreBtn = document.querySelector('#moreBtn');
-  const exportBtn = document.querySelector('#exportBtn');
-
-  const tbody = document.querySelector('#tbody');
-  const shown = document.querySelector('#shown');
-  const loaded = document.querySelector('#loaded');
-  const cursorBadge = document.querySelector('#cursorBadge');
-
-  let items = [];          // loaded raw
-  let cursor = null;       // next cursor
-  let allStates = new Set();
-
-  // Fetch helper
-  async function fetchBatch({limit, cursorParam}){
-    const url = new URL('/.netlify/functions/items', location.origin);
-    url.searchParams.set('limit', limit||'50');
-    if(cursorParam) url.searchParams.set('cursor', cursorParam);
-    const resp = await fetch(url);
-    if(!resp.ok){ console.error('fetch failed'); return {items:[], cursor:null}; }
-    const data = await resp.json();
-    // expectation: { items:[{id,name,column_values:[...]}], cursor }
-    return data;
-  }
-
-  function numberFrom(a){
-    if(a==null) return null;
-    const s = (""+a).replace(/[^\d.\-]/g,'');
-    if(!s) return null;
-    const n = parseFloat(s);
-    return Number.isFinite(n)?n:null;
-  }
-
-  function buildStateOptions(){
-    // fill all US states ever seen (from Monday you listed)
-    const states = [
-      "", "Alabama","California","Colorado","Delaware","Florida","Georgia","Idaho","Illinois","Louisiana","Maine","Michigan",
-      "Mississippi","Missouri","Nebraska","New Mexico","Ohio","Oklahoma","Texas","Utah","Washington","Wisconsin","New Jersey"
-    ];
-    stateSel.innerHTML = states.map(s=> `<option value="${s}">${s||'alle'}</option>`).join('');
-  }
-
-  buildStateOptions();
+  let items=[],cursor=null;
 
   async function initialLoad(){
-    items = []; cursor = null; allStates.clear();
-    const {items:batch, cursor:cur} = await fetchBatch({limit:limitSel.value});
-    items.push(...batch);
-    cursor = cur||null;
-    mergeStates(batch);
+    items=[];cursor=null;
+    const {items:batch,cursor:cur}=await fetchBatch({limit:limitSel.value});
+    items.push(...batch);cursor=cur||null;
     render();
-  }
-
-  function mergeStates(batch){
-    for(const it of batch){
-      const st = readCell(it, COL.state);
-      if(st) allStates.add(st);
-    }
-  }
-
-  function readCell(item, colId){
-    const v = item.column_values?.find(c=>c.id===colId);
-    if(!v) return "";
-    switch(v.type){
-      case "text": case "long-text": return v.text||"";
-      case "dropdown": return (v.text||"").replaceAll(";",", ");
-      case "status": return v.text||"";
-      case "numbers": return v.text || v.value || "";
-      case "link": return v.text || v.url || "";
-      case "location": return v.text || "";
-      default: return v.text || "";
-    }
-  }
-
-  function toRow(item){
-    const cv = item.column_values||[];
-    const pick = id => readCell(item,id);
-
-    // build one unified majors string
-    const majors = pick(COL.majors);
-
-    return {
-      name: item.name || "",
-      state: pick(COL.state),
-      major: majors,
-      ranking: numberFrom(pick(COL.ranking)),
-      final_cost: numberFrom(pick(COL.final_cost)),
-      gpa: numberFrom(pick(COL.gpa)),
-
-      city: pick(COL.city),
-      address: pick(COL.address),
-      virtual_tour: pick(COL.virtual_tour),
-      fachabitur: pick(COL.fachabitur),
-      fach_det: pick(COL.fach_det),
-
-      usnews_rank: pick(COL.usnews_rank),
-      usnews_link: pick(COL.usnews_link),
-      type: pick(COL.type),
-      enroll: numberFrom(pick(COL.enroll)),
-      live_pct: pick(COL.live_pct),
-      live_num: numberFrom(pick(COL.live_num)),
-      ratio: numberFrom(pick(COL.ratio)),
-      insurance: pick(COL.insurance),
-      insurance_info: pick(COL.insurance_info),
-
-      app_fee: pick(COL.app_fee),
-      how_apply: pick(COL.how_apply),
-      cred_eval: pick(COL.cred_eval),
-      cred_info: pick(COL.cred_info),
-      spring_adm: pick(COL.spring_adm),
-      spring_sch: pick(COL.spring_sch),
-      clarify: pick(COL.clarify),
-
-      campus_acts: pick(COL.campus_acts),
-      sports: pick(COL.sports),
-      uni_home: pick(COL.uni_home),
-      intl_adm: pick(COL.intl_adm),
-
-      degrees_link: pick(COL.degrees_link),
-      acad_year: pick(COL.acad_year),
-
-      tuition: numberFrom(pick(COL.tuition)),
-      room: numberFrom(pick(COL.room)),
-      board: numberFrom(pick(COL.board)),
-      fees: numberFrom(pick(COL.fees)),
-      total: numberFrom(pick(COL.total)),
-      cost_info: pick(COL.cost_info),
-      adm_req: pick(COL.adm_req),
-
-      sch_low: numberFrom(pick(COL.sch_low)),
-      sch_low_type: pick(COL.sch_low_type),
-      toefl_low: numberFrom(pick(COL.toefl_low)),
-      gpa_low: numberFrom(pick(COL.gpa_low)),
-      sat_low: numberFrom(pick(COL.sat_low)),
-      sch_low_info: pick(COL.sch_low_info),
-
-      sch_mid: numberFrom(pick(COL.sch_mid)),
-      sch_mid_type: pick(COL.sch_mid_type),
-      toefl_mid: numberFrom(pick(COL.toefl_mid)),
-      gpa_mid: numberFrom(pick(COL.gpa_mid)),
-      sat_mid: numberFrom(pick(COL.sat_mid)),
-      sch_mid_info: pick(COL.sch_mid_info),
-
-      sch_hi: numberFrom(pick(COL.sch_hi)),
-      sch_hi_type: pick(COL.sch_hi_type),
-      toefl_hi: numberFrom(pick(COL.toefl_hi)),
-      gpa_hi: numberFrom(pick(COL.gpa_hi)),
-      sat_hi: numberFrom(pick(COL.sat_hi)),
-      sch_hi_info: pick(COL.sch_hi_info),
-
-      net_low: pick(COL.net_low),
-      net_mid: pick(COL.net_mid),
-      net_hi: pick(COL.net_hi),
-
-      dead_fall: pick(COL.dead_fall),
-      dead_spring: pick(COL.dead_spring),
-      dead_link: pick(COL.dead_link),
-
-      campus_job: pick(COL.campus_job),
-      min_wage: numberFrom(pick(COL.min_wage)),
-      work_comp: numberFrom(pick(COL.work_comp))
-    };
-  }
-
-  function formatMoney(n){
-    if(n==null || n==="") return "";
-    try{ return new Intl.NumberFormat('en-US',{style:'currency',currency:'USD',maximumFractionDigits:0}).format(n); }
-    catch{ return "$"+n; }
+    loader.style.display='none'; mainWrap.style.display='block';
   }
 
   function render(){
-    const rows = items.map(toRow);
-
-    // filter
-    const qv = q.value.trim().toLowerCase();
-    const st = stateSel.value;
-    const rkMinV = numberFrom(rkMin.value), rkMaxV = numberFrom(rkMax.value);
-    const fcMinV = numberFrom(fcMin.value), fcMaxV = numberFrom(fcMax.value);
-    const gpaMinV = numberFrom(gpaMin.value), gpaMaxV = numberFrom(gpaMax.value);
-
-    const filtered = rows.filter(r=>{
-      if(qv){
-        const inText = (r.name+" "+(r.major||"")).toLowerCase();
-        if(!inText.includes(qv)) return false;
-      }
-      if(st && r.state!==st) return false;
-      if(rkMinV!=null && (r.ranking==null || r.ranking<rkMinV)) return false;
-      if(rkMaxV!=null && (r.ranking!=null && r.ranking>rkMaxV)) return false;
-      if(fcMinV!=null && (r.final_cost==null || r.final_cost<fcMinV)) return false;
-      if(fcMaxV!=null && (r.final_cost!=null && r.final_cost>fcMaxV)) return false;
-      if(gpaMinV!=null && (r.gpa==null || r.gpa<gpaMinV)) return false;
-      if(gpaMaxV!=null && (r.gpa!=null && r.gpa>gpaMaxV)) return false;
-      return true;
-    });
-
-    // sort (header click)
-    applySort(filtered);
-
-    // paint
-    tbody.innerHTML = filtered.map(r=>`
+    const rows=items.map(it=>({
+      name:it.name,state:it.state,major:it.majors,
+      ranking:it.ranking,final_cost:it.totalCost,gpa:it.minGpa
+    }));
+    tbody.innerHTML=rows.map(r=>`
       <tr>
-        <td class="sticky"><strong>${esc(r.name)}</strong></td>
+        <td class="sticky">${esc(r.name)}</td>
         <td>${esc(r.state)}</td>
         <td>${esc(r.major)}</td>
         <td class="right">${r.ranking??""}</td>
         <td class="right">${formatMoney(r.final_cost)}</td>
         <td class="right">${r.gpa??""}</td>
-
-        <td>${esc(r.city)}</td>
-        <td class="mono">${esc(r.address)}</td>
-        <td>${linkify(r.virtual_tour)}</td>
-        <td>${pill(r.fachabitur)}</td>
-        <td>${esc(r.fach_det)}</td>
-
-        <td class="right mono">${esc(r.usnews_rank)}</td>
-        <td>${linkify(r.usnews_link)}</td>
-        <td>${esc(r.type)}</td>
-        <td class="right">${r.enroll??""}</td>
-        <td class="right">${esc(r.live_pct)}</td>
-        <td class="right">${r.live_num??""}</td>
-        <td class="right">${r.ratio??""}</td>
-        <td>${esc(r.insurance)}</td>
-        <td>${esc(r.insurance_info)}</td>
-
-        <td class="right">${esc(r.app_fee)}</td>
-        <td>${esc(r.how_apply)}</td>
-        <td>${pill(r.cred_eval)}</td>
-        <td>${esc(r.cred_info)}</td>
-        <td>${pill(r.spring_adm)}</td>
-        <td>${pill(r.spring_sch)}</td>
-        <td>${esc(r.clarify)}</td>
-
-        <td>${linkify(r.campus_acts)}</td>
-        <td>${linkify(r.sports)}</td>
-        <td>${linkify(r.uni_home)}</td>
-        <td>${linkify(r.intl_adm)}</td>
-
-        <td>${esc(r.majors)}</td>
-        <td>${linkify(r.degrees_link)}</td>
-        <td>${esc(r.acad_year)}</td>
-
-        <td class="right">${formatMoney(r.tuition)}</td>
-        <td class="right">${formatMoney(r.room)}</td>
-        <td class="right">${formatMoney(r.board)}</td>
-        <td class="right">${formatMoney(r.fees)}</td>
-        <td class="right"><strong>${formatMoney(r.total)}</strong></td>
-        <td>${esc(r.cost_info)}</td>
-
-        <td>${esc(r.adm_req)}</td>
-
-        <td class="right">${formatMoney(r.sch_low)}</td>
-        <td>${esc(r.sch_low_type)}</td>
-        <td class="right">${r.toefl_low??""}</td>
-        <td class="right">${r.gpa_low??""}</td>
-        <td class="right">${r.sat_low??""}</td>
-        <td>${esc(r.sch_low_info)}</td>
-
-        <td class="right">${formatMoney(r.sch_mid)}</td>
-        <td>${esc(r.sch_mid_type)}</td>
-        <td class="right">${r.toefl_mid??""}</td>
-        <td class="right">${r.gpa_mid??""}</td>
-        <td class="right">${r.sat_mid??""}</td>
-        <td>${esc(r.sch_mid_info)}</td>
-
-        <td class="right">${formatMoney(r.sch_hi)}</td>
-        <td>${esc(r.sch_hi_type)}</td>
-        <td class="right">${r.toefl_hi??""}</td>
-        <td class="right">${r.gpa_hi??""}</td>
-        <td class="right">${r.sat_hi??""}</td>
-        <td>${esc(r.sch_hi_info)}</td>
-
-        <td class="right">${esc(r.net_low)}</td>
-        <td class="right">${esc(r.net_mid)}</td>
-        <td class="right">${esc(r.net_hi)}</td>
-
-        <td>${esc(r.dead_fall)}</td>
-        <td>${esc(r.dead_spring)}</td>
-        <td>${linkify(r.dead_link)}</td>
-
-        <td>${pill(r.campus_job)}</td>
-        <td class="right">${r.min_wage??""}</td>
-        <td class="right">${formatMoney(r.work_comp)}</td>
-      </tr>
-    `).join('');
-
-    shown.textContent = `${filtered.length} angezeigt`;
-    loaded.textContent = `${items.length} geladen`;
-    cursorBadge.textContent = `cursor: ${cursor ? 'more' : '–'}`;
-  }
-
-  function esc(s){ return (s??"").toString().replace(/[&<>"']/g, m=>({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[m])); }
-  function linkify(s){ if(!s) return ""; return `<a class="link" href="${esc(s)}" target="_blank" rel="noopener">Link</a>`; }
-  function pill(txt){ if(!txt) return ""; return `<span class="pill">${esc(txt)}</span>`; }
-
-  // Sort
-  let sort = {key:null, dir:1};
-  function applySort(arr){
-    if(!sort.key) return;
-    const k = sort.key, d = sort.dir;
-    arr.sort((a,b)=>{
-      const va = a[k], vb=b[k];
-      const na = (typeof va === 'number')?va:numberFrom(va);
-      const nb = (typeof vb === 'number')?vb:numberFrom(vb);
-      if(na!=null && nb!=null) return (na-nb)*d;
-      return (String(va||'').localeCompare(String(vb||'')))*d;
-    });
-  }
-  document.querySelectorAll('thead th').forEach(th=>{
-    th.addEventListener('click', ()=>{
-      const key = th.dataset.key;
-      if(!key) return;
-      if(sort.key===key) sort.dir *= -1; else { sort.key=key; sort.dir=1; }
-      render();
-    });
-  });
-
-  // Events
-  reloadBtn.onclick = initialLoad;
-  resetBtn.onclick = ()=>{
-    q.value=''; stateSel.value='';
-    rkMin.value=''; rkMax.value='';
-    fcMin.value=''; fcMax.value='';
-    gpaMin.value=''; gpaMax.value='';
-    sort = {key:null, dir:1}; initialLoad();
-  }
-  moreBtn.onclick = async ()=>{
-    if(!cursor) return;
-    const {items:batch, cursor:cur} = await fetchBatch({limit:limitSel.value, cursorParam:cursor});
-    items.push(...batch);
-    cursor = cur||null;
-    mergeStates(batch);
-    render();
-  };
-  [q,stateSel,rkMin,rkMax,fcMin,fcMax,gpaMin,gpaMax,limitSel].forEach(el=>{
-    el.addEventListener('change', render);
-    el.addEventListener('keyup', e=>{ if(e.key==='Enter') render(); });
-  });
-
-  // Export CSV
-  exportBtn.onclick = ()=>{
-    const rows = Array.from(tbody.querySelectorAll('tr')).map(tr =>
-      Array.from(tr.children).map(td => td.textContent.replace(/\s+/g,' ').trim())
-    );
-    const headers = Array.from(document.querySelectorAll('thead th')).map(th=>th.textContent.trim());
-    const csv = [headers, ...rows].map(r=>r.map(x=>{
-      const s = x.replace(/"/g,'""'); return `"${s}"`;
-    }).join(',')).join('\n');
-
-    const blob = new Blob([csv], {type:'text/csv;charset=utf-8;'});
-    const a = document.createElement('a');
-    a.href = URL.createObjectURL(blob);
-    a.download = 'monday-board-export.csv';
-    document.body.appendChild(a); a.click(); a.remove();
-  };
-
-  // Start
-  initialLoad();
-})();
-</script>
-</body>
-</html>
+      </tr>`).join('');
+    shown.textContent=`${rows.length} shown
