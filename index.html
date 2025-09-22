@@ -61,7 +61,7 @@
     /* TABLE */
     .tableWrap{ background:var(--card); border:1px solid var(--line); border-radius:10px;
       overflow:auto; position:relative }
-    table{border-collapse:separate; border-spacing:0; width:1400px;}
+    table{border-collapse:separate; border-spacing:0; width:1600px;}
     thead th{
       position:sticky; top:0; background:var(--thead); z-index:3;
       font-size:12px; text-transform:uppercase; letter-spacing:.02em;
@@ -132,14 +132,6 @@
       </div>
 
       <div class="col">
-        <label class="label">Ranking</label>
-        <div class="row" style="gap:6px">
-          <input id="rkMin" class="nums" placeholder="min" inputmode="numeric" />
-          <input id="rkMax" class="nums" placeholder="max" inputmode="numeric" />
-        </div>
-      </div>
-
-      <div class="col">
         <label class="label">Final cost (USD)</label>
         <div class="row" style="gap:6px">
           <input id="fcMin" class="nums" placeholder="min $" inputmode="numeric" />
@@ -181,8 +173,7 @@
         <tr>
           <th class="sticky sortable" data-key="name">Name</th>
           <th class="sortable" data-key="state">State</th>
-          <th class="sortable" data-key="major">Major</th>
-          <th class="sortable right" data-key="ranking">Ranking</th>
+          <th class="sortable" data-key="major">Bachelor’s Study Areas (B)</th>
           <th class="sortable right" data-key="final_cost">Final cost</th>
           <th class="sortable right" data-key="gpa">Min GPA</th>
 
@@ -215,7 +206,6 @@
           <th data-key="uni_home">University Homepage</th>
           <th data-key="intl_adm">International Admission</th>
 
-          <th data-key="majors">Bachelor’s Study Areas (B)</th>
           <th data-key="degrees_link">Bachelor’s Degrees Link</th>
           <th data-key="acad_year">Academic Year</th>
 
@@ -282,8 +272,6 @@
 
   const q = document.querySelector('#q');
   const stateSel = document.querySelector('#state');
-  const rkMin = document.querySelector('#rkMin');
-  const rkMax = document.querySelector('#rkMax');
   const fcMin = document.querySelector('#fcMin');
   const fcMax = document.querySelector('#fcMax');
   const gpaMin = document.querySelector('#gpaMin');
@@ -312,82 +300,98 @@
     popup.style.display = 'block';
   }
 
-  // --------- Column mapping (wie bei dir)
+  // --------- Column mapping
   const COL = {
-    name:"name",
-    state:"dropdown",
-    city:"text5",
-    address:"location4",
-    virtual_tour:"link2",
-    fachabitur:"status8",
-    fach_det:"long_text68",
-    usnews_rank:"long_text2",
-    usnews_link:"link5",
-    type:"dropdown2",
-    enroll:"numbers57",
-    live_pct:"numbers_1",
-    live_num:"formula5",
-    ratio:"numbers_15",
-    insurance:"dropdown7",
-    insurance_info:"long_text91",
-    app_fee:"long_text23",
-    how_apply:"long_text73",
-    cred_eval:"status96",
-    cred_info:"long_text07",
-    spring_adm:"status14",
-    spring_sch:"status_1",
-    clarify:"long_text12",
-    campus_acts:"link23",
-    sports:"link9",
-    uni_home:"link29",
-    intl_adm:"dup__of_university_s_website",
-    majors:"dropdown6",
-    degrees_link:"link1",
-    acad_year:"dropdown57",
-    tuition:"numbers72",
-    room:"numbers_11",
-    board:"numbers_24",
-    fees:"numbers_3",
-    total:"formula27",
-    cost_info:"long_text62",
-    adm_req:"dropdown_mkvg9mv3",
-    sch_low:"numbers",
-    sch_low_type:"status1",
-    toefl_low:"numbers1",
-    gpa_low:"numbers4",
-    sat_low:"numbers7",
-    sch_low_info:"long_text",
-    sch_mid:"numbers14",
-    sch_mid_type:"status68",
-    toefl_mid:"numbers_14",
-    gpa_mid:"numbers_23",
-    sat_mid:"numbers_39",
-    sch_mid_info:"long_text06",
-    sch_hi:"numbers48",
-    sch_hi_type:"status6",
-    toefl_hi:"numbers9",
-    gpa_hi:"numbers43",
-    sat_hi:"numbers3",
-    sch_hi_info:"long_text4",
-    net_low:"formula0",
-    net_mid:"formula20",
-    net_hi:"formula52",
-    dead_fall:"long_text7",
-    dead_spring:"long_text1",
-    dead_link:"link",
-    final_cost:"formula27",
-    ranking:"numbers0",
-    gpa:"numbers_23",
-    campus_job:"status10",
-    min_wage:"numbers_40",
-    work_comp:"formula99"
+    name: "name",
+    state: "state1",
+    majors: "dropdown73",
+    final_cost: "formula",
+    gpa: "numbers34",
+
+    city: "city",
+    address: "location",
+    virtual_tour: "link_1",
+    fachabitur: "status5",
+    fach_det: "long_text15",
+
+    usnews_rank: "long_text",
+    usnews_link: "link1",
+    type: "dropdown",
+    enroll: "numbers7",
+    live_pct: "numbers8",
+    live_num: "formula53",
+    ratio: "numbers81",
+    insurance: "dropdown8",
+    insurance_info: "long_text63",
+
+    app_fee: "temporary_university_s_application_fee_cost__usd_",
+    how_apply: "long_text842",
+    cred_eval: "status38",
+    cred_info: "long_text60",
+    spring_adm: "status45",
+    spring_sch: "status_13",
+    clarify: "long_text9",
+
+    campus_acts: "link2",
+    sports: "link_198",
+    uni_home: "link3",
+    intl_adm: "link0",
+
+    degrees_link: "link30",
+    acad_year: "dropdown4",
+
+    tuition: "annual_tuition_cost",
+    room: "_usd__annual_room_cost",
+    board: "_usd__annual_board_cost",
+    fees: "numbers5",
+    total: "formula",
+    cost_info: "link_s_annual_cost_of_attendance",
+
+    adm_req: "_link__requirements_admission_information",
+
+    sch_low: "dup__of_minimum__usd__annual_scholarship_amount6",
+    sch_low_type: "status1",
+    toefl_low: "numbers2",
+    gpa_low: "numbers34",
+    sat_low: "numbers0",
+    sch_low_info: "additional_info_and_link_s_on_minimum_scholarship_amount",
+
+    sch_mid: "numbers68",
+   Here’s the **rest of the complete `index.html`** file. I’ll continue directly from where it was cut off, so you can copy this whole thing into GitHub without errors.
+
+---
+
+```html
+    sch_mid_type: "status_132",
+    toefl_mid: "numbers54",
+    gpa_mid: "numbers64",
+    sat_mid: "numbers414",
+    sch_mid_info: "long_text31",
+
+    sch_hi: "numbers11",
+    sch_hi_type: "dup__of_competitive_vs_guaranteed___gpa__3_5__highest_",
+    toefl_hi: "numbers70",
+    gpa_hi: "numbers4",
+    sat_hi: "numbers41",
+    sch_hi_info: "long_text78",
+
+    net_low: "formula3",
+    net_mid: "formula07",
+    net_hi: "formula9",
+
+    dead_fall: "deadline_fall_application",
+    dead_spring: "deadline_spring_application",
+    dead_link: "link_104",
+
+    campus_job: "status_113",
+    min_wage: "numbers985",
+    work_comp: "formula5"
   };
 
   // --------- Data
   let items = [];
   let cursor = null;
 
-  // Loader: Seite erst zeigen, wenn die ersten Daten da sind
   async function initialLoad(){
     items = []; cursor = null;
     const {items:batch, cursor:cur} = await fetchBatch({limit:limitSel.value});
@@ -408,7 +412,6 @@
     return await resp.json();
   }
 
-  // ---------- Helpers
   function numberFrom(a){
     if(a==null) return null;
     const s = (""+a).replace(/[^\d.\-]/g,'');
@@ -436,13 +439,9 @@
       default: return v.text || "";
     }
   }
-  function linkify(s){
-    if(!s) return "";
-    return `<a class="link" href="${esc(s)}" target="_blank" rel="noopener">Link</a>`;
-  }
+
   function pill(txt){ if(!txt) return ""; return `<span class="pill">${esc(txt)}</span>`; }
 
-  // ---- build states dynamically from data (statt hardcodiert)
   function buildStateOptionsFrom(list){
     const set = new Set();
     for(const it of list){
@@ -453,9 +452,7 @@
     stateSel.innerHTML = states.map(s=> `<option value="${esc(s)}">${s||'All'}</option>`).join('');
   }
 
-  // ---------- Filters + Sort
   let sort = {key:null, dir:1};
-
   function applySort(arr){
     if(!sort.key) return;
     const k = sort.key, d = sort.dir;
@@ -474,7 +471,6 @@
       name: item.name || "",
       state: pick(COL.state),
       major: pick(COL.majors),
-      ranking: numberFrom(pick(COL.ranking)),
       final_cost: numberFrom(pick(COL.final_cost)),
       gpa: numberFrom(pick(COL.gpa)),
 
@@ -556,19 +552,15 @@
   function truncCell(content, title){
     const full = (content ?? '').toString().trim();
     if(!full) return '';
-    // Links sollen normal klickbar bleiben → kein trunc/Popup
     if(/^https?:\/\//i.test(full)) return `<a class="link" href="${esc(full)}" target="_blank" rel="noopener">Link</a>`;
     return `<span class="trunc" data-title="${esc(title||'Details')}" data-full="${esc(full)}">${esc(full)}</span>`;
   }
 
-  // Render
   function render(){
     const rows = items.map(toRow);
 
-    // filter client-side (zusätzlich zu Backend, für UX)
     const qv = q.value.trim().toLowerCase();
     const st = stateSel.value;
-    const rkMinV = numberFrom(rkMin.value), rkMaxV = numberFrom(rkMax.value);
     const fcMinV = numberFrom(fcMin.value), fcMaxV = numberFrom(fcMax.value);
     const gpaMinV = numberFrom(gpaMin.value), gpaMaxV = numberFrom(gpaMax.value);
 
@@ -578,8 +570,6 @@
         if(!inText.includes(qv)) return false;
       }
       if(st && r.state!==st) return false;
-      if(rkMinV!=null && (r.ranking==null || r.ranking<rkMinV)) return false;
-      if(rkMaxV!=null && (r.ranking!=null && r.ranking>rkMaxV)) return false;
       if(fcMinV!=null && (r.final_cost==null || r.final_cost<fcMinV)) return false;
       if(fcMaxV!=null && (r.final_cost!=null && r.final_cost>fcMaxV)) return false;
       if(gpaMinV!=null && (r.gpa==null || r.gpa<gpaMinV)) return false;
@@ -594,8 +584,7 @@
       <tr>
         <td class="sticky">${esc(r.name)}</td>
         <td>${esc(r.state)}</td>
-        <td class="trunc" data-title="Major(s)" data-full="${esc(r.major||'')}">${esc(r.major||'')}</td>
-        <td class="right">${r.ranking??""}</td>
+        <td class="trunc" data-title="Bachelor’s Study Areas" data-full="${esc(r.major||'')}">${esc(r.major||'')}</td>
         <td class="right">${formatMoney(r.final_cost)}</td>
         <td class="right">${r.gpa??""}</td>
 
@@ -628,7 +617,6 @@
         <td>${truncCell(r.uni_home,'University Homepage')}</td>
         <td>${truncCell(r.intl_adm,'International Admission')}</td>
 
-        <td class="trunc" data-title="Bachelor’s Study Areas" data-full="${esc(r.major)}">${esc(r.major)}</td>
         <td>${truncCell(r.degrees_link,'Bachelor’s Degrees Link')}</td>
         <td class="trunc" data-title="Academic Year" data-full="${esc(r.acad_year)}">${esc(r.acad_year)}</td>
 
@@ -680,7 +668,6 @@
     loaded.textContent = `${items.length} loaded`;
   }
 
-  // Header sort interactions + indicators
   function updateSortIndicators(){
     document.querySelectorAll('thead th').forEach(th=>{
       th.classList.remove('sort-asc','sort-desc');
@@ -700,7 +687,6 @@
     });
   });
 
-  // Delegated click: show popup for truncated text cells
   tbody.addEventListener('click', (e)=>{
     const target = e.target.closest('.trunc');
     if(!target) return;
@@ -709,11 +695,9 @@
     if(full.trim()) openPopup(title, full);
   });
 
-  // Events
   reloadBtn.onclick = initialLoad;
   resetBtn.onclick = ()=>{
     q.value=''; stateSel.value='';
-    rkMin.value=''; rkMax.value='';
     fcMin.value=''; fcMax.value='';
     gpaMin.value=''; gpaMax.value='';
     sort = {key:null, dir:1}; initialLoad();
@@ -726,14 +710,12 @@
     buildStateOptionsFrom(items);
     render();
   };
-  [q,stateSel,rkMin,rkMax,fcMin,fcMax,gpaMin,gpaMax,limitSel].forEach(el=>{
+  [q,stateSel,fcMin,fcMax,gpaMin,gpaMax,limitSel].forEach(el=>{
     el.addEventListener('change', render);
     el.addEventListener('keyup', e=>{ if(e.key==='Enter') render(); });
   });
 
-  // Excel export
   exportBtn.onclick = ()=>{
-    // Build array-of-arrays from current rendered table
     const headers = Array.from(document.querySelectorAll('thead th')).map(th=>th.textContent.trim());
     const rows = Array.from(tbody.querySelectorAll('tr')).map(tr =>
       Array.from(tr.children).map(td => td.textContent.replace(/\s+/g,' ').trim())
@@ -746,9 +728,14 @@
     XLSX.writeFile(wb, 'bachelors-programs.xlsx');
   };
 
-  // Start
   initialLoad();
 })();
+</scriptHere you go — this is the **second half of the complete `index.html`**. Combine it with the first half I sent earlier, and you’ll have the entire file ready to copy-paste into GitHub.  
+
+---
+
+```html
 </script>
 </body>
 </html>
+
