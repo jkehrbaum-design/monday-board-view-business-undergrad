@@ -3,7 +3,7 @@
 
 export const handler = async (event) => {
   const TOKEN    = process.env.MONDAY_API_TOKEN;
-  const BOARD_ID = process.env.MONDAY_BOARD_ID || '2761790925';
+  const BOARD_ID = process.env.MONDAY_BOARD_ID || '2738090584';
 
   if (event.queryStringParameters?.debug === 'env') {
     return json({ hasToken: !!TOKEN, boardId: BOARD_ID });
@@ -15,11 +15,9 @@ export const handler = async (event) => {
   const limit  = clampInt(p.limit, 50, 1, 200);
   const cursor = p.cursor || null;
 
-  // Optional backend filters (keine Änderung gegenüber deiner Logik)
+  // Optional backend filters
   const q      = (p.q || '').trim().toLowerCase();
   const stateF = (p.state || '').trim();
-  const rMin   = toNum(p.rankMin, -Infinity);
-  const rMax   = toNum(p.rankMax, +Infinity);
   const cMin   = toNum(p.costMin, -Infinity);
   const cMax   = toNum(p.costMax, +Infinity);
   const gMin   = toNum(p.gpaMin, -Infinity);
@@ -59,12 +57,11 @@ export const handler = async (event) => {
     return {
       id: it.id,
       name: it.name,
-      state: gv(cols, 'dropdown'),
-      ranking: gvNum(cols, 'numbers0'),       // Webometrics
-      totalCost: gvNum(cols, 'formula27'),    // TOTAL Approx Annual Cost
-      minGpa: gvNum(cols, 'numbers4'),        // GPA Minimum (Lowest Scholarship)
-      majors: gv(cols, 'dropdown6'),          // Bachelor’s Study Areas
-      column_values: cols                     // IMPORTANT: keep raw for frontend rendering
+      state: gv(cols, 'state1'),                    // State
+      totalCost: gvNum(cols, 'formula'),            // TOTAL Annual Cost
+      minGpa: gvNum(cols, 'numbers34'),             // GPA Minimum (Lowest Scholarship)
+      majors: gv(cols, 'dropdown73'),               // Bachelor’s Study Areas
+      column_values: cols                           // IMPORTANT: keep raw for frontend rendering
     };
   });
 
@@ -77,7 +74,6 @@ export const handler = async (event) => {
     if (stateF && stateF !== 'all') {
       if ((row.state || '').toLowerCase() !== stateF.toLowerCase()) return false;
     }
-    if (!between(row.ranking,  rMin, rMax)) return false;
     if (!between(row.totalCost, cMin, cMax)) return false;
     if (!between(row.minGpa,   gMin, gMax)) return false;
     return true;
@@ -127,3 +123,4 @@ function between(n, min, max){
   if (n === null || n === undefined || isNaN(n)) return true;
   return n >= min && n <= max;
 }
+
