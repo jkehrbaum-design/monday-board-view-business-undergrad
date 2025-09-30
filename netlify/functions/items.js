@@ -1,5 +1,8 @@
 // netlify/functions/items.js
-// Reads Monday items incl. all columns and returns cursor + filter fields
+// Reads ALL Monday items (Shareable only), incl. all columns, and returns them in one response.
+// - Server-side filter: SHAREABLE? (F) == "Shareable"
+// - Auto-follows cursor to collect ALL items (no pagination for the client)
+// - Optional backend filters: q (search), state, costMin/Max, gpaMin/Max
 
 export const handler = async (event) => {
   const TOKEN    = process.env.MONDAY_API_TOKEN;
@@ -12,9 +15,6 @@ export const handler = async (event) => {
 
   const p = event.queryStringParameters || {};
 
-  const limit  = clampInt(p.limit, 50, 1, 200);
-  const cursor = p.cursor || null;
-
   // Optional backend filters
   const q      = (p.q || '').trim().toLowerCase();
   const stateF = (p.state || '').trim();
@@ -23,10 +23,27 @@ export const handler = async (event) => {
   const gMin   = toNum(p.gpaMin, -Infinity);
   const gMax   = toNum(p.gpaMax, +Infinity);
 
+  // We still use a per-page limit when talking to Monday, but we loop through all pages.
+  const PAGE_LIMIT = clampInt(p.limit, 100, 1, 200); // 100 is a good tradeoff; Monday caps around here.
+
+  // GraphQL with server-side "Shareable" filter
   const query = `
     query($boardId: [ID!], $limit: Int, $cursor: String){
       boards(ids: $boardId){
-        items_page (limit: $limit, cursor: $cursor){
+        items_page(
+          limit: $limit
+          cursor: $cursor
+          query_params: {
+            rules: [
+              {
+                column_id: "dup__of_sharable___bachelor_s___freshman___average_"
+                operator: any_of
+                compare_value: ["Shareable"]
+              }
+            ]
+            operator: and
+          }
+        ){
           cursor
           items {
             id
@@ -42,30 +59,39 @@ export const handler = async (event) => {
       }
     }`;
 
-  const variables = { boardId: BOARD_ID, limit, cursor };
-  const data  = await gql(query, variables, TOKEN);
-  const page  = data?.boards?.[0]?.items_page || {};
-  const items = Array.isArray(page.items) ? page.items : [];
+  // ---- fetch ALL pages
+  let cursor = null;
+  let allItems = [];
+  const SAFETY_MAX_PAGES = 200; // prevents runaway loops
+  for (let i = 0; i < SAFETY_MAX_PAGES; i++) {
+    const vars = { boardId: BOARD_ID, limit: PAGE_LIMIT, cursor };
+    const data = await gql(query, vars, TOKEN);
+    const page = data?.boards?.[0]?.items_page || {};
+    const batch = Array.isArray(page.items) ? page.items : [];
+    allItems.push(...batch);
+    cursor = page.cursor || null;
+    if (!cursor) break;
+  }
 
-  // helper to read Monday values
+  // helpers to read Monday values
   const gv    = (cols, id) => (cols.find(c => c.id === id)?.text || '').trim();
   const gvNum = (cols, id) => numFromText(gv(cols, id));
 
-  // prepare a few convenience fields, but keep ALL raw columns in `column_values`
-  const prepped = items.map(it => {
+  // Prepare a few convenience fields; keep ALL raw columns in `column_values`
+  const prepped = allItems.map(it => {
     const cols = it.column_values || [];
     return {
       id: it.id,
       name: it.name,
-      state: gv(cols, 'state1'),                    // State
-      totalCost: gvNum(cols, 'formula'),            // TOTAL Annual Cost
-      minGpa: gvNum(cols, 'numbers34'),             // GPA Minimum (Lowest Scholarship)
-      majors: gv(cols, 'dropdown73'),               // Bachelor’s Study Areas
-      column_values: cols                           // IMPORTANT: keep raw for frontend rendering
+      state: gv(cols, 'state1'),          // "State" (dropdown)
+      totalCost: gvNum(cols, 'formula'),  // TOTAL Approx Annual Cost (B)
+      minGpa: gvNum(cols, 'numbers34'),   // GPA Minimum (F) (Lowest Scholarship)
+      majors: gv(cols, 'dropdown73'),     // Bachelor's Study Areas (B)
+      column_values: cols
     };
   });
 
-  // backend filter so pagination stays meaningful
+  // Optional backend filters so the *client* always gets the final set already filtered
   const filtered = prepped.filter(row => {
     if (q) {
       const hay = (row.name + ' ' + (row.majors||'')).toLowerCase();
@@ -79,8 +105,9 @@ export const handler = async (event) => {
     return true;
   });
 
+  // Return everything at once; cursor is null because we've already consumed all pages
   return json({
-    cursor: page.cursor || null,
+    cursor: null,
     totalLoaded: filtered.length,
     items: filtered
   });
@@ -123,4 +150,3 @@ function between(n, min, max){
   if (n === null || n === undefined || isNaN(n)) return true;
   return n >= min && n <= max;
 }
-
