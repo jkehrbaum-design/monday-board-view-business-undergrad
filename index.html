@@ -162,7 +162,6 @@
     <div class="chips" style="margin-top:10px">
       <span id="shown" class="chip">0 shown</span>
       <span id="loaded" class="chip">0 loaded</span>
-      <button id="moreBtn" class="btn" style="height:28px;padding:0 10px">Load more</button>
     </div>
   </div>
 
@@ -276,11 +275,10 @@
   const fcMax = document.querySelector('#fcMax');
   const gpaMin = document.querySelector('#gpaMin');
   const gpaMax = document.querySelector('#gpaMax');
-  const limitSel = document.querySelector('#limit');
+  const limitSel = document.querySelector('#limit'); // still used to hint server page-size; backend fetches all
 
   const reloadBtn = document.querySelector('#reloadBtn');
   const resetBtn = document.querySelector('#resetBtn');
-  const moreBtn = document.querySelector('#moreBtn');
   const exportBtn = document.querySelector('#exportBtn');
 
   const tbody = document.querySelector('#tbody');
@@ -293,14 +291,13 @@
   const popupBody = document.getElementById('popupBody');
   const popupClose = document.getElementById('popupClose');
   popupClose.onclick = () => popup.style.display = 'none';
-
   function openPopup(title, text){
     popupTitle.textContent = title || 'Details';
     popupBody.textContent = text || '';
     popup.style.display = 'block';
   }
 
-  // --------- Column mapping
+  // --------- Column mapping (Freshman/Bachelor’s board IDs)
   const COL = {
     name: "name",
     state: "state1",
@@ -384,29 +381,29 @@
   };
 
   // --------- Data
-  let items = [];
-  let cursor = null;
+  let items = []; // ALL rows; backend now returns everything already (no cursor)
 
   async function initialLoad(){
-    items = []; cursor = null;
-    const {items:batch, cursor:cur} = await fetchBatch({limit:limitSel.value});
+    items = [];
+    const {items:batch} = await fetchAll();
     items.push(...batch);
-    cursor = cur || null;
     buildStateOptionsFrom(items);
     render();
     loader.style.display = 'none';
     app.style.display = 'block';
   }
 
-  async function fetchBatch({limit, cursorParam}){
+  async function fetchAll(){
+    // Backend already fetches all pages and returns everything at once.
     const url = new URL('/.netlify/functions/items', location.origin);
-    url.searchParams.set('limit', limit||'50');
-    if(cursorParam) url.searchParams.set('cursor', cursorParam);
+    // (optional) pass a per-page hint; backend still loads all
+    url.searchParams.set('limit', limitSel.value || '50');
     const resp = await fetch(url);
-    if(!resp.ok) return {items:[], cursor:null};
+    if(!resp.ok) return {items:[]};
     return await resp.json();
   }
 
+  // ---------- Helpers
   function numberFrom(a){
     if(a==null) return null;
     const s = (""+a).replace(/[^\d.\-]/g,'');
@@ -434,7 +431,10 @@
       default: return v.text || "";
     }
   }
-
+  function linkify(s){
+    if(!s) return "";
+    return `<a class="link" href="${esc(s)}" target="_blank" rel="noopener">Link</a>`;
+  }
   function pill(txt){ if(!txt) return ""; return `<span class="pill">${esc(txt)}</span>`; }
 
   function buildStateOptionsFrom(list){
@@ -447,6 +447,7 @@
     stateSel.innerHTML = states.map(s=> `<option value="${esc(s)}">${s||'All'}</option>`).join('');
   }
 
+  // ---------- Sort
   let sort = {key:null, dir:1};
   function applySort(arr){
     if(!sort.key) return;
@@ -459,7 +460,26 @@
       return (String(va||'').localeCompare(String(vb||'')))*d;
     });
   }
+  function updateSortIndicators(){
+    document.querySelectorAll('thead th').forEach(th=>{
+      th.classList.remove('sort-asc','sort-desc');
+      const key = th.dataset.key;
+      if(key && key === sort.key){
+        th.classList.add(sort.dir===1?'sort-asc':'sort-desc');
+      }
+    });
+  }
+  document.querySelectorAll('thead th').forEach(th=>{
+    if(th.dataset.key) th.classList.add('sortable');
+    th.addEventListener('click', ()=>{
+      const key = th.dataset.key;
+      if(!key) return;
+      if(sort.key===key) sort.dir *= -1; else { sort.key=key; sort.dir=1; }
+      render();
+    });
+  });
 
+  // ---------- Rows
   function toRow(item){
     const pick = (id) => readCell(item,id);
     return {
@@ -547,6 +567,7 @@
   function truncCell(content, title){
     const full = (content ?? '').toString().trim();
     if(!full) return '';
+    // If it looks like a URL, show as link
     if(/^https?:\/\//i.test(full)) return `<a class="link" href="${esc(full)}" target="_blank" rel="noopener">Link</a>`;
     return `<span class="trunc" data-title="${esc(title||'Details')}" data-full="${esc(full)}">${esc(full)}</span>`;
   }
@@ -554,6 +575,7 @@
   function render(){
     const rows = items.map(toRow);
 
+    // client-side filters
     const qv = q.value.trim().toLowerCase();
     const st = stateSel.value;
     const fcMinV = numberFrom(fcMin.value), fcMaxV = numberFrom(fcMax.value);
@@ -663,25 +685,7 @@
     loaded.textContent = `${items.length} loaded`;
   }
 
-  function updateSortIndicators(){
-    document.querySelectorAll('thead th').forEach(th=>{
-      th.classList.remove('sort-asc','sort-desc');
-      const key = th.dataset.key;
-      if(key && key === sort.key){
-        th.classList.add(sort.dir===1?'sort-asc':'sort-desc');
-      }
-    });
-  }
-  document.querySelectorAll('thead th').forEach(th=>{
-    if(th.dataset.key) th.classList.add('sortable');
-    th.addEventListener('click', ()=>{
-      const key = th.dataset.key;
-      if(!key) return;
-      if(sort.key===key) sort.dir *= -1; else { sort.key=key; sort.dir=1; }
-      render();
-    });
-  });
-
+  // Delegated click: show popup for truncated text cells
   tbody.addEventListener('click', (e)=>{
     const target = e.target.closest('.trunc');
     if(!target) return;
@@ -690,20 +694,14 @@
     if(full.trim()) openPopup(title, full);
   });
 
+  // Events
   reloadBtn.onclick = initialLoad;
   resetBtn.onclick = ()=>{
     q.value=''; stateSel.value='';
     fcMin.value=''; fcMax.value='';
     gpaMin.value=''; gpaMax.value='';
-    sort = {key:null, dir:1}; initialLoad();
-  };
-  moreBtn.onclick = async ()=>{
-    if(!cursor) return;
-    const {items:batch, cursor:cur} = await fetchBatch({limit:limitSel.value, cursorParam:cursor});
-    items.push(...batch);
-    cursor = cur || null;
-    buildStateOptionsFrom(items);
-    render();
+    sort = {key:null, dir:1};
+    initialLoad();
   };
   [q,stateSel,fcMin,fcMax,gpaMin,gpaMax,limitSel].forEach(el=>{
     el.addEventListener('change', render);
@@ -717,7 +715,6 @@
       Array.from(tr.children).map(td => td.textContent.replace(/\s+/g,' ').trim())
     );
     const aoa = [headers, ...rows];
-
     const ws = XLSX.utils.aoa_to_sheet(aoa);
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, 'Programs');
@@ -730,6 +727,3 @@
 </script>
 </body>
 </html>
-
-
-
