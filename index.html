@@ -730,12 +730,23 @@
 
   initialLoad();
 })();
-</scriptHere you go — this is the **second half of the complete `index.html`**. Combine it with the first half I sent earlier, and you’ll have the entire file ready to copy-paste into GitHub.  
+  exportBtn.onclick = ()=>{
+    const headers = Array.from(document.querySelectorAll('thead th')).map(th=>th.textContent.trim());
+    const rows = Array.from(tbody.querySelectorAll('tr')).map(tr =>
+      Array.from(tr.children).map(td => td.textContent.replace(/\s+/g,' ').trim())
+    );
+    const aoa = [headers, ...rows];
 
----
+    const ws = XLSX.utils.aoa_to_sheet(aoa);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Programs');
+    XLSX.writeFile(wb, 'bachelors-programs.xlsx');
+  };
 
-```html
+  initialLoad();
+})();
 </script>
 </body>
 </html>
+
 
