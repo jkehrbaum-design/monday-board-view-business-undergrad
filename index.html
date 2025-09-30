@@ -357,11 +357,6 @@
     sch_low_info: "additional_info_and_link_s_on_minimum_scholarship_amount",
 
     sch_mid: "numbers68",
-   Here’s the **rest of the complete `index.html`** file. I’ll continue directly from where it was cut off, so you can copy this whole thing into GitHub without errors.
-
----
-
-```html
     sch_mid_type: "status_132",
     toefl_mid: "numbers54",
     gpa_mid: "numbers64",
@@ -715,6 +710,7 @@
     el.addEventListener('keyup', e=>{ if(e.key==='Enter') render(); });
   });
 
+  // Excel export
   exportBtn.onclick = ()=>{
     const headers = Array.from(document.querySelectorAll('thead th')).map(th=>th.textContent.trim());
     const rows = Array.from(tbody.querySelectorAll('tr')).map(tr =>
@@ -728,25 +724,12 @@
     XLSX.writeFile(wb, 'bachelors-programs.xlsx');
   };
 
-  initialLoad();
-})();
-  exportBtn.onclick = ()=>{
-    const headers = Array.from(document.querySelectorAll('thead th')).map(th=>th.textContent.trim());
-    const rows = Array.from(tbody.querySelectorAll('tr')).map(tr =>
-      Array.from(tr.children).map(td => td.textContent.replace(/\s+/g,' ').trim())
-    );
-    const aoa = [headers, ...rows];
-
-    const ws = XLSX.utils.aoa_to_sheet(aoa);
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, 'Programs');
-    XLSX.writeFile(wb, 'bachelors-programs.xlsx');
-  };
-
+  // Start
   initialLoad();
 })();
 </script>
 </body>
 </html>
+
 
 
