@@ -11,6 +11,7 @@
 
   <!-- XLSX for Excel export -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+
   <style>
     :root{
       --bg:#f6f7fb;
@@ -25,8 +26,8 @@
       --thead:#f2f4f8;
       --chip:#f4f6fa;
       --chipText:#49506a;
-      --stickyW:280px;
-      --stickyShadow: 6px 0 10px -6px rgba(31,36,48,0.2);
+      --stickyW:320px; /* a bit wider for Name */
+      --stripe: #dbeafe; /* default left stripe */
     }
     *{box-sizing:border-box}
     html,body{height:100%}
@@ -37,42 +38,53 @@
       font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,"Helvetica Neue",Arial;
     }
     .wrap{ max-width:1200px; margin:24px auto; padding:0 20px; }
+
     .h1{ font-size:28px; font-weight:700; margin:8px 0 4px; }
-    .sub{ color:var(--muted); font-size:13px; margin-bottom:18px; }
+    .sub{ color:var(--muted); font-size:13px; margin-bottom:12px; }
+
+    /* Sticky filter card */
+    .filters-wrap {
+      position: sticky;
+      top: 0;
+      z-index: 30;
+      padding-top: 8px;
+      background: linear-gradient(#f6f7fb, #f6f7fb);
+    }
     .card{
       background:var(--card); border:1px solid var(--line);
-      border-radius:10px; padding:14px; margin-bottom:16px;
-      box-shadow:0 1px 2px rgba(0,0,0,.03);
+      border-radius:10px; padding:14px; margin-bottom:10px; box-shadow:0 1px 2px rgba(0,0,0,.03);
     }
     .row{display:flex; gap:10px; flex-wrap:wrap; align-items:flex-end}
     .col{display:flex; flex-direction:column; gap:6px}
     .label{font-size:12px; color:var(--muted)}
     input,select{
       height:36px; padding:0 10px; border:1px solid var(--line);
-      border-radius:8px; background:#fff; color:var(--text); min-width:120px;
+      border-radius:8px; background:#fff; color:var(--text); min-width:160px;
     }
-    .nums{width:110px; text-align:right}
+    select[multiple]{
+      min-height:36px; height:auto; padding:6px 10px;
+    }
+    .nums{width:130px; text-align:right}
     .btn{
       height:36px; padding:0 14px; border-radius:8px; border:1px solid var(--line);
       background:#fff; cursor:pointer; font-weight:600;
     }
     .btn.primary{background:var(--primary);border-color:var(--primary);color:#fff}
-    .chips{display:flex; gap:8px; align-items:center; font-size:12px}
+    .chips{display:flex; gap:8px; align-items:center; font-size:12px; flex-wrap:wrap}
     .chip{background:var(--chip); color:var(--chipText); padding:4px 8px; border-radius:999px}
     .muted{color:var(--muted)}
     .spacer{flex:1}
 
     /* TABLE */
-    .tableWrap{
-      background:var(--card); border:1px solid var(--line); border-radius:10px;
-      overflow:auto; position:relative
-    }
-    table{border-collapse:separate; border-spacing:0; width:1750px;}
+    .tableWrap{ background:var(--card); border:1px solid var(--line); border-radius:10px;
+      overflow:auto; position:relative }
+    table{border-collapse:separate; border-spacing:0; width:1600px;}
     thead th{
-      position:sticky; top:0; background:var(--thead); z-index:3;
+      position:sticky; top:0; background:var(--thead); z-index:20;
       font-size:12px; text-transform:uppercase; letter-spacing:.02em;
       color:#49506a; padding:10px; border-bottom:1px solid var(--line);
       user-select:none; cursor:pointer;
+      white-space:nowrap;
     }
     thead th.sortable::after{ content:" ⇅"; font-size:10px; color:#999; margin-left:4px; }
     thead th.sort-asc::after{ content:" ▲"; }
@@ -82,25 +94,44 @@
       max-width:280px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
       background:#fff;
     }
+    tbody td.trunc { cursor:pointer; }
 
-    /* Sticky first column (th + td) with shadow */
-    .sticky{
-      position:sticky; left:0; z-index:5; background:#fff;
-      min-width:var(--stickyW); max-width:var(--stickyW);
-      box-shadow: var(--stickyShadow);
+    /* Freeze first column (Name) correctly: */
+    th.sticky, td.sticky{
+      position: sticky;
+      left: 0;
+      z-index: 25; /* above body cells */
+      background: #fff;
+      min-width: var(--stickyW);
+      max-width: var(--stickyW);
+      box-shadow: 2px 0 0 rgba(0,0,0,0.04); /* subtle divider at right edge */
     }
-    thead .sticky{ z-index:6; background:var(--thead); }
+    /* Make rows scroll under the sticky first column (no overlay) */
+    tbody td:not(.sticky){
+      z-index: 1;
+    }
 
     tbody tr:hover td{background:#fafbff}
-    tbody tr:hover .sticky{ background:#fff; }
 
     .pill{display:inline-flex; align-items:center; gap:6px; padding:4px 10px;
       border-radius:999px; background:var(--pill); color:var(--pillText); font-size:12px; }
+    .pill.green{ background:#e8f7ef; color:#0f7a39; }
+    .pill.red{ background:#fde2e5; color:#b32036; }
+    .pill.gray{ background:#edf0f4; color:#667085; }
     .link{color:var(--link); text-decoration:none; font-weight:600}
     .mono{font-family: ui-monospace,Menlo,Consolas,monospace; font-size:12px}
     .right{text-align:right}
 
-    /* Full-screen loader */
+    /* Row left stripe by Geographical Area */
+    tr .stripe{
+      position: absolute;
+      left: 0; top: 0; bottom: 0;
+      width: 4px; content: "";
+      background: var(--stripe);
+    }
+    tr { position: relative; }
+
+    /* Full-screen loader (initial) */
     #loader{
       position:fixed; inset:0; background:#fff; display:flex; align-items:center; justify-content:center;
       font-size:16px; color:#333; z-index:2000;
@@ -121,13 +152,8 @@
     #popup h4{ margin:0 24px 10px 0; font-size:14px; color:#555; }
     #popup pre{ white-space:pre-wrap; word-break:break-word; font-family:inherit; font-size:14px; margin:0; }
 
-    /* Sticky filters card */
-    .filters-sticky{
-      position:sticky;
-      top:12px;
-      z-index:10;
-      background:#fff;
-    }
+    /* Tiny progress text inline in filters */
+    .progress{ font-size:12px; color:#667085; }
   </style>
 </head>
 <body>
@@ -140,50 +166,59 @@
   <div class="sub">The data comes from a secure Netlify function (read-only). The look and feel is inspired by Monday.</div>
 
   <!-- FILTERS (sticky) -->
-  <div class="card filters-sticky">
-    <div class="row">
-      <div class="col" style="min-width:260px">
-        <label class="label">Search (Name & Major)</label>
-        <input id="q" placeholder="Search…" />
+  <div class="filters-wrap">
+    <div class="card">
+      <div class="row">
+        <div class="col" style="min-width:260px">
+          <label class="label">Search (Name & Major)</label>
+          <input id="q" placeholder="Search…" />
+        </div>
+
+        <div class="col">
+          <label class="label">State (multi)</label>
+          <select id="state" multiple></select>
+        </div>
+
+        <div class="col">
+          <label class="label">Geographical Area (multi)</label>
+          <select id="geo" multiple></select>
+        </div>
+
+        <div class="col">
+          <label class="label">2025 Min Wage ($)</label>
+          <div class="row" style="gap:6px">
+            <input id="mwMin" class="nums" placeholder="min $" inputmode="decimal" />
+            <input id="mwMax" class="nums" placeholder="max $" inputmode="decimal" />
+          </div>
+        </div>
+
+        <div class="col">
+          <label class="label">Tuition (USD)</label>
+          <div class="row" style="gap:6px">
+            <input id="tuMin" class="nums" placeholder="min $" inputmode="numeric" />
+            <input id="tuMax" class="nums" placeholder="max $" inputmode="numeric" />
+          </div>
+        </div>
+
+        <div class="spacer"></div>
+
+        <div class="col">
+          <label class="label">Page size (fetch batch)</label>
+          <select id="limit"><option>50</option><option>100</option><option selected>200</option></select>
+        </div>
+
+        <button class="btn primary" id="reloadBtn">Reload</button>
+        <button class="btn" id="resetBtn">Clear filters</button>
+        <button class="btn" id="exportBtn">Export Excel</button>
       </div>
 
-      <div class="col">
-        <label class="label">State</label>
-        <select id="state"><option value="">All</option></select>
-      </div>
-
-      <div class="col">
-        <label class="label">Final cost (USD)</label>
-        <div class="row" style="gap:6px">
-          <input id="fcMin" class="nums" placeholder="min $" inputmode="numeric" />
-          <input id="fcMax" class="nums" placeholder="max $" inputmode="numeric" />
+      <div class="row" style="margin-top:10px; align-items:center">
+        <div class="chips">
+          <span id="shown" class="chip">0 shown</span>
+          <span id="loaded" class="chip">0 loaded</span>
+          <span id="progress" class="progress"></span>
         </div>
       </div>
-
-      <div class="col">
-        <label class="label">GPA</label>
-        <div class="row" style="gap:6px">
-          <input id="gpaMin" class="nums" placeholder="min" inputmode="decimal" />
-          <input id="gpaMax" class="nums" placeholder="max" inputmode="decimal" />
-        </div>
-      </div>
-
-      <div class="col">
-        <label class="label">Page size</label>
-        <select id="limit"><option>20</option><option selected>50</option><option>100</option></select>
-      </div>
-
-      <div class="spacer"></div>
-
-      <button class="btn primary" id="reloadBtn">Reload</button>
-      <button class="btn" id="resetBtn">Reset filters</button>
-      <button class="btn" id="exportBtn">Export Excel</button>
-    </div>
-
-    <div class="chips" style="margin-top:10px">
-      <span id="shown" class="chip">0 shown</span>
-      <span id="loaded" class="chip">0 loaded</span>
-      <button id="moreBtn" class="btn" style="height:28px;padding:0 10px">Load more</button>
     </div>
   </div>
 
@@ -194,12 +229,14 @@
         <tr>
           <th class="sticky sortable" data-key="name">Name</th>
           <th class="sortable" data-key="state">State</th>
-          <th class="sortable" data-key="geo_area">Geographical Area</th>
-          <th class="sortable" data-key="major">Bachelor’s Study Areas (B)</th>
+          <th data-key="geo_area" class="sortable">Geographical Area</th>
+          <th data-key="major" class="sortable">Bachelor’s Study Areas (B)</th>
+
+          <!-- (Removed) Final cost + Min GPA per your request -->
 
           <th data-key="city">City</th>
           <th data-key="address">Full address</th>
-          <th data-key="state_video1">Video I about the State</th>
+          <th data-key="video_state">Video I about the State</th>
           <th data-key="virtual_tour">Virtual Campus Tour?</th>
           <th data-key="fachabitur">Fachabitur?</th>
           <th data-key="fach_det">Fachabitur Details</th>
@@ -269,9 +306,9 @@
           <th data-key="dead_link">Deadline Link</th>
 
           <th data-key="campus_job">Campus Employment?</th>
-          <th data-key="work_details">Work on Campus Details</th>
           <th data-key="min_wage" class="right">2025 Min Wage</th>
           <th data-key="work_comp" class="right">Annual Work Compensation</th>
+          <th data-key="work_details">Bachelor’s Work on Campus Details (B)</th>
         </tr>
       </thead>
       <tbody id="tbody"></tbody>
@@ -294,20 +331,21 @@
 
   const q = document.querySelector('#q');
   const stateSel = document.querySelector('#state');
-  const fcMin = document.querySelector('#fcMin');
-  const fcMax = document.querySelector('#fcMax');
-  const gpaMin = document.querySelector('#gpaMin');
-  const gpaMax = document.querySelector('#gpaMax');
+  const geoSel = document.querySelector('#geo');
+  const mwMin = document.querySelector('#mwMin');
+  const mwMax = document.querySelector('#mwMax');
+  const tuMin = document.querySelector('#tuMin');
+  const tuMax = document.querySelector('#tuMax');
   const limitSel = document.querySelector('#limit');
 
   const reloadBtn = document.querySelector('#reloadBtn');
   const resetBtn = document.querySelector('#resetBtn');
-  const moreBtn = document.querySelector('#moreBtn');
   const exportBtn = document.querySelector('#exportBtn');
 
   const tbody = document.querySelector('#tbody');
   const shown = document.querySelector('#shown');
   const loaded = document.querySelector('#loaded');
+  const progressEl = document.querySelector('#progress');
 
   // Popup
   const popup = document.getElementById('popup');
@@ -321,7 +359,7 @@
     popup.style.display = 'block';
   }
 
-  // --------- Column mapping (IDs from your Monday board)
+  // --------- Column mapping (Monday column IDs)
   const COL = {
     name: "name",
     state: "state1",
@@ -330,7 +368,7 @@
 
     city: "city",
     address: "location",
-    state_video1: "link_14",
+    video_state: "link_14",
     virtual_tour: "link_1",
     fachabitur: "status5",
     fach_det: "long_text15",
@@ -400,33 +438,69 @@
     dead_link: "link_104",
 
     campus_job: "status_113",
-    work_details: "long_text56",
     min_wage: "numbers985",
     work_comp: "formula5",
+    work_details: "long_text56"
+  };
 
-    /* kept only for filtering (not displayed) */
-    final_cost: "formula",
-    gpa: "numbers34"
+  // Colors per Geographical Area (fallbacks included)
+  const GEO_COLORS = {
+    "Pacific West Coast":"#dbeafe",
+    "Mountain West":"#fde68a",
+    "Midwest":"#bbf7d0",
+    "Northeast":"#fbcfe8",
+    "Southeast":"#c7d2fe",
+    "Southwest":"#fecaca",
+    "": "#e5e7eb",
+    "Other":"#e5e7eb"
   };
 
   // --------- Data
   let items = [];
   let cursor = null;
+  let loading = false;
 
+  // Auto-load all pages with progress
   async function initialLoad(){
-    items = []; cursor = null;
-    const {items:batch, cursor:cur} = await fetchBatch({limit:limitSel.value});
-    items.push(...batch);
-    cursor = cur || null;
-    buildStateOptionsFrom(items);
-    render();
-    loader.style.display = 'none';
-    app.style.display = 'block';
+    items = []; cursor = null; loading = true;
+    progressEl.textContent = 'Loading…';
+    app.style.display = 'none';
+    loader.style.display = 'flex';
+
+    try{
+      const first = await fetchBatch({limit:limitSel.value});
+      items.push(...first.items);
+      cursor = first.cursor || null;
+      loaded.textContent = `${items.length} loaded`;
+      progressEl.textContent = `Loaded ${items.length}…`;
+
+      // keep fetching until cursor ends
+      while(cursor){
+        const next = await fetchBatch({limit:limitSel.value, cursorParam:cursor});
+        items.push(...next.items);
+        cursor = next.cursor || null;
+        loaded.textContent = `${items.length} loaded`;
+        progressEl.textContent = `Loaded ${items.length}…`;
+        // yield to paint
+        await new Promise(r=>setTimeout(r, 0));
+      }
+
+      // Build selects
+      buildMultiSelectOptions(stateSel, uniq(items.map(it => readCell(it, COL.state)).filter(Boolean)).sort());
+      buildMultiSelectOptions(geoSel, uniq(items.map(it => readCell(it, COL.geo_area)).filter(Boolean)).sort());
+
+      render();
+    } finally {
+      loading = false;
+      loader.style.display = 'none';
+      app.style.display = 'block';
+      progressEl.textContent = '';
+    }
   }
 
   async function fetchBatch({limit, cursorParam}){
     const url = new URL('/.netlify/functions/items', location.origin);
-    url.searchParams.set('limit', limit||'50');
+    url.searchParams.set('limit', limit||'200');
     if(cursorParam) url.searchParams.set('cursor', cursorParam);
     const resp = await fetch(url);
     if(!resp.ok) return {items:[], cursor:null};
@@ -434,6 +508,7 @@
   }
 
   // ---------- Helpers
+  function uniq(arr){ return Array.from(new Set(arr)); }
   function numberFrom(a){
     if(a==null) return null;
     const s = (""+a).replace(/[^\d.\-]/g,'');
@@ -447,9 +522,15 @@
     catch{ return "$"+n; }
   }
   function formatInt(n){
-    if(n==null || n==="") return "";
-    try{ return new Intl.NumberFormat('en-US',{maximumFractionDigits:0}).format(n); }
+    if(n==null || isNaN(n)) return "";
+    try{ return new Intl.NumberFormat('en-US',{maximumFractionDigits:0}).format(+n); }
     catch{ return String(n); }
+  }
+  function formatDollarsNoCents(n){
+    if(n==null || isNaN(n)) return "";
+    const v = Math.round(+n * 100) / 100;
+    // Always show $ and allow decimals if present in data
+    return '$' + new Intl.NumberFormat('en-US', {minimumFractionDigits: (v%1!==0)?2:0, maximumFractionDigits:2}).format(v);
   }
   function esc(s){ return (s??"").toString().replace(/[&<>"']/g, m=>({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[m])); }
 
@@ -466,28 +547,34 @@
       default: return v.text || "";
     }
   }
+  function pillByStatus(txt){
+    if(!txt) return '';
+    const t = String(txt).toLowerCase();
+    if(t==='yes' || t==='shareable') return `<span class="pill green">${esc(txt)}</span>`;
+    if(t==='no' || t==='non shareable') return `<span class="pill red">${esc(txt)}</span>`;
+    return `<span class="pill gray">${esc(txt)}</span>`;
+  }
+  function linkify(s, label){
+    if(!s) return "";
+    const url = String(s).trim();
+    if(!/^https?:/i.test(url)) return esc(url);
+    return `<a class="link" href="${esc(url)}" target="_blank" rel="noopener">${label||'Link'}</a>`;
+  }
   function truncCell(content, title){
     const full = (content ?? '').toString().trim();
     if(!full) return '';
-    if(/^https?:\/\//i.test(full)) return `<a class="link" href="${esc(full)}" target="_blank" rel="noopener">Link</a>`;
+    if(/^https?:\/\//i.test(full)) return linkify(full, 'Link');
     return `<span class="trunc" data-title="${esc(title||'Details')}" data-full="${esc(full)}">${esc(full)}</span>`;
   }
-  function pill(txt){ if(!txt) return ""; return `<span class="pill">${esc(txt)}</span>`; }
-
-  // ---- build states dynamically from data
-  function buildStateOptionsFrom(list){
-    const set = new Set();
-    for(const it of list){
-      const st = readCell(it, COL.state);
-      if(st) set.add(st);
-    }
-    const states = ["", ...Array.from(set).sort()];
-    stateSel.innerHTML = states.map(s=> `<option value="${esc(s)}">${s||'All'}</option>`).join('');
+  function buildMultiSelectOptions(sel, values){
+    sel.innerHTML = values.map(v=>`<option value="${esc(v)}">${esc(v)}</option>`).join('');
+  }
+  function getMultiSelectValues(sel){
+    return Array.from(sel.selectedOptions).map(o=>o.value).filter(Boolean);
   }
 
-  // ---------- Filters + Sort
+  // ---------- Sort
   let sort = {key:null, dir:1};
-
   function applySort(arr){
     if(!sort.key) return;
     const k = sort.key, d = sort.dir;
@@ -499,7 +586,26 @@
       return (String(va||'').localeCompare(String(vb||'')))*d;
     });
   }
+  function updateSortIndicators(){
+    document.querySelectorAll('thead th').forEach(th=>{
+      th.classList.remove('sort-asc','sort-desc');
+      const key = th.dataset.key;
+      if(key && key === sort.key){
+        th.classList.add(sort.dir===1?'sort-asc':'sort-desc');
+      }
+    });
+  }
+  document.querySelectorAll('thead th').forEach(th=>{
+    if(th.dataset.key) th.classList.add('sortable');
+    th.addEventListener('click', ()=>{
+      const key = th.dataset.key;
+      if(!key) return;
+      if(sort.key===key) sort.dir *= -1; else { sort.key=key; sort.dir=1; }
+      render();
+    });
+  });
 
+  // ---------- Rows
   function toRow(item){
     const pick = (id) => readCell(item,id);
     return {
@@ -508,13 +614,9 @@
       geo_area: pick(COL.geo_area),
       major: pick(COL.majors),
 
-      // kept for filters (not displayed)
-      final_cost: numberFrom(pick(COL.final_cost)),
-      gpa: numberFrom(pick(COL.gpa)),
-
       city: pick(COL.city),
       address: pick(COL.address),
-      state_video1: pick(COL.state_video1),
+      video_state: pick(COL.video_state),
       virtual_tour: pick(COL.virtual_tour),
       fachabitur: pick(COL.fachabitur),
       fach_det: pick(COL.fach_det),
@@ -551,6 +653,7 @@
       fees: numberFrom(pick(COL.fees)),
       total: numberFrom(pick(COL.total)),
       cost_info: pick(COL.cost_info),
+
       adm_req: pick(COL.adm_req),
 
       sch_low: numberFrom(pick(COL.sch_low)),
@@ -583,55 +686,67 @@
       dead_link: pick(COL.dead_link),
 
       campus_job: pick(COL.campus_job),
-      work_details: pick(COL.work_details),
       min_wage: numberFrom(pick(COL.min_wage)),
-      work_comp: numberFrom(pick(COL.work_comp))
+      work_comp: numberFrom(pick(COL.work_comp)),
+      work_details: pick(COL.work_details)
     };
+  }
+
+  // Geographical area → stripe color
+  function stripeColor(area){
+    return GEO_COLORS[area] || GEO_COLORS["Other"];
   }
 
   // Render
   function render(){
     const rows = items.map(toRow);
 
-    // filters (client-side)
+    // filters
     const qv = q.value.trim().toLowerCase();
-    const st = stateSel.value;
-    const fcMinV = numberFrom(fcMin.value), fcMaxV = numberFrom(fcMax.value);
-    const gpaMinV = numberFrom(gpaMin.value), gpaMaxV = numberFrom(gpaMax.value);
+    const states = getMultiSelectValues(stateSel);
+    const geos = getMultiSelectValues(geoSel);
+    const mwMinV = numberFrom(mwMin.value), mwMaxV = numberFrom(mwMax.value);
+    const tuMinV = numberFrom(tuMin.value), tuMaxV = numberFrom(tuMax.value);
 
     const filtered = rows.filter(r=>{
       if(qv){
         const inText = (r.name+" "+(r.major||"")).toLowerCase();
         if(!inText.includes(qv)) return false;
       }
-      if(st && r.state!==st) return false;
-      if(fcMinV!=null && (r.final_cost==null || r.final_cost<fcMinV)) return false;
-      if(fcMaxV!=null && (r.final_cost!=null && r.final_cost>fcMaxV)) return false;
-      if(gpaMinV!=null && (r.gpa==null || r.gpa<gpaMinV)) return false;
-      if(gpaMaxV!=null && (r.gpa!=null && r.gpa>gpaMaxV)) return false;
+      if(states.length && !states.includes(r.state||"")) return false;
+      if(geos.length && !geos.includes(r.geo_area||"")) return false;
+      if(mwMinV!=null && (r.min_wage==null || r.min_wage<mwMinV)) return false;
+      if(mwMaxV!=null && (r.min_wage!=null && r.min_wage>mwMaxV)) return false;
+      if(tuMinV!=null && (r.tuition==null || r.tuition<tuMinV)) return false;
+      if(tuMaxV!=null && (r.tuition!=null && r.tuition>tuMaxV)) return false;
       return true;
     });
 
-    // sort (optional; click headers with data-key)
     applySort(filtered);
     updateSortIndicators();
 
-    tbody.innerHTML = filtered.map(r=>`
-      <tr>
-        <td class="sticky"><strong>${esc(r.name)}</strong></td>
+    tbody.innerHTML = filtered.map(r=>{
+      const stripe = stripeColor(r.geo_area||"");
+      return `
+      <tr style="--stripe:${stripe}">
+        <td class="sticky">
+          <div class="stripe"></div>
+          <strong>${esc(r.name)}</strong>
+          <div style="margin-top:4px">${pillByStatus('Shareable')}</div>
+        </td>
         <td>${esc(r.state)}</td>
         <td>${esc(r.geo_area)}</td>
         <td class="trunc" data-title="Bachelor’s Study Areas" data-full="${esc(r.major||'')}">${esc(r.major||'')}</td>
 
         <td class="trunc" data-title="City" data-full="${esc(r.city)}">${esc(r.city)}</td>
         <td class="trunc mono" data-title="Full address" data-full="${esc(r.address)}">${esc(r.address)}</td>
-        <td>${truncCell(r.state_video1,'Video I about the State')}</td>
-        <td>${truncCell(r.virtual_tour,'Virtual Campus Tour')}</td>
-        <td>${pill(r.fachabitur)}</td>
+        <td>${linkify(r.video_state,'Video')}</td>
+        <td>${linkify(r.virtual_tour,'Tour')}</td>
+        <td>${pillByStatus(r.fachabitur)}</td>
         <td class="trunc" data-title="Fachabitur Details" data-full="${esc(r.fach_det)}">${esc(r.fach_det)}</td>
 
         <td class="right mono">${esc(r.usnews_rank)}</td>
-        <td>${truncCell(r.usnews_link,'U.S. News Link')}</td>
+        <td>${linkify(r.usnews_link,'U.S. News')}</td>
         <td class="trunc" data-title="Type" data-full="${esc(r.type)}">${esc(r.type)}</td>
         <td class="right">${formatInt(r.enroll)}</td>
         <td class="right">${esc(r.live_pct)}</td>
@@ -642,18 +757,18 @@
 
         <td class="right">${esc(r.app_fee)}</td>
         <td class="trunc" data-title="How to Apply" data-full="${esc(r.how_apply)}">${esc(r.how_apply)}</td>
-        <td>${pill(r.cred_eval)}</td>
+        <td>${pillByStatus(r.cred_eval)}</td>
         <td class="trunc" data-title="Credential Eval Info" data-full="${esc(r.cred_info)}">${esc(r.cred_info)}</td>
-        <td>${pill(r.spring_adm)}</td>
-        <td>${pill(r.spring_sch)}</td>
+        <td>${pillByStatus(r.spring_adm)}</td>
+        <td>${pillByStatus(r.spring_sch)}</td>
         <td class="trunc" data-title="Clarification" data-full="${esc(r.clarify)}">${esc(r.clarify)}</td>
 
-        <td>${truncCell(r.campus_acts,'On Campus Activities')}</td>
-        <td>${truncCell(r.sports,'Sports Homepage')}</td>
-        <td>${truncCell(r.uni_home,'University Homepage')}</td>
-        <td>${truncCell(r.intl_adm,'International Admission')}</td>
+        <td>${linkify(r.campus_acts,'Activities')}</td>
+        <td>${linkify(r.sports,'Sports')}</td>
+        <td>${linkify(r.uni_home,'Homepage')}</td>
+        <td>${linkify(r.intl_adm,'International')}</td>
 
-        <td>${truncCell(r.degrees_link,'Bachelor’s Degrees Link')}</td>
+        <td>${linkify(r.degrees_link,'Degrees')}</td>
         <td class="trunc" data-title="Academic Year" data-full="${esc(r.acad_year)}">${esc(r.acad_year)}</td>
 
         <td class="right">${formatMoney(r.tuition)}</td>
@@ -692,53 +807,22 @@
 
         <td class="trunc" data-title="Fall Deadline" data-full="${esc(r.dead_fall)}">${esc(r.dead_fall)}</td>
         <td class="trunc" data-title="Spring Deadline" data-full="${esc(r.dead_spring)}">${esc(r.dead_spring)}</td>
-        <td>${truncCell(r.dead_link,'Deadline Link')}</td>
+        <td>${linkify(r.dead_link,'Deadlines')}</td>
 
-        <td>${pill(r.campus_job)}</td>
-        <td class="trunc" data-title="Work on Campus Details" data-full="${esc(r.work_details)}">${esc(r.work_details)}</td>
-        <td class="right">${formatMoney(r.min_wage)}</td>
+        <td>${pillByStatus(r.campus_job)}</td>
+        <td class="right">${formatDollarsNoCents(r.min_wage)}</td>
         <td class="right">${formatMoney(r.work_comp)}</td>
+        <td class="trunc" data-title="Bachelor’s Work on Campus Details (B)" data-full="${esc(r.work_details)}">${esc(r.work_details)}</td>
       </tr>
-    `).join('');
+      `;
+    }).join('');
 
     shown.textContent = `${filtered.length} shown`;
     loaded.textContent = `${items.length} loaded`;
   }
 
-  // Header sort interactions + indicators
-  function updateSortIndicators(){
-    document.querySelectorAll('thead th').forEach(th=>{
-      th.classList.remove('sort-asc','sort-desc');
-      const key = th.dataset.key;
-      if(key && key === sort.key){
-        th.classList.add(sort.dir===1?'sort-asc':'sort-desc');
-      }
-    });
-  }
-  function applySort(arr){
-    if(!sort.key) return;
-    const k = sort.key, d = sort.dir;
-    arr.sort((a,b)=>{
-      const va = a[k], vb=b[k];
-      const na = (typeof va === 'number')?va:numberFrom(va);
-      const nb = (typeof vb === 'number')?vb:numberFrom(vb);
-      if(na!=null && nb!=null) return (na-nb)*d;
-      return (String(va||'').localeCompare(String(vb||'')))*d;
-    });
-  }
-  document.querySelectorAll('thead th').forEach(th=>{
-    if(th.dataset.key) th.classList.add('sortable');
-    th.addEventListener('click', ()=>{
-      const key = th.dataset.key;
-      if(!key){ return; }
-      if(sort.key===key) sort.dir *= -1; else { sort.key=key; sort.dir=1; }
-      render();
-    });
-  });
-
   // Delegated click: show popup for truncated text cells
-  const tbodyEl = document.getElementById('tbody');
-  tbodyEl.addEventListener('click', (e)=>{
+  tbody.addEventListener('click', (e)=>{
     const target = e.target.closest('.trunc');
     if(!target) return;
     const title = target.dataset.title || 'Details';
@@ -749,28 +833,24 @@
   // Events
   reloadBtn.onclick = initialLoad;
   resetBtn.onclick = ()=>{
-    q.value=''; stateSel.value='';
-    fcMin.value=''; fcMax.value='';
-    gpaMin.value=''; gpaMax.value='';
-    sort = {key:null, dir:1}; initialLoad();
-  };
-  moreBtn.onclick = async ()=>{
-    if(!cursor) return;
-    const {items:batch, cursor:cur} = await fetchBatch({limit:limitSel.value, cursorParam:cursor});
-    items.push(...batch);
-    cursor = cur || null;
-    buildStateOptionsFrom(items);
+    q.value='';
+    Array.from(stateSel.options).forEach(o=>o.selected=false);
+    Array.from(geoSel.options).forEach(o=>o.selected=false);
+    mwMin.value=''; mwMax.value='';
+    tuMin.value=''; tuMax.value='';
+    sort = {key:null, dir:1};
     render();
   };
-  [q,stateSel,fcMin,fcMax,gpaMin,gpaMax,limitSel].forEach(el=>{
+
+  [q,stateSel,geoSel,mwMin,mwMax,tuMin,tuMax,limitSel].forEach(el=>{
     el.addEventListener('change', render);
-    el.addEventListener('keyup', e=>{ if(e.key==='Enter') render(); });
+    if(el.tagName!=='SELECT'){ el.addEventListener('keyup', e=>{ if(e.key==='Enter') render(); }); }
   });
 
-  // Excel export
+  // Excel export (current filtered view)
   exportBtn.onclick = ()=>{
     const headers = Array.from(document.querySelectorAll('thead th')).map(th=>th.textContent.trim());
-    const rows = Array.from(document.querySelectorAll('#tbody tr')).map(tr =>
+    const rows = Array.from(tbody.querySelectorAll('tr')).map(tr =>
       Array.from(tr.children).map(td => td.textContent.replace(/\s+/g,' ').trim())
     );
     const aoa = [headers, ...rows];
