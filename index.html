@@ -26,6 +26,7 @@
       --chip:#f4f6fa;
       --chipText:#49506a;
       --stickyW:280px;
+      --stickyShadow: 6px 0 10px -6px rgba(31,36,48,0.2);
     }
     *{box-sizing:border-box}
     html,body{height:100%}
@@ -38,8 +39,11 @@
     .wrap{ max-width:1200px; margin:24px auto; padding:0 20px; }
     .h1{ font-size:28px; font-weight:700; margin:8px 0 4px; }
     .sub{ color:var(--muted); font-size:13px; margin-bottom:18px; }
-    .card{ background:var(--card); border:1px solid var(--line);
-      border-radius:10px; padding:14px; margin-bottom:16px; box-shadow:0 1px 2px rgba(0,0,0,.03);}
+    .card{
+      background:var(--card); border:1px solid var(--line);
+      border-radius:10px; padding:14px; margin-bottom:16px;
+      box-shadow:0 1px 2px rgba(0,0,0,.03);
+    }
     .row{display:flex; gap:10px; flex-wrap:wrap; align-items:flex-end}
     .col{display:flex; flex-direction:column; gap:6px}
     .label{font-size:12px; color:var(--muted)}
@@ -59,8 +63,10 @@
     .spacer{flex:1}
 
     /* TABLE */
-    .tableWrap{ background:var(--card); border:1px solid var(--line); border-radius:10px;
-      overflow:auto; position:relative }
+    .tableWrap{
+      background:var(--card); border:1px solid var(--line); border-radius:10px;
+      overflow:auto; position:relative
+    }
     table{border-collapse:separate; border-spacing:0; width:1600px;}
     thead th{
       position:sticky; top:0; background:var(--thead); z-index:3;
@@ -74,12 +80,19 @@
     tbody td{
       padding:12px 10px; border-top:1px solid var(--line); vertical-align:top; font-size:14px;
       max-width:280px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+      background:#fff;
     }
-    tbody td.trunc { cursor:pointer; }
+
+    /* Sticky first column (th + td) with shadow and higher stacking */
     .sticky{
-      position:sticky; left:0; z-index:2; background:#fff; min-width:var(--stickyW); max-width:var(--stickyW);
+      position:sticky; left:0; z-index:5; background:#fff;
+      min-width:var(--stickyW); max-width:var(--stickyW);
+      box-shadow: var(--stickyShadow);
     }
+    thead .sticky{ z-index:6; background:var(--thead); }
+
     tbody tr:hover td{background:#fafbff}
+    tbody tr:hover .sticky{ background:#fff; } /* keep sticky cell white on hover row */
 
     .pill{display:inline-flex; align-items:center; gap:6px; padding:4px 10px;
       border-radius:999px; background:var(--pill); color:var(--pillText); font-size:12px; }
@@ -107,6 +120,14 @@
     #popupClose{ position:absolute; top:8px; right:12px; cursor:pointer; font-weight:700; }
     #popup h4{ margin:0 24px 10px 0; font-size:14px; color:#555; }
     #popup pre{ white-space:pre-wrap; word-break:break-word; font-family:inherit; font-size:14px; margin:0; }
+
+    /* Sticky filters card under the page title */
+    .filters-sticky{
+      position:sticky;
+      top:12px;
+      z-index:10;
+      background:#fff;
+    }
   </style>
 </head>
 <body>
@@ -118,8 +139,8 @@
   <div class="h1">Bachelor’s Programs – Freshman & Average Student</div>
   <div class="sub">The data comes from a secure Netlify function (read-only). The look and feel is inspired by Monday.</div>
 
-  <!-- FILTERS -->
-  <div class="card">
+  <!-- FILTERS (sticky) -->
+  <div class="card filters-sticky">
     <div class="row">
       <div class="col" style="min-width:260px">
         <label class="label">Search (Name & Major)</label>
@@ -147,6 +168,11 @@
         </div>
       </div>
 
+      <div class="col">
+        <label class="label">Page size</label>
+        <select id="limit"><option>20</option><option selected>50</option><option>100</option></select>
+      </div>
+
       <div class="spacer"></div>
 
       <button class="btn primary" id="reloadBtn">Reload</button>
@@ -157,6 +183,7 @@
     <div class="chips" style="margin-top:10px">
       <span id="shown" class="chip">0 shown</span>
       <span id="loaded" class="chip">0 loaded</span>
+      <button id="moreBtn" class="btn" style="height:28px;padding:0 10px">Load more</button>
     </div>
   </div>
 
@@ -168,8 +195,7 @@
           <th class="sticky sortable" data-key="name">Name</th>
           <th class="sortable" data-key="state">State</th>
           <th class="sortable" data-key="major">Bachelor’s Study Areas (B)</th>
-          <th class="sortable right" data-key="final_cost">Final cost</th>
-          <th class="sortable right" data-key="gpa">Min GPA</th>
+          <!-- Removed Final cost / Min GPA columns by request -->
 
           <th data-key="city">City</th>
           <th data-key="address">Full address</th>
@@ -260,29 +286,46 @@
 
 <script>
 (() => {
-  // ---------- UI refs
+  // --------- UI refs
   const app = document.getElementById('app');
   const loader = document.getElementById('loader');
+
   const q = document.querySelector('#q');
   const stateSel = document.querySelector('#state');
   const fcMin = document.querySelector('#fcMin');
   const fcMax = document.querySelector('#fcMax');
   const gpaMin = document.querySelector('#gpaMin');
   const gpaMax = document.querySelector('#gpaMax');
+  const limitSel = document.querySelector('#limit');
+
   const reloadBtn = document.querySelector('#reloadBtn');
   const resetBtn = document.querySelector('#resetBtn');
+  const moreBtn = document.querySelector('#moreBtn');
   const exportBtn = document.querySelector('#exportBtn');
+
   const tbody = document.querySelector('#tbody');
   const shown = document.querySelector('#shown');
   const loaded = document.querySelector('#loaded');
 
-  // ---------- Monday column IDs (confirmed mapping)
+  // Popup
+  const popup = document.getElementById('popup');
+  const popupTitle = document.getElementById('popupTitle');
+  const popupBody = document.getElementById('popupBody');
+  const popupClose = document.getElementById('popupClose');
+  popupClose.onclick = () => popup.style.display = 'none';
+  function openPopup(title, text){
+    popupTitle.textContent = title || 'Details';
+    popupBody.textContent = text || '';
+    popup.style.display = 'block';
+  }
+
+  // --------- Column mapping (IDs from your Monday board)
   const COL = {
     name: "name",
     state: "state1",
     majors: "dropdown73",
-    final_cost: "formula",               // TOTAL (B) on Monday (formula)
-    gpa: "numbers34",                    // GPA Min (Lowest Scholarship)
+    final_cost: "formula",         // kept for filtering only (not displayed)
+    gpa: "numbers34",              // kept for filtering only (not displayed)
 
     city: "city",
     address: "location",
@@ -359,27 +402,36 @@
     work_comp: "formula5"
   };
 
-  // ---------- Data + load (one-shot; backend returns all shareable)
+  // --------- Data
   let items = [];
+  let cursor = null;
+
   async function initialLoad(){
-    try{
-      const resp = await fetch('/.netlify/functions/items');
-      const data = await resp.json();
-      items = Array.isArray(data.items) ? data.items : [];
-      buildStateOptions(items);
-      render();
-    } finally {
-      loader.style.display = 'none';
-      app.style.display = 'block';
-    }
+    items = []; cursor = null;
+    const {items:batch, cursor:cur} = await fetchBatch({limit:limitSel.value});
+    items.push(...batch);
+    cursor = cur || null;
+    buildStateOptionsFrom(items);
+    render();
+    loader.style.display = 'none';
+    app.style.display = 'block';
+  }
+
+  async function fetchBatch({limit, cursorParam}){
+    const url = new URL('/.netlify/functions/items', location.origin);
+    url.searchParams.set('limit', limit||'50');
+    if(cursorParam) url.searchParams.set('cursor', cursorParam);
+    const resp = await fetch(url);
+    if(!resp.ok) return {items:[], cursor:null};
+    return await resp.json();
   }
 
   // ---------- Helpers
-  function esc(s){ return (s??"").toString().replace(/[&<>"']/g, m=>({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[m])); }
   function numberFrom(a){
     if(a==null) return null;
     const s = (""+a).replace(/[^\d.\-]/g,'');
-    if(!s) return null; const n = parseFloat(s);
+    if(!s) return null;
+    const n = parseFloat(s);
     return Number.isFinite(n)?n:null;
   }
   function formatMoney(n){
@@ -387,10 +439,18 @@
     try{ return new Intl.NumberFormat('en-US',{style:'currency',currency:'USD',maximumFractionDigits:0}).format(n); }
     catch{ return "$"+n; }
   }
+  function formatInt(n){
+    if(n==null || n==="") return "";
+    try{ return new Intl.NumberFormat('en-US',{maximumFractionDigits:0}).format(n); }
+    catch{ return String(n); }
+  }
+  function esc(s){ return (s??"").toString().replace(/[&<>"']/g, m=>({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[m])); }
+
   function readCell(item, colId){
     const v = item.column_values?.find(c=>c.id===colId);
     if(!v) return "";
     switch(v.type){
+      case "text": case "long-text": return v.text||"";
       case "dropdown": return (v.text||"").replaceAll(";",", ");
       case "status": return v.text||"";
       case "numbers": return v.text || v.value || "";
@@ -403,14 +463,10 @@
     if(!s) return "";
     return `<a class="link" href="${esc(s)}" target="_blank" rel="noopener">Link</a>`;
   }
-  function truncCell(content, title){
-    const full = (content ?? '').toString().trim();
-    if(!full) return '';
-    if(/^https?:\/\//i.test(full)) return linkify(full);
-    return `<span class="trunc" data-title="${esc(title||'Details')}" data-full="${esc(full)}">${esc(full)}</span>`;
-  }
+  function pill(txt){ if(!txt) return ""; return `<span class="pill">${esc(txt)}</span>`; }
 
-  function buildStateOptions(list){
+  // ---- build states dynamically from data
+  function buildStateOptionsFrom(list){
     const set = new Set();
     for(const it of list){
       const st = readCell(it, COL.state);
@@ -420,8 +476,9 @@
     stateSel.innerHTML = states.map(s=> `<option value="${esc(s)}">${s||'All'}</option>`).join('');
   }
 
-  // ---------- Sorting
+  // ---------- Filters + Sort
   let sort = {key:null, dir:1};
+
   function applySort(arr){
     if(!sort.key) return;
     const k = sort.key, d = sort.dir;
@@ -433,30 +490,15 @@
       return (String(va||'').localeCompare(String(vb||'')))*d;
     });
   }
-  function updateSortIndicators(){
-    document.querySelectorAll('thead th').forEach(th=>{
-      th.classList.remove('sort-asc','sort-desc');
-      const key = th.dataset.key;
-      if(key && key === sort.key){
-        th.classList.add(sort.dir===1?'sort-asc':'sort-desc');
-      }
-    });
-  }
-  document.addEventListener('click', (e)=>{
-    const th = e.target.closest('thead th');
-    if(!th || !th.dataset.key) return;
-    const key = th.dataset.key;
-    if(sort.key===key) sort.dir *= -1; else { sort.key=key; sort.dir=1; }
-    render();
-  });
 
-  // ---------- Row projection
   function toRow(item){
     const pick = (id) => readCell(item,id);
     return {
       name: item.name || "",
       state: pick(COL.state),
       major: pick(COL.majors),
+
+      // kept for filters (not displayed)
       final_cost: numberFrom(pick(COL.final_cost)),
       gpa: numberFrom(pick(COL.gpa)),
 
@@ -535,11 +577,18 @@
     };
   }
 
-  // ---------- Render
+  function truncCell(content, title){
+    const full = (content ?? '').toString().trim();
+    if(!full) return '';
+    if(/^https?:\/\//i.test(full)) return `<a class="link" href="${esc(full)}" target="_blank" rel="noopener">Link</a>`;
+    return `<span class="trunc" data-title="${esc(title||'Details')}" data-full="${esc(full)}">${esc(full)}</span>`;
+  }
+
+  // Render
   function render(){
     const rows = items.map(toRow);
 
-    // client-side filters
+    // filters (client-side; backend has already reduced to Shareable if you added that in items.js)
     const qv = q.value.trim().toLowerCase();
     const st = stateSel.value;
     const fcMinV = numberFrom(fcMin.value), fcMaxV = numberFrom(fcMax.value);
@@ -547,8 +596,8 @@
 
     const filtered = rows.filter(r=>{
       if(qv){
-        const hay = (r.name+" "+(r.major||"")).toLowerCase();
-        if(!hay.includes(qv)) return false;
+        const inText = (r.name+" "+(r.major||"")).toLowerCase();
+        if(!inText.includes(qv)) return false;
       }
       if(st && r.state!==st) return false;
       if(fcMinV!=null && (r.final_cost==null || r.final_cost<fcMinV)) return false;
@@ -563,34 +612,32 @@
 
     tbody.innerHTML = filtered.map(r=>`
       <tr>
-        <td class="sticky">${esc(r.name)}</td>
+        <td class="sticky"><strong>${esc(r.name)}</strong></td>
         <td>${esc(r.state)}</td>
         <td class="trunc" data-title="Bachelor’s Study Areas" data-full="${esc(r.major||'')}">${esc(r.major||'')}</td>
-        <td class="right">${formatMoney(r.final_cost)}</td>
-        <td class="right">${r.gpa??""}</td>
 
         <td class="trunc" data-title="City" data-full="${esc(r.city)}">${esc(r.city)}</td>
         <td class="trunc mono" data-title="Full address" data-full="${esc(r.address)}">${esc(r.address)}</td>
         <td>${truncCell(r.virtual_tour,'Virtual Campus Tour')}</td>
-        <td>${r.fachabitur?`<span class="pill">${esc(r.fachabitur)}</span>`:""}</td>
+        <td>${pill(r.fachabitur)}</td>
         <td class="trunc" data-title="Fachabitur Details" data-full="${esc(r.fach_det)}">${esc(r.fach_det)}</td>
 
         <td class="right mono">${esc(r.usnews_rank)}</td>
         <td>${truncCell(r.usnews_link,'U.S. News Link')}</td>
         <td class="trunc" data-title="Type" data-full="${esc(r.type)}">${esc(r.type)}</td>
-        <td class="right">${r.enroll??""}</td>
+        <td class="right">${formatInt(r.enroll)}</td>
         <td class="right">${esc(r.live_pct)}</td>
-        <td class="right">${r.live_num??""}</td>
+        <td class="right">${formatInt(r.live_num)}</td>
         <td class="right">${r.ratio??""}</td>
         <td class="trunc" data-title="Insurance Required?" data-full="${esc(r.insurance)}">${esc(r.insurance)}</td>
         <td class="trunc" data-title="Health Insurance details" data-full="${esc(r.insurance_info)}">${esc(r.insurance_info)}</td>
 
         <td class="right">${esc(r.app_fee)}</td>
         <td class="trunc" data-title="How to Apply" data-full="${esc(r.how_apply)}">${esc(r.how_apply)}</td>
-        <td>${r.cred_eval?`<span class="pill">${esc(r.cred_eval)}</span>`:""}</td>
+        <td>${pill(r.cred_eval)}</td>
         <td class="trunc" data-title="Credential Eval Info" data-full="${esc(r.cred_info)}">${esc(r.cred_info)}</td>
-        <td>${r.spring_adm?`<span class="pill">${esc(r.spring_adm)}</span>`:""}</td>
-        <td>${r.spring_sch?`<span class="pill">${esc(r.spring_sch)}</span>`:""}</td>
+        <td>${pill(r.spring_adm)}</td>
+        <td>${pill(r.spring_sch)}</td>
         <td class="trunc" data-title="Clarification" data-full="${esc(r.clarify)}">${esc(r.clarify)}</td>
 
         <td>${truncCell(r.campus_acts,'On Campus Activities')}</td>
@@ -639,8 +686,8 @@
         <td class="trunc" data-title="Spring Deadline" data-full="${esc(r.dead_spring)}">${esc(r.dead_spring)}</td>
         <td>${truncCell(r.dead_link,'Deadline Link')}</td>
 
-        <td>${r.campus_job?`<span class="pill">${esc(r.campus_job)}</span>`:""}</td>
-        <td class="right">${r.min_wage??""}</td>
+        <td>${pill(r.campus_job)}</td>
+        <td class="right">${formatMoney(r.min_wage)}</td>
         <td class="right">${formatMoney(r.work_comp)}</td>
       </tr>
     `).join('');
@@ -649,46 +696,71 @@
     loaded.textContent = `${items.length} loaded`;
   }
 
-  // popup for long text cells
-  const popup = document.getElementById('popup');
-  const popupTitle = document.getElementById('popupTitle');
-  const popupBody = document.getElementById('popupBody');
-  document.getElementById('popupClose').onclick = ()=> popup.style.display='none';
-  tbody.addEventListener('click', (e)=>{
-    const el = e.target.closest('.trunc'); if(!el) return;
-    popupTitle.textContent = el.dataset.title || 'Details';
-    popupBody.textContent = el.dataset.full || el.textContent || '';
-    popup.style.display = 'block';
+  // Header sort interactions + indicators
+  function updateSortIndicators(){
+    document.querySelectorAll('thead th').forEach(th=>{
+      th.classList.remove('sort-asc','sort-desc');
+      const key = th.dataset.key;
+      if(key && key === sort.key){
+        th.classList.add(sort.dir===1?'sort-asc':'sort-desc');
+      }
+    });
+  }
+  document.querySelectorAll('thead th').forEach(th=>{
+    if(th.dataset.key) th.classList.add('sortable');
+    th.addEventListener('click', ()=>{
+      const key = th.dataset.key;
+      if(!key) return;
+      if(sort.key===key) sort.dir *= -1; else { sort.key=key; sort.dir=1; }
+      render();
+    });
   });
 
-  // interactions
+  // Delegated click: show popup for truncated text cells
+  tbody.addEventListener('click', (e)=>{
+    const target = e.target.closest('.trunc');
+    if(!target) return;
+    const title = target.dataset.title || 'Details';
+    const full = target.dataset.full || target.textContent || '';
+    if(full.trim()) openPopup(title, full);
+  });
+
+  // Events
   reloadBtn.onclick = initialLoad;
   resetBtn.onclick = ()=>{
     q.value=''; stateSel.value='';
     fcMin.value=''; fcMax.value='';
     gpaMin.value=''; gpaMax.value='';
-    sort = {key:null, dir:1};
-    initialLoad();
+    sort = {key:null, dir:1}; initialLoad();
   };
-  [q,stateSel,fcMin,fcMax,gpaMin,gpaMax].forEach(el=>{
+  moreBtn.onclick = async ()=>{
+    if(!cursor) return;
+    const {items:batch, cursor:cur} = await fetchBatch({limit:limitSel.value, cursorParam:cursor});
+    items.push(...batch);
+    cursor = cur || null;
+    buildStateOptionsFrom(items);
+    render();
+  };
+  [q,stateSel,fcMin,fcMax,gpaMin,gpaMax,limitSel].forEach(el=>{
     el.addEventListener('change', render);
     el.addEventListener('keyup', e=>{ if(e.key==='Enter') render(); });
   });
 
-  // Excel export (current view)
+  // Excel export
   exportBtn.onclick = ()=>{
     const headers = Array.from(document.querySelectorAll('thead th')).map(th=>th.textContent.trim());
     const rows = Array.from(tbody.querySelectorAll('tr')).map(tr =>
       Array.from(tr.children).map(td => td.textContent.replace(/\s+/g,' ').trim())
     );
     const aoa = [headers, ...rows];
+
     const ws = XLSX.utils.aoa_to_sheet(aoa);
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, 'Programs');
     XLSX.writeFile(wb, 'bachelors-programs.xlsx');
   };
 
-  // go
+  // Start
   initialLoad();
 })();
 </script>
