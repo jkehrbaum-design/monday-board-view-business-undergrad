@@ -67,7 +67,7 @@
       background:var(--card); border:1px solid var(--line); border-radius:10px;
       overflow:auto; position:relative
     }
-    table{border-collapse:separate; border-spacing:0; width:1600px;}
+    table{border-collapse:separate; border-spacing:0; width:1700px;}
     thead th{
       position:sticky; top:0; background:var(--thead); z-index:3;
       font-size:12px; text-transform:uppercase; letter-spacing:.02em;
@@ -92,7 +92,7 @@
     thead .sticky{ z-index:6; background:var(--thead); }
 
     tbody tr:hover td{background:#fafbff}
-    tbody tr:hover .sticky{ background:#fff; } /* keep sticky cell white on hover row */
+    tbody tr:hover .sticky{ background:#fff; }
 
     .pill{display:inline-flex; align-items:center; gap:6px; padding:4px 10px;
       border-radius:999px; background:var(--pill); color:var(--pillText); font-size:12px; }
@@ -121,7 +121,7 @@
     #popup h4{ margin:0 24px 10px 0; font-size:14px; color:#555; }
     #popup pre{ white-space:pre-wrap; word-break:break-word; font-family:inherit; font-size:14px; margin:0; }
 
-    /* Sticky filters card under the page title */
+    /* Sticky filters card */
     .filters-sticky{
       position:sticky;
       top:12px;
@@ -194,11 +194,12 @@
         <tr>
           <th class="sticky sortable" data-key="name">Name</th>
           <th class="sortable" data-key="state">State</th>
+          <th class="sortable" data-key="geo_area">Geographical Area</th>
           <th class="sortable" data-key="major">Bachelor’s Study Areas (B)</th>
-          <!-- Removed Final cost / Min GPA columns by request -->
 
           <th data-key="city">City</th>
           <th data-key="address">Full address</th>
+          <th data-key="state_video1">Video I about the State</th>
           <th data-key="virtual_tour">Virtual Campus Tour?</th>
           <th data-key="fachabitur">Fachabitur?</th>
           <th data-key="fach_det">Fachabitur Details</th>
@@ -268,6 +269,7 @@
           <th data-key="dead_link">Deadline Link</th>
 
           <th data-key="campus_job">Campus Employment?</th>
+          <th data-key="work_details">Work on Campus Details</th>
           <th data-key="min_wage" class="right">2025 Min Wage</th>
           <th data-key="work_comp" class="right">Annual Work Compensation</th>
         </tr>
@@ -323,12 +325,14 @@
   const COL = {
     name: "name",
     state: "state1",
+    geo_area: "dropdown30",
     majors: "dropdown73",
     final_cost: "formula",         // kept for filtering only (not displayed)
     gpa: "numbers34",              // kept for filtering only (not displayed)
 
     city: "city",
     address: "location",
+    state_video1: "link_14",
     virtual_tour: "link_1",
     fachabitur: "status5",
     fach_det: "long_text15",
@@ -398,6 +402,7 @@
     dead_link: "link_104",
 
     campus_job: "status_113",
+    work_details: "long_text56",
     min_wage: "numbers985",
     work_comp: "formula5"
   };
@@ -459,9 +464,11 @@
       default: return v.text || "";
     }
   }
-  function linkify(s){
-    if(!s) return "";
-    return `<a class="link" href="${esc(s)}" target="_blank" rel="noopener">Link</a>`;
+  function truncCell(content, title){
+    const full = (content ?? '').toString().trim();
+    if(!full) return '';
+    if(/^https?:\/\//i.test(full)) return `<a class="link" href="${esc(full)}" target="_blank" rel="noopener">Link</a>`;
+    return `<span class="trunc" data-title="${esc(title||'Details')}" data-full="${esc(full)}">${esc(full)}</span>`;
   }
   function pill(txt){ if(!txt) return ""; return `<span class="pill">${esc(txt)}</span>`; }
 
@@ -496,6 +503,7 @@
     return {
       name: item.name || "",
       state: pick(COL.state),
+      geo_area: pick(COL.geo_area),
       major: pick(COL.majors),
 
       // kept for filters (not displayed)
@@ -504,6 +512,7 @@
 
       city: pick(COL.city),
       address: pick(COL.address),
+      state_video1: pick(COL.state_video1),
       virtual_tour: pick(COL.virtual_tour),
       fachabitur: pick(COL.fachabitur),
       fach_det: pick(COL.fach_det),
@@ -572,23 +581,17 @@
       dead_link: pick(COL.dead_link),
 
       campus_job: pick(COL.campus_job),
+      work_details: pick(COL.work_details),
       min_wage: numberFrom(pick(COL.min_wage)),
       work_comp: numberFrom(pick(COL.work_comp))
     };
-  }
-
-  function truncCell(content, title){
-    const full = (content ?? '').toString().trim();
-    if(!full) return '';
-    if(/^https?:\/\//i.test(full)) return `<a class="link" href="${esc(full)}" target="_blank" rel="noopener">Link</a>`;
-    return `<span class="trunc" data-title="${esc(title||'Details')}" data-full="${esc(full)}">${esc(full)}</span>`;
   }
 
   // Render
   function render(){
     const rows = items.map(toRow);
 
-    // filters (client-side; backend has already reduced to Shareable if you added that in items.js)
+    // filters (client-side)
     const qv = q.value.trim().toLowerCase();
     const st = stateSel.value;
     const fcMinV = numberFrom(fcMin.value), fcMaxV = numberFrom(fcMax.value);
@@ -607,6 +610,7 @@
       return true;
     });
 
+    // sort (optional; click headers with data-key)
     applySort(filtered);
     updateSortIndicators();
 
@@ -614,10 +618,12 @@
       <tr>
         <td class="sticky"><strong>${esc(r.name)}</strong></td>
         <td>${esc(r.state)}</td>
+        <td>${esc(r.geo_area)}</td>
         <td class="trunc" data-title="Bachelor’s Study Areas" data-full="${esc(r.major||'')}">${esc(r.major||'')}</td>
 
         <td class="trunc" data-title="City" data-full="${esc(r.city)}">${esc(r.city)}</td>
         <td class="trunc mono" data-title="Full address" data-full="${esc(r.address)}">${esc(r.address)}</td>
+        <td>${truncCell(r.state_video1,'Video I about the State')}</td>
         <td>${truncCell(r.virtual_tour,'Virtual Campus Tour')}</td>
         <td>${pill(r.fachabitur)}</td>
         <td class="trunc" data-title="Fachabitur Details" data-full="${esc(r.fach_det)}">${esc(r.fach_det)}</td>
@@ -687,6 +693,7 @@
         <td>${truncCell(r.dead_link,'Deadline Link')}</td>
 
         <td>${pill(r.campus_job)}</td>
+        <td class="trunc" data-title="Work on Campus Details" data-full="${esc(r.work_details)}">${esc(r.work_details)}</td>
         <td class="right">${formatMoney(r.min_wage)}</td>
         <td class="right">${formatMoney(r.work_comp)}</td>
       </tr>
@@ -697,6 +704,7 @@
   }
 
   // Header sort interactions + indicators
+  let sort = {key:null, dir:1};
   function updateSortIndicators(){
     document.querySelectorAll('thead th').forEach(th=>{
       th.classList.remove('sort-asc','sort-desc');
@@ -706,11 +714,22 @@
       }
     });
   }
+  function applySort(arr){
+    if(!sort.key) return;
+    const k = sort.key, d = sort.dir;
+    arr.sort((a,b)=>{
+      const va = a[k], vb=b[k];
+      const na = (typeof va === 'number')?va:numberFrom(va);
+      const nb = (typeof vb === 'number')?vb:numberFrom(vb);
+      if(na!=null && nb!=null) return (na-nb)*d;
+      return (String(va||'').localeCompare(String(vb||'')))*d;
+    });
+  }
   document.querySelectorAll('thead th').forEach(th=>{
     if(th.dataset.key) th.classList.add('sortable');
     th.addEventListener('click', ()=>{
       const key = th.dataset.key;
-      if(!key) return;
+      if(!key){ return; }
       if(sort.key===key) sort.dir *= -1; else { sort.key=key; sort.dir=1; }
       render();
     });
