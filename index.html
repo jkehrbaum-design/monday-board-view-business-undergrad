@@ -18,8 +18,10 @@
     }
     *{box-sizing:border-box}
     html,body{height:100%}
-    body{margin:0; background:var(--bg); color:var(--text);
-      font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,"Helvetica Neue",Arial;}
+    body{
+      margin:0; background:var(--bg); color:var(--text);
+      font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,"Helvetica Neue",Arial;
+    }
 
     .wrap{ max-width:1200px; margin:24px auto; padding:0 20px; }
     .h1{ font-size:28px; font-weight:700; margin:8px 0 4px; }
@@ -357,7 +359,7 @@
     room: "_usd__annual_room_cost",
     board: "_usd__annual_board_cost",
     fees: "numbers5",
-    total: "formula", // TOTAL (B) formula column
+    total: "formula",
     cost_info: "link_s_annual_cost_of_attendance",
 
     adm_req: "_link__requirements_admission_information",
@@ -407,13 +409,22 @@
   let cursor = null;
   let isLoading = false;
 
-  // Progressive load: fetch first page, render, then (optionally) follow cursor until done
+  // Fast-first render: load first page, reveal UI, then optionally continue in background.
   async function initialLoad(){
     items = []; cursor = null;
     showLoader(true);
-    await fetchAndAppend({limit: limitSel.value, cursorParam: null, progressive: autoLoad.checked});
+
+    // First page only (quick display)
+    await fetchAndAppend({limit: limitSel.value, cursorParam: null, progressive: false});
+
+    // Reveal UI
     showLoader(false);
     app.style.display = 'block';
+
+    // Continue loading more pages in the background if toggled
+    if (autoLoad.checked && cursor) {
+      fetchAndAppend({limit: limitSel.value, cursorParam: cursor, progressive: true});
+    }
   }
 
   async function fetchAndAppend({limit, cursorParam, progressive}){
@@ -422,7 +433,7 @@
     if(Array.isArray(batch) && batch.length){
       items.push(...batch);
       buildStateOptionsFrom(items);
-      render(); // progressive paint
+      render(); // paint after each page
     }
     cursor = cur || null;
 
@@ -458,7 +469,7 @@
     moreBtn.disabled = on; reloadBtn.disabled = on;
     moreSpin.style.display = on ? 'inline-block' : 'none';
     reloadSpin.style.display = on ? 'inline-block' : 'none';
-    moreBtn.querySelector('span').textContent = on ? 'Loading more…' : 'Load more';
+    moreBtn.querySelector('span').textContent = on ? 'Load more…' : 'Load more';
   }
   function numberFrom(a){
     if(a==null) return null;
@@ -491,12 +502,13 @@
       default: return v.text || "";
     }
   }
-  function linkify(s, label='Link'){
-    if(!s) return "";
-    // If Monday stored "Link - https://..." as text, pull the URL if present
-    const urlMatch = String(s).match(/https?:\/\/\S+/);
-    const href = urlMatch ? urlMatch[0] : s;
-    return `<a class="link" href="${esc(href)}" target="_blank" rel="noopener">${esc(label)}</a>`;
+  function truncCell(content, title){
+    const full = (content ?? '').toString().trim();
+    if(!full) return '';
+    // If it's a URL or Monday "Link - https://..." text, make it clickable
+    const urlMatch = full.match(/https?:\/\/\S+/);
+    if(urlMatch) return `<a class="link" href="${esc(urlMatch[0])}" target="_blank" rel="noopener">Link</a>`;
+    return `<span class="trunc" data-title="${esc(title||'Details')}" data-full="${esc(full)}">${esc(full)}</span>`;
   }
   function pill(txt){ if(!txt) return ""; return `<span class="pill">${esc(txt)}</span>`; }
 
@@ -614,15 +626,6 @@
     };
   }
 
-  function truncCell(content, title){
-    const full = (content ?? '').toString().trim();
-    if(!full) return '';
-    // If it's a URL or Monday "Link - https://..." text, make it clickable
-    const urlMatch = full.match(/https?:\/\/\S+/);
-    if(urlMatch) return `<a class="link" href="${esc(urlMatch[0])}" target="_blank" rel="noopener">Link</a>`;
-    return `<span class="trunc" data-title="${esc(title||'Details')}" data-full="${esc(full)}">${esc(full)}</span>`;
-  }
-
   // Render table
   function render(){
     const rows = items.map(toRow);
@@ -649,7 +652,7 @@
     applySort(filtered);
     updateSortIndicators();
 
-    tbody.innerHTML = filtered.map(r=>`
+    const html = filtered.map(r=>`
       <tr>
         <td class="sticky"><strong>${esc(r.name)}</strong></td>
         <td>${esc(r.state)}</td>
@@ -735,6 +738,7 @@
       </tr>
     `).join('');
 
+    tbody.innerHTML = html;
     shown.textContent = `${filtered.length} shown`;
     loaded.textContent = `${items.length} loaded`;
     moreBtn.style.display = cursor ? 'inline-flex' : 'none';
