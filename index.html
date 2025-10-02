@@ -18,8 +18,10 @@
     }
     *{box-sizing:border-box}
     html,body{height:100%}
-    body{margin:0; background:var(--bg); color:var(--text);
-      font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,"Helvetica Neue",Arial;}
+    body{
+      margin:0; background:var(--bg); color:var(--text);
+      font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,"Helvetica Neue",Arial;
+    }
 
     .wrap{ max-width:1200px; margin:24px auto; padding:0 20px; }
     .h1{ font-size:28px; font-weight:700; margin:8px 0 4px; }
@@ -52,9 +54,11 @@
     .toggle{display:inline-flex; align-items:center; gap:6px; font-size:12px; color:#444}
 
     /* TABLE */
-    .tableWrap{ background:var(--card); border:1px solid var(--line); border-radius:10px;
-      overflow:auto; position:relative; max-height:75vh; }
-    table{border-collapse:separate; border-spacing:0; width:1800px;}
+    .tableWrap{
+      background:var(--card); border:1px solid var(--line); border-radius:10px;
+      overflow:auto; position:relative; max-height:75vh;
+    }
+    table{border-collapse:separate; border-spacing:0; width:2200px;}
     thead th{
       position:sticky; top:0; background:var(--thead); z-index:5;
       font-size:12px; text-transform:uppercase; letter-spacing:.02em;
@@ -69,7 +73,7 @@
       max-width:280px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
     }
     tbody td.trunc { cursor:pointer; }
-    /* Frozen first column */
+    /* Frozen first column that others scroll UNDER (higher z-index & right border) */
     .sticky{
       position:sticky; left:0; z-index:6;
       background:#fff; min-width:var(--stickyW); max-width:var(--stickyW);
@@ -94,7 +98,22 @@
     }
     @keyframes spin{ to{ transform:rotate(360deg); } }
 
-    /* Fixed horizontal scroller */
+    /* Popup */
+    #popup{
+      display:none; position:fixed; top:50%; left:50%; transform:translate(-50%,-50%);
+      background:#fff; padding:16px 18px; border:1px solid var(--line); border-radius:10px;
+      box-shadow:0 12px 30px rgba(0,0,0,.15); z-index:3000; max-width:700px; max-height:70vh; overflow:auto;
+    }
+    #popupClose{ position:absolute; top:8px; right:12px; cursor:pointer; font-weight:700; }
+    #popup h4{ margin:0 24px 10px 0; font-size:14px; color:#555; }
+    #popup pre{ white-space:pre-wrap; word-break:break-word; font-family:inherit; font-size:14px; margin:0; }
+
+    .little-spinner{
+      width:14px; height:14px; border:2px solid #e2e8f0; border-top-color:#fff; border-radius:50%;
+      animation:spin .8s linear infinite;
+    }
+
+    /* Fixed horizontal scroller at bottom */
     #fixedScroller {
       position:fixed; bottom:0; left:0; right:0;
       height:20px; overflow-x:auto; overflow-y:hidden;
@@ -112,9 +131,58 @@
   <div class="h1">Bachelor’s Programs – Freshman & Average Student</div>
   <div class="sub">The data comes from a secure Netlify function (read-only). The look and feel is inspired by Monday.</div>
 
-  <!-- FILTERS -->
+  <!-- FILTERS (sticky) -->
   <div class="card">
-    <!-- ... filters unchanged ... -->
+    <div class="row">
+      <div class="col" style="min-width:260px">
+        <label class="label">Search (Name & Major)</label>
+        <input id="q" placeholder="Search…" />
+      </div>
+
+      <div class="col">
+        <label class="label">State</label>
+        <select id="state"><option value="">All</option></select>
+      </div>
+
+      <div class="col">
+        <label class="label">Final cost (USD)</label>
+        <div class="row" style="gap:6px">
+          <input id="fcMin" class="nums" placeholder="min $" inputmode="numeric" />
+          <input id="fcMax" class="nums" placeholder="max $" inputmode="numeric" />
+        </div>
+      </div>
+
+      <div class="col">
+        <label class="label">GPA</label>
+        <div class="row" style="gap:6px">
+          <input id="gpaMin" class="nums" placeholder="min" inputmode="decimal" />
+          <input id="gpaMax" class="nums" placeholder="max" inputmode="decimal" />
+        </div>
+      </div>
+
+      <div class="col">
+        <label class="label">Page size</label>
+        <select id="limit"><option>50</option><option selected>100</option><option>200</option></select>
+      </div>
+
+      <div class="spacer"></div>
+
+      <label class="toggle"><input id="autoLoad" type="checkbox" checked /> Auto-load remaining</label>
+
+      <button class="btn primary" id="reloadBtn">
+        <div class="little-spinner" id="reloadSpin" style="display:none"></div><span>Reload</span>
+      </button>
+      <button class="btn" id="resetBtn">Reset filters</button>
+      <button class="btn" id="exportBtn">Export Excel</button>
+    </div>
+
+    <div class="chips" style="margin-top:10px">
+      <span id="shown" class="chip">0 shown</span>
+      <span id="loaded" class="chip">0 loaded</span>
+      <button id="moreBtn" class="btn" style="height:28px;padding:0 10px">
+        <div class="little-spinner" id="moreSpin" style="display:none"></div><span>Load more</span>
+      </button>
+    </div>
   </div>
 
   <!-- TABLE -->
@@ -126,12 +194,85 @@
           <th class="sortable" data-key="state">State</th>
           <th class="sortable" data-key="geo_area">Geographical Area</th>
           <th class="sortable" data-key="major">Bachelor’s Study Areas (B)</th>
+
+          <!-- removed “Final cost” and “Min GPA” columns by request -->
+
+          <th data-key="city">City</th>
+          <th data-key="address">Full address</th>
+          <th data-key="video_state">Video I about the State</th>
+          <th data-key="virtual_tour">Virtual Campus Tour?</th>
+          <th data-key="fachabitur">Fachabitur?</th>
+          <th data-key="fach_det">Fachabitur Details</th>
+
+          <th data-key="usnews_rank" class="right">U.S. News Ranking</th>
+          <th data-key="usnews_link">U.S. News Link</th>
+          <th data-key="type">Type of Institution</th>
+          <th data-key="enroll" class="right">Total Enrollment</th>
+          <th data-key="live_pct" class="right">% Live on Campus</th>
+          <th data-key="live_num" class="right"># Live on Campus</th>
+          <th data-key="ratio" class="right">Student-Faculty</th>
+          <th data-key="insurance">Insurance Required?</th>
+          <th data-key="insurance_info">Health Insurance details</th>
+
+          <th data-key="app_fee" class="right">Application Fee</th>
+          <th data-key="how_apply">How to Apply</th>
+          <th data-key="cred_eval">Credential Eval Required</th>
+          <th data-key="cred_info">+ Info on Credential Evaluation</th>
+          <th data-key="spring_adm">Spring Admission?</th>
+          <th data-key="spring_sch">Spring Scholarships?</th>
+          <th data-key="clarify">Clarification</th>
+
+          <th data-key="campus_acts">On Campus Activities</th>
+          <th data-key="sports">Sports Homepage</th>
+          <th data-key="uni_home">University Homepage</th>
+          <th data-key="intl_adm">International Admission</th>
+
+          <th data-key="degrees_link">Bachelor’s Degrees Link</th>
+          <th data-key="acad_year">Academic Year</th>
+
           <th data-key="tuition" class="right">Tuition</th>
           <th data-key="room" class="right">Room</th>
           <th data-key="board" class="right">Board</th>
           <th data-key="fees" class="right">Fees</th>
           <th data-key="total" class="right">TOTAL</th>
+          <th data-key="cost_info">+ Info Annual Cost</th>
+
+          <th data-key="adm_req">Admission Requirements</th>
+
+          <th data-key="sch_low" class="right">Lowest $</th>
+          <th data-key="sch_low_type">Lowest: Type</th>
+          <th data-key="toefl_low" class="right">TOEFL Min (Lowest)</th>
+          <th data-key="gpa_low" class="right">GPA Min (Lowest)</th>
+          <th data-key="sat_low" class="right">SAT Min (Lowest)</th>
+          <th data-key="sch_low_info">Lowest: Info</th>
+
+          <th data-key="sch_mid" class="right">Mid $</th>
+          <th data-key="sch_mid_type">Mid: Type</th>
+          <th data-key="toefl_mid" class="right">TOEFL Min (Mid)</th>
+          <th data-key="gpa_mid" class="right">GPA Min (Mid)</th>
+          <th data-key="sat_mid" class="right">SAT Min (Mid)</th>
+          <th data-key="sch_mid_info">Mid: Info</th>
+
+          <th data-key="sch_hi" class="right">High $</th>
+          <th data-key="sch_hi_type">High: Type</th>
           <th data-key="toefl_hi" class="right">TOEFL iBT Minimum (Highest Scholarship)</th>
+          <th data-key="gpa_hi" class="right">GPA Min (High)</th>
+          <th data-key="sat_hi" class="right">SAT Min (High)</th>
+          <th data-key="sch_hi_info">High: Info</th>
+
+          <th data-key="net_low" class="right">NetCost Low</th>
+          <th data-key="net_mid" class="right">NetCost Mid</th>
+          <th data-key="net_hi" class="right">NetCost High</th>
+
+          <th data-key="dead_fall">Fall Deadline</th>
+          <th data-key="dead_spring">Spring Deadline</th>
+          <th data-key="dead_link">Deadline Link</th>
+
+          <th data-key="campus_job">Campus Employment?</th>
+          <th data-key="min_wage" class="right">2025 Min Wage</th>
+          <th data-key="work_comp" class="right">Annual Work Compensation</th>
+
+          <th data-key="work_details_b">Bachelor’s Work on Campus Details (B)</th>
         </tr>
       </thead>
       <tbody id="tbody"></tbody>
@@ -139,28 +280,549 @@
   </div>
 </div>
 
+<!-- Popup for full cell text -->
+<div id="popup">
+  <span id="popupClose">✕</span>
+  <h4 id="popupTitle">Details</h4>
+  <pre id="popupBody"></pre>
+</div>
+
 <!-- Fixed bottom scrollbar -->
 <div id="fixedScroller"><div id="scrollInner"></div></div>
 
 <script>
 (() => {
+  // --------- UI refs
+  const app = document.getElementById('app');
+  const loader = document.getElementById('loader');
+
+  const q = document.querySelector('#q');
+  const stateSel = document.querySelector('#state');
+  const fcMin = document.querySelector('#fcMin');
+  const fcMax = document.querySelector('#fcMax');
+  const gpaMin = document.querySelector('#gpaMin');
+  const gpaMax = document.querySelector('#gpaMax');
+  const limitSel = document.querySelector('#limit');
+  const autoLoad = document.querySelector('#autoLoad');
+
+  const reloadBtn = document.querySelector('#reloadBtn');
+  const reloadSpin = document.getElementById('reloadSpin');
+  const moreBtn = document.querySelector('#moreBtn');
+  const moreSpin = document.getElementById('moreSpin');
+  const resetBtn = document.querySelector('#resetBtn');
+  const exportBtn = document.querySelector('#exportBtn');
+
+  const tbody = document.querySelector('#tbody');
+  const shown = document.querySelector('#shown');
+  const loaded = document.querySelector('#loaded');
+
+  // Bottom fixed scroller sync
   const tableWrap = document.getElementById('tableWrap');
   const fixedScroller = document.getElementById('fixedScroller');
   const scrollInner = document.getElementById('scrollInner');
+  function syncScrollerWidth(){ scrollInner.style.width = tableWrap.scrollWidth + 'px'; }
+  new ResizeObserver(syncScrollerWidth).observe(tableWrap);
+  window.addEventListener('resize', syncScrollerWidth);
+  fixedScroller.addEventListener('scroll', ()=>{ tableWrap.scrollLeft = fixedScroller.scrollLeft; });
+  tableWrap.addEventListener('scroll', ()=>{ fixedScroller.scrollLeft = tableWrap.scrollLeft; });
 
-  // Sync bottom scroller with table
-  function syncScroller() {
-    scrollInner.style.width = tableWrap.scrollWidth + 'px';
+  // --------- Column mapping (IDs from your Monday board)
+  const COL = {
+    name: "name",
+    state: "state1",
+    geo_area: "dropdown30",
+    majors: "dropdown73",
+
+    city: "city",
+    address: "location",
+    video_state: "link_14",
+    virtual_tour: "link_1",
+    fachabitur: "status5",
+    fach_det: "long_text15",
+
+    usnews_rank: "long_text",
+    usnews_link: "link1",
+    type: "dropdown",
+    enroll: "numbers7",
+    live_pct: "numbers8",
+    live_num: "formula53",
+    ratio: "numbers81",
+    insurance: "dropdown8",
+    insurance_info: "long_text63",
+
+    app_fee: "temporary_university_s_application_fee_cost__usd_",
+    how_apply: "long_text842",
+    cred_eval: "status38",
+    cred_info: "long_text60",
+    spring_adm: "status45",
+    spring_sch: "status_13",
+    clarify: "long_text9",
+
+    campus_acts: "link2",
+    sports: "link_198",
+    uni_home: "link3",
+    intl_adm: "link0",
+
+    degrees_link: "link30",
+    acad_year: "dropdown4",
+
+    tuition: "annual_tuition_cost",
+    room: "_usd__annual_room_cost",
+    board: "_usd__annual_board_cost",
+    fees: "numbers5",
+    total: "formula",              // TOTAL (Approximate Annual Cost in USD)
+    cost_info: "link_s_annual_cost_of_attendance",
+
+    adm_req: "_link__requirements_admission_information",
+
+    sch_low: "dup__of_minimum__usd__annual_scholarship_amount6",
+    sch_low_type: "status1",
+    toefl_low: "numbers2",
+    gpa_low: "numbers34",
+    sat_low: "numbers0",
+    sch_low_info: "additional_info_and_link_s_on_minimum_scholarship_amount",
+
+    sch_mid: "numbers68",
+    sch_mid_type: "status_132",
+    toefl_mid: "numbers54",
+    gpa_mid: "numbers64",
+    sat_mid: "numbers414",
+    sch_mid_info: "long_text31",
+
+    sch_hi: "numbers11",
+    sch_hi_type: "dup__of_competitive_vs_guaranteed___gpa__3_5__highest_",
+    /* Important: Use numbers9 for TOEFL iBT Minimum (Highest Scholarship) as requested */
+    toefl_hi: "numbers9",
+    gpa_hi: "numbers4",
+    sat_hi: "numbers41",
+    sch_hi_info: "long_text78",
+
+    net_low: "formula3",
+    net_mid: "formula07",
+    net_hi: "formula9",
+
+    dead_fall: "deadline_fall_application",
+    dead_spring: "deadline_spring_application",
+    dead_link: "link_104",
+
+    campus_job: "status_113",
+    min_wage: "numbers985",
+    work_comp: "formula5",
+
+    work_details_b: "long_text56",
+
+    // Keep for client-side filters only (not displayed as columns)
+    final_cost: "formula",
+    gpa: "numbers34"
+  };
+
+  // --------- Data & state
+  let items = [];   // raw pages combined
+  let cursor = null;
+  let isLoading = false;
+
+  // Fast-first render: load first page, reveal UI, then optionally continue in background.
+  async function initialLoad(){
+    items = []; cursor = null;
+    showLoader(true);
+
+    // First page only (quick display)
+    await fetchAndAppend({limit: limitSel.value, cursorParam: null, progressive: false});
+
+    // Reveal UI
+    showLoader(false);
+    app.style.display = 'block';
+    syncScrollerWidth();
+
+    // Continue loading more pages in the background if toggled
+    if (autoLoad.checked && cursor) {
+      fetchAndAppend({limit: limitSel.value, cursorParam: cursor, progressive: true});
+    }
   }
-  syncScroller();
-  new ResizeObserver(syncScroller).observe(tableWrap);
 
-  fixedScroller.addEventListener('scroll', () => {
-    tableWrap.scrollLeft = fixedScroller.scrollLeft;
+  async function fetchAndAppend({limit, cursorParam, progressive}){
+    setMoreLoading(true);
+    const {items:batch, cursor:cur} = await fetchBatch({limit, cursorParam});
+    if(Array.isArray(batch) && batch.length){
+      items.push(...batch);
+      buildStateOptionsFrom(items);
+      render(); // paint after each page
+      syncScrollerWidth();
+    }
+    cursor = cur || null;
+
+    // If progressive, keep going automatically until no cursor
+    while(progressive && cursor){
+      const {items:nextBatch, cursor:nextCur} = await fetchBatch({limit, cursorParam: cursor});
+      if(Array.isArray(nextBatch) && nextBatch.length){
+        items.push(...nextBatch);
+        buildStateOptionsFrom(items);
+        render();
+        syncScrollerWidth();
+      }
+      cursor = nextCur || null;
+    }
+    setMoreLoading(false);
+  }
+
+  async function fetchBatch({limit, cursorParam}){
+    const url = new URL('/.netlify/functions/items', location.origin);
+    url.searchParams.set('limit', String(limit || '100'));
+    if(cursorParam) url.searchParams.set('cursor', cursorParam);
+    const resp = await fetch(url, { cache: 'no-store' });
+    if(!resp.ok){
+      console.error('Fetch failed', resp.status);
+      return {items:[], cursor:null};
+    }
+    return await resp.json();
+  }
+
+  // ---------- Helpers
+  function showLoader(on){ loader.style.display = on ? 'flex' : 'none'; }
+  function setMoreLoading(on){
+    isLoading = on;
+    moreBtn.disabled = on; reloadBtn.disabled = on;
+    moreSpin.style.display = on ? 'inline-block' : 'none';
+    reloadSpin.style.display = on ? 'inline-block' : 'none';
+    moreBtn.querySelector('span').textContent = on ? 'Loading more…' : 'Load more';
+  }
+  function numberFrom(a){
+    if(a==null) return null;
+    const s = (""+a).replace(/[^\d.\-]/g,''); if(!s) return null;
+    const n = parseFloat(s); return Number.isFinite(n)?n:null;
+  }
+  function formatMoney(n){
+    if(n==null || n==="") return "";
+    try{ return new Intl.NumberFormat('en-US',{style:'currency',currency:'USD',maximumFractionDigits:0}).format(n); }
+    catch{ return "$"+n; }
+  }
+  function formatInt(n){
+    if(n==null || n==="") return "";
+    try{ return new Intl.NumberFormat('en-US',{maximumFractionDigits:0}).format(n); }
+    catch{ return String(n); }
+  }
+  function esc(s){ return (s??"").toString().replace(/[&<>"']/g, m=>({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[m])); }
+
+  function readCell(item, colId){
+    const v = item.column_values?.find(c=>c.id===colId);
+    if(!v) return "";
+    switch(v.type){
+      case "text": case "long-text": return v.text||"";
+      case "dropdown": return (v.text||"").replaceAll(";",", ");
+      case "status": return v.text||"";
+      case "numbers": return v.text || v.value || "";
+      case "link": return v.text || v.url || "";
+      case "location": return v.text || "";
+      case "formula": return v.text || ""; // Monday returns computed string in text
+      default: return v.text || "";
+    }
+  }
+  function truncCell(content, title){
+    const full = (content ?? '').toString().trim();
+    if(!full) return '';
+    const urlMatch = full.match(/https?:\/\/\S+/);
+    if(urlMatch) return `<a class="link" href="${esc(urlMatch[0])}" target="_blank" rel="noopener">Link</a>`;
+    return `<span class="trunc" data-title="${esc(title||'Details')}" data-full="${esc(full)}">${esc(full)}</span>`;
+  }
+  function pill(txt){ if(!txt) return ""; return `<span class="pill">${esc(txt)}</span>`; }
+
+  function buildStateOptionsFrom(list){
+    const set = new Set();
+    for(const it of list){
+      const st = readCell(it, COL.state);
+      if(st) set.add(st);
+    }
+    const states = ["", ...Array.from(set).sort()];
+    stateSel.innerHTML = states.map(s=> `<option value="${esc(s)}">${s||'All'}</option>`).join('');
+  }
+
+  // ---------- Filters + Sort
+  let sort = {key:null, dir:1};
+  function applySort(arr){
+    if(!sort.key) return;
+    const k = sort.key, d = sort.dir;
+    arr.sort((a,b)=>{
+      const va = a[k], vb=b[k];
+      const na = (typeof va === 'number')?va:numberFrom(va);
+      const nb = (typeof vb === 'number')?vb:numberFrom(vb);
+      if(na!=null && nb!=null) return (na-nb)*d;
+      return (String(va||'').localeCompare(String(vb||'')))*d;
+    });
+  }
+
+  function toRow(item){
+    const pick = (id) => readCell(item,id);
+    return {
+      name: item.name || "",
+      state: pick(COL.state),
+      geo_area: pick(COL.geo_area),
+      major: pick(COL.majors),
+
+      city: pick(COL.city),
+      address: pick(COL.address),
+      video_state: pick(COL.video_state),
+      virtual_tour: pick(COL.virtual_tour),
+      fachabitur: pick(COL.fachabitur),
+      fach_det: pick(COL.fach_det),
+
+      usnews_rank: pick(COL.usnews_rank),
+      usnews_link: pick(COL.usnews_link),
+      type: pick(COL.type),
+      enroll: numberFrom(pick(COL.enroll)),
+      live_pct: pick(COL.live_pct),
+      live_num: numberFrom(pick(COL.live_num)),
+      ratio: numberFrom(pick(COL.ratio)),
+      insurance: pick(COL.insurance),
+      insurance_info: pick(COL.insurance_info),
+
+      app_fee: pick(COL.app_fee),
+      how_apply: pick(COL.how_apply),
+      cred_eval: pick(COL.cred_eval),
+      cred_info: pick(COL.cred_info),
+      spring_adm: pick(COL.spring_adm),
+      spring_sch: pick(COL.spring_sch),
+      clarify: pick(COL.clarify),
+
+      campus_acts: pick(COL.campus_acts),
+      sports: pick(COL.sports),
+      uni_home: pick(COL.uni_home),
+      intl_adm: pick(COL.intl_adm),
+
+      degrees_link: pick(COL.degrees_link),
+      acad_year: pick(COL.acad_year),
+
+      tuition: numberFrom(pick(COL.tuition)),
+      room: numberFrom(pick(COL.room)),
+      board: numberFrom(pick(COL.board)),
+      fees: numberFrom(pick(COL.fees)),
+      total: numberFrom(pick(COL.total)),
+      cost_info: pick(COL.cost_info),
+      adm_req: pick(COL.adm_req),
+
+      sch_low: numberFrom(pick(COL.sch_low)),
+      sch_low_type: pick(COL.sch_low_type),
+      toefl_low: numberFrom(pick(COL.toefl_low)),
+      gpa_low: numberFrom(pick(COL.gpa_low)),
+      sat_low: numberFrom(pick(COL.sat_low)),
+      sch_low_info: pick(COL.sch_low_info),
+
+      sch_mid: numberFrom(pick(COL.sch_mid)),
+      sch_mid_type: pick(COL.sch_mid_type),
+      toefl_mid: numberFrom(pick(COL.toefl_mid)),
+      gpa_mid: numberFrom(pick(COL.gpa_mid)),
+      sat_mid: numberFrom(pick(COL.sat_mid)),
+      sch_mid_info: pick(COL.sch_mid_info),
+
+      sch_hi: numberFrom(pick(COL.sch_hi)),
+      sch_hi_type: pick(COL.sch_hi_type),
+      toefl_hi: numberFrom(pick(COL.toefl_hi)),   // numbers9
+      gpa_hi: numberFrom(pick(COL.gpa_hi)),
+      sat_hi: numberFrom(pick(COL.sat_hi)),
+      sch_hi_info: pick(COL.sch_hi_info),
+
+      net_low: pick(COL.net_low),
+      net_mid: pick(COL.net_mid),
+      net_hi: pick(COL.net_hi),
+
+      dead_fall: pick(COL.dead_fall),
+      dead_spring: pick(COL.dead_spring),
+      dead_link: pick(COL.dead_link),
+
+      campus_job: pick(COL.campus_job),
+      min_wage: numberFrom(pick(COL.min_wage)),
+      work_comp: numberFrom(pick(COL.work_comp)),
+
+      work_details_b: pick(COL.work_details_b),
+
+      // for client filters:
+      final_cost: numberFrom(pick(COL.final_cost)),
+      gpa: numberFrom(pick(COL.gpa))
+    };
+  }
+
+  // Render table
+  function render(){
+    const rows = items.map(toRow);
+
+    // filters
+    const qv = q.value.trim().toLowerCase();
+    const st = stateSel.value;
+    const fcMinV = numberFrom(fcMin.value), fcMaxV = numberFrom(fcMax.value);
+    const gpaMinV = numberFrom(gpaMin.value), gpaMaxV = numberFrom(gpaMax.value);
+
+    const filtered = rows.filter(r=>{
+      if(qv){
+        const inText = (r.name+" "+(r.major||"")).toLowerCase();
+        if(!inText.includes(qv)) return false;
+      }
+      if(st && r.state!==st) return false;
+      if(fcMinV!=null && (r.final_cost==null || r.final_cost<fcMinV)) return false;
+      if(fcMaxV!=null && (r.final_cost!=null && r.final_cost>fcMaxV)) return false;
+      if(gpaMinV!=null && (r.gpa==null || r.gpa<gpaMinV)) return false;
+      if(gpaMaxV!=null && (r.gpa!=null && r.gpa>gpaMaxV)) return false;
+      return true;
+    });
+
+    applySort(filtered);
+    updateSortIndicators();
+
+    tbody.innerHTML = filtered.map(r=>`
+      <tr>
+        <td class="sticky"><strong>${esc(r.name)}</strong></td>
+        <td>${esc(r.state)}</td>
+        <td class="trunc" data-title="Geographical Area" data-full="${esc(r.geo_area||'')}">${esc(r.geo_area||'')}</td>
+        <td class="trunc" data-title="Bachelor’s Study Areas" data-full="${esc(r.major||'')}">${esc(r.major||'')}</td>
+
+        <td class="trunc" data-title="City" data-full="${esc(r.city)}">${esc(r.city)}</td>
+        <td class="trunc mono" data-title="Full address" data-full="${esc(r.address)}">${esc(r.address)}</td>
+        <td>${truncCell(r.video_state,'Video I about the State')}</td>
+        <td>${truncCell(r.virtual_tour,'Virtual Campus Tour')}</td>
+        <td>${pill(r.fachabitur)}</td>
+        <td class="trunc" data-title="Fachabitur Details" data-full="${esc(r.fach_det)}">${esc(r.fach_det)}</td>
+
+        <td class="right mono">${esc(r.usnews_rank)}</td>
+        <td>${truncCell(r.usnews_link,'U.S. News Link')}</td>
+        <td class="trunc" data-title="Type" data-full="${esc(r.type)}">${esc(r.type)}</td>
+        <td class="right">${formatInt(r.enroll)}</td>
+        <td class="right">${esc(r.live_pct)}</td>
+        <td class="right">${formatInt(r.live_num)}</td>
+        <td class="right">${r.ratio??""}</td>
+        <td class="trunc" data-title="Insurance Required?" data-full="${esc(r.insurance)}">${esc(r.insurance)}</td>
+        <td class="trunc" data-title="Health Insurance details" data-full="${esc(r.insurance_info)}">${esc(r.insurance_info)}</td>
+
+        <td class="right">${esc(r.app_fee)}</td>
+        <td class="trunc" data-title="How to Apply" data-full="${esc(r.how_apply)}">${esc(r.how_apply)}</td>
+        <td>${pill(r.cred_eval)}</td>
+        <td class="trunc" data-title="Credential Eval Info" data-full="${esc(r.cred_info)}">${esc(r.cred_info)}</td>
+        <td>${pill(r.spring_adm)}</td>
+        <td>${pill(r.spring_sch)}</td>
+        <td class="trunc" data-title="Clarification" data-full="${esc(r.clarify)}">${esc(r.clarify)}</td>
+
+        <td>${truncCell(r.campus_acts,'On Campus Activities')}</td>
+        <td>${truncCell(r.sports,'Sports Homepage')}</td>
+        <td>${truncCell(r.uni_home,'University Homepage')}</td>
+        <td>${truncCell(r.intl_adm,'International Admission')}</td>
+
+        <td>${truncCell(r.degrees_link,'Bachelor’s Degrees Link')}</td>
+        <td class="trunc" data-title="Academic Year" data-full="${esc(r.acad_year)}">${esc(r.acad_year)}</td>
+
+        <td class="right">${formatMoney(r.tuition)}</td>
+        <td class="right">${formatMoney(r.room)}</td>
+        <td class="right">${formatMoney(r.board)}</td>
+        <td class="right">${formatMoney(r.fees)}</td>
+        <td class="right"><strong>${formatMoney(r.total)}</strong></td>
+        <td class="trunc" data-title="Annual Cost Info" data-full="${esc(r.cost_info)}">${esc(r.cost_info)}</td>
+
+        <td class="trunc" data-title="Admission Requirements" data-full="${esc(r.adm_req)}">${esc(r.adm_req)}</td>
+
+        <td class="right">${formatMoney(r.sch_low)}</td>
+        <td class="trunc" data-title="Lowest Type" data-full="${esc(r.sch_low_type)}">${esc(r.sch_low_type)}</td>
+        <td class="right">${r.toefl_low??""}</td>
+        <td class="right">${r.gpa_low??""}</td>
+        <td class="right">${r.sat_low??""}</td>
+        <td class="trunc" data-title="Lowest Info" data-full="${esc(r.sch_low_info)}">${esc(r.sch_low_info)}</td>
+
+        <td class="right">${formatMoney(r.sch_mid)}</td>
+        <td class="trunc" data-title="Mid Type" data-full="${esc(r.sch_mid_type)}">${esc(r.sch_mid_type)}</td>
+        <td class="right">${r.toefl_mid??""}</td>
+        <td class="right">${r.gpa_mid??""}</td>
+        <td class="right">${r.sat_mid??""}</td>
+        <td class="trunc" data-title="Mid Info" data-full="${esc(r.sch_mid_info)}">${esc(r.sch_mid_info)}</td>
+
+        <td class="right">${formatMoney(r.sch_hi)}</td>
+        <td class="trunc" data-title="High Type" data-full="${esc(r.sch_hi_type)}">${esc(r.sch_hi_type)}</td>
+        <td class="right">${r.toefl_hi??""}</td>
+        <td class="right">${r.gpa_hi??""}</td>
+        <td class="right">${r.sat_hi??""}</td>
+        <td class="trunc" data-title="High Info" data-full="${esc(r.sch_hi_info)}">${esc(r.sch_hi_info)}</td>
+
+        <td class="right">${esc(r.net_low)}</td>
+        <td class="right">${esc(r.net_mid)}</td>
+        <td class="right">${esc(r.net_hi)}</td>
+
+        <td class="trunc" data-title="Fall Deadline" data-full="${esc(r.dead_fall)}">${esc(r.dead_fall)}</td>
+        <td class="trunc" data-title="Spring Deadline" data-full="${esc(r.dead_spring)}">${esc(r.dead_spring)}</td>
+        <td>${truncCell(r.dead_link,'Deadline Link')}</td>
+
+        <td>${pill(r.campus_job)}</td>
+        <td class="right">${r.min_wage==null||r.min_wage==="" ? "" : formatMoney(r.min_wage).replace(".00","")}</td>
+        <td class="right">${formatMoney(r.work_comp)}</td>
+
+        <td class="trunc" data-title="Bachelor’s Work on Campus Details (B)" data-full="${esc(r.work_details_b)}">${esc(r.work_details_b)}</td>
+      </tr>
+    `).join('');
+
+    shown.textContent = `${filtered.length} shown`;
+    loaded.textContent = `${items.length} loaded`;
+    moreBtn.style.display = cursor ? 'inline-flex' : 'none';
+  }
+
+  // Header sort interactions + indicators
+  function updateSortIndicators(){
+    document.querySelectorAll('thead th').forEach(th=>{
+      th.classList.remove('sort-asc','sort-desc');
+      const key = th.dataset.key;
+      if(key && key === sort.key){
+        th.classList.add(sort.dir===1?'sort-asc':'sort-desc');
+      }
+    });
+  }
+  document.querySelectorAll('thead th').forEach(th=>{
+    if(th.dataset.key) th.classList.add('sortable');
+    th.addEventListener('click', ()=>{
+      const key = th.dataset.key;
+      if(!key) return;
+      if(sort.key===key) sort.dir *= -1; else { sort.key=key; sort.dir=1; }
+      render();
+    });
   });
-  tableWrap.addEventListener('scroll', () => {
-    fixedScroller.scrollLeft = tableWrap.scrollLeft;
+
+  // Delegated click: show popup for truncated text cells
+  document.querySelector('#tbody').addEventListener('click', (e)=>{
+    const target = e.target.closest('.trunc');
+    if(!target) return;
+    const title = target.dataset.title || 'Details';
+    const full = target.dataset.full || target.textContent || '';
+    if(full.trim()) {
+      document.getElementById('popupTitle').textContent = title;
+      document.getElementById('popupBody').textContent = full;
+      document.getElementById('popup').style.display = 'block';
+    }
   });
+  document.getElementById('popupClose').onclick = ()=>{ document.getElementById('popup').style.display='none'; };
+
+  // Events
+  reloadBtn.onclick = async ()=>{ if(isLoading) return; await initialLoad(); };
+  resetBtn.onclick = async ()=>{
+    if(isLoading) return;
+    q.value=''; stateSel.value=''; fcMin.value=''; fcMax.value=''; gpaMin.value=''; gpaMax.value='';
+    sort = {key:null, dir:1};
+    await initialLoad();
+  };
+  moreBtn.onclick = async ()=>{
+    if(isLoading || !cursor) return;
+    await fetchAndAppend({limit: limitSel.value, cursorParam: cursor, progressive: autoLoad.checked});
+  };
+  [q,stateSel,fcMin,fcMax,gpaMin,gpaMax,limitSel,autoLoad].forEach(el=>{
+    el.addEventListener('change', render);
+    if(el.tagName === 'INPUT') el.addEventListener('keyup', e=>{ if(e.key==='Enter') render(); });
+  });
+
+  // Excel export
+  exportBtn.onclick = ()=>{
+    const headers = Array.from(document.querySelectorAll('thead th')).map(th=>th.textContent.trim());
+    const rows = Array.from(tbody.querySelectorAll('tr')).map(tr =>
+      Array.from(tr.children).map(td => td.textContent.replace(/\s+/g,' ').trim())
+    );
+    const aoa = [headers, ...rows];
+    const ws = XLSX.utils.aoa_to_sheet(aoa);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Programs');
+    XLSX.writeFile(wb, 'bachelors-programs.xlsx');
+  };
+
+  // Start
+  initialLoad();
 })();
 </script>
 </body>
