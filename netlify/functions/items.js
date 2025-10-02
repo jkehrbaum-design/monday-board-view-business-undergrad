@@ -13,10 +13,10 @@ export const handler = async (event) => {
   if (!TOKEN) return json({ error: 'No MONDAY_API_TOKEN set' }, 500);
 
   const p = event.queryStringParameters || {};
-  const limit  = clampInt(p.limit, 100, 1, 200); // default 100 for snappier loads
+  const limit  = clampInt(p.limit, 50, 1, 200); // default 50 (safer regionally)
   const cursor = p.cursor || null;
 
-  // Optional backend filters you already wired up on the UI
+  // Optional backend filters (mirrors your UI)
   const q      = (p.q || '').trim().toLowerCase();
   const stateF = (p.state || '').trim();
   const cMin   = toNum(p.costMin, -Infinity);
@@ -53,7 +53,7 @@ export const handler = async (event) => {
   const gv    = (cols, id) => (cols.find(c => c.id === id)?.text || '').trim();
   const gvNum = (cols, id) => numFromText(gv(cols, id));
 
-  // 1) Keep only items with SHAREABLE? (F) == "Shareable" (label index 1)
+  // Shareable column logic
   const SHAREABLE_COL_ID = 'dup__of_sharable___bachelor_s___freshman___average_';
   const isShareable = (cols) => {
     const c = cols.find(x => x.id === SHAREABLE_COL_ID);
@@ -66,7 +66,22 @@ export const handler = async (event) => {
     return false;
   };
 
-  // 2) Prepare convenience fields but keep ALL raw columns for the frontend
+  // If called in debug mode, return a quick summary for this single page
+  if ((p.debug || '').toLowerCase() === 'shareable') {
+    const shareable = items.filter(it => isShareable(it.column_values || []));
+    return json({
+      region: process.env.AWS_REGION || process.env.NETLIFY_REGION || 'unknown',
+      boardId: BOARD_ID,
+      requestedLimit: limit,
+      receivedThisPage: items.length,
+      shareableOnThisPage: shareable.length,
+      cursorPresent: !!page.cursor,
+      sampleIds: shareable.slice(0, 10).map(x => x.id),
+      note: "This inspects only the current items_page to avoid timeouts. The UI should keep calling with the returned cursor to load the rest."
+    });
+  }
+
+  // Prepare small shape for the UI but keep ALL raw columns for rendering
   const prepped = items
     .filter(it => isShareable(it.column_values || []))
     .map(it => {
@@ -75,14 +90,14 @@ export const handler = async (event) => {
         id: it.id,
         name: it.name,
         state: gv(cols, 'state1'),          // "State" dropdown
-        totalCost: gvNum(cols, 'formula'),  // TOTAL (B) (formula column id: "formula")
+        totalCost: gvNum(cols, 'formula'),  // TOTAL (B) (id "formula")
         minGpa: gvNum(cols, 'numbers34'),   // GPA Minimum (Lowest Scholarship)
         majors: gv(cols, 'dropdown73'),     // Bachelor's Study Areas (B)
-        column_values: cols                 // keep raw for UI mapping
+        column_values: cols                 // keep raw for UI mapping (70+ columns)
       };
     });
 
-  // 3) Optional backend filters to reduce payload early (client has same filters)
+  // Optional backend filters to reduce payload early
   const filtered = prepped.filter(row => {
     if (q) {
       const hay = (row.name + ' ' + (row.majors || '')).toLowerCase();
