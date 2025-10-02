@@ -10,29 +10,16 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <style>
 :root{
-  --bg:#f6f7fb;
-  --card:#ffffff;
-  --text:#1f2430;
-  --muted:#6b7280;
-  --line:#e6e9f0;
-  --primary:#1f76ff;
-  --pill:#eef3ff;
-  --pillText:#1f4fbf;
-  --link:#1f76ff;
-  --thead:#f2f4f8;
-  --chip:#f4f6fa;
-  --chipText:#49506a;
-  --stickyW:280px; /* Name column width */
+  --bg:#f6f7fb; --card:#ffffff; --text:#1f2430; --muted:#6b7280; --line:#e6e9f0;
+  --primary:#1f76ff; --pill:#eef3ff; --pillText:#1f4fbf; --link:#1f76ff; --thead:#f2f4f8;
+  --chip:#f4f6fa; --chipText:#49506a; --stickyW:280px;           /* Name col width */
 }
 *{box-sizing:border-box}
 html,body{height:100%}
-body{
-  margin:0; background:var(--bg); color:var(--text);
-  font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,"Helvetica Neue",Arial;
-}
-.wrap{ max-width:1200px; margin:24px auto; padding:0 20px; }
-.h1{ font-size:28px; font-weight:700; margin:8px 0 4px; }
-.sub{ color:var(--muted); font-size:13px; margin-bottom:18px; }
+body{margin:0;background:var(--bg);color:var(--text);font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,"Helvetica Neue",Arial;}
+.wrap{max-width:1200px;margin:24px auto;padding:0 20px;}
+.h1{font-size:28px;font-weight:700;margin:8px 0 4px;}
+.sub{color:var(--muted);font-size:13px;margin-bottom:18px;}
 
 /* Sticky filter card */
 .card{
@@ -40,24 +27,18 @@ body{
   border:1px solid var(--line); border-radius:10px; padding:14px; margin-bottom:10px;
   box-shadow:0 1px 2px rgba(0,0,0,.03);
 }
-.row{display:flex; gap:10px; flex-wrap:wrap; align-items:flex-end}
-.col{display:flex; flex-direction:column; gap:6px}
-.label{font-size:12px; color:var(--muted)}
-input,select{
-  height:36px; padding:0 10px; border:1px solid var(--line); border-radius:8px;
-  background:#fff; color:#1f2430; min-width:120px;
-}
-.nums{width:110px; text-align:right}
-.btn{
-  height:36px; padding:0 14px; border-radius:8px; border:1px solid var(--line);
-  background:#fff; cursor:pointer; font-weight:600; display:inline-flex; align-items:center; gap:8px;
-}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end}
+.col{display:flex;flex-direction:column;gap:6px}
+.label{font-size:12px;color:var(--muted)}
+input,select{height:36px;padding:0 10px;border:1px solid var(--line);border-radius:8px;background:#fff;color:#1f2430;min-width:120px;}
+.nums{width:110px;text-align:right}
+.btn{height:36px;padding:0 14px;border-radius:8px;border:1px solid var(--line);background:#fff;cursor:pointer;font-weight:600;display:inline-flex;align-items:center;gap:8px;}
 .btn.primary{background:var(--primary);border-color:var(--primary);color:#fff}
-.chips{display:flex; gap:8px; align-items:center; font-size:12px}
-.chip{background:var(--chip); color:var(--chipText); padding:4px 8px; border-radius:999px}
+.chips{display:flex;gap:8px;align-items:center;font-size:12px}
+.chip{background:var(--chip);color:var(--chipText);padding:4px 8px;border-radius:999px}
 .muted{color:var(--muted)}
 .spacer{flex:1}
-.toggle{display:inline-flex; align-items:center; gap:6px; font-size:12px; color:#444}
+.toggle{display:inline-flex;align-items:center;gap:6px;font-size:12px;color:#444}
 
 /* Top horizontal scrollbar (mirrors bottom) */
 .hScrollTop{
@@ -67,68 +48,54 @@ input,select{
 }
 .hScrollInner{height:1px;} /* width set in JS */
 
-/* TABLE */
+/* ===== TABLE AREA: own vertical scroll so headers never disappear ===== */
 .tableWrap{
   background:var(--card); border:1px solid var(--line); border-radius:10px;
   overflow:auto; position:relative;
+  /* height is set dynamically by JS to fill the viewport */
+  max-height:70vh; /* safe fallback */
 }
-table{
-  border-collapse:separate; border-spacing:0;
-  width:max-content; min-width:1800px;
-}
+table{border-collapse:separate;border-spacing:0;width:max-content;min-width:1800px;}
 thead th{
-  position:sticky; top:0; background:var(--thead); z-index:3;
+  position:sticky; top:0; background:var(--thead); z-index:5;   /* pinned inside .tableWrap */
   font-size:12px; text-transform:uppercase; letter-spacing:.02em; color:#49506a;
   padding:10px; border-bottom:1px solid var(--line); user-select:none; cursor:pointer;
 }
-thead th.sortable::after{ content:" ⇅"; font-size:10px; color:#999; margin-left:4px; }
-thead th.sort-asc::after{ content:" ▲"; }
-thead th.sort-desc::after{ content:" ▼"; }
+thead th.sortable::after{content:" ⇅";font-size:10px;color:#999;margin-left:4px;}
+thead th.sort-asc::after{content:" ▲";}
+thead th.sort-desc::after{content:" ▼";}
 
 tbody td{
   padding:12px 10px; border-top:1px solid var(--line); vertical-align:top; font-size:14px;
   max-width:280px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
 }
-tbody td.trunc { cursor:pointer; }
+tbody td.trunc{cursor:pointer}
 
 /* Only the first column is frozen (left + header) */
 th.sticky, td.sticky{
-  position:sticky; left:0; z-index:4; background:#fff;
+  position:sticky; left:0; background:#fff; z-index:6;   /* above other cells */
   min-width:var(--stickyW); max-width:var(--stickyW); box-shadow:1px 0 0 var(--line);
 }
-/* keep sticky header above sticky cells and also top-pinned */
-thead th.sticky{ z-index:6; top:0; left:0; }
+/* ensure the sticky header cell is above the sticky body cell */
+thead th.sticky{z-index:7; top:0; left:0;}
 
 tbody tr:hover td{background:#fafbff}
-.pill{display:inline-flex; align-items:center; gap:6px; padding:4px 10px; border-radius:999px; background:var(--pill); color:var(--pillText); font-size:12px; }
-.link{color:var(--link); text-decoration:none; font-weight:600}
-.mono{font-family: ui-monospace,Menlo,Consolas,monospace; font-size:12px}
+.pill{display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:999px;background:var(--pill);color:var(--pillText);font-size:12px;}
+.link{color:var(--link);text-decoration:none;font-weight:600}
+.mono{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12px}
 .right{text-align:right}
 
 /* Full-screen loader */
-#loader{
-  position:fixed; inset:0; background:#fff; display:flex; align-items:center; justify-content:center;
-  font-size:16px; color:#333; z-index:2000;
-}
-.spinner{
-  width:48px; height:48px; border:4px solid #eee; border-top-color:var(--primary);
-  border-radius:50%; animation:spin 1s linear infinite; margin-right:12px;
-}
-@keyframes spin{ to{ transform:rotate(360deg); } }
+#loader{position:fixed;inset:0;background:#fff;display:flex;align-items:center;justify-content:center;font-size:16px;color:#333;z-index:2000;}
+.spinner{width:48px;height:48px;border:4px solid #eee;border-top-color:var(--primary);border-radius:50%;animation:spin 1s linear infinite;margin-right:12px;}
+@keyframes spin{to{transform:rotate(360deg)}}
 
 /* Popup */
-#popup{
-  display:none; position:fixed; top:50%; left:50%; transform:translate(-50%,-50%);
-  background:#fff; padding:16px 18px; border:1px solid var(--line); border-radius:10px;
-  box-shadow:0 12px 30px rgba(0,0,0,.15); z-index:3000; max-width:700px; max-height:70vh; overflow:auto;
-}
-#popupClose{ position:absolute; top:8px; right:12px; cursor:pointer; font-weight:700; }
-#popup h4{ margin:0 24px 10px 0; font-size:14px; color:#555; }
-#popup pre{ white-space:pre-wrap; word-break:break-word; font-family:inherit; font-size:14px; margin:0; }
-.little-spinner{
-  width:14px; height:14px; border:2px solid #e2e8f0; border-top-color:#fff; border-radius:50%;
-  animation:spin .8s linear infinite;
-}
+#popup{display:none;position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:#fff;padding:16px 18px;border:1px solid var(--line);border-radius:10px;box-shadow:0 12px 30px rgba(0,0,0,.15);z-index:3000;max-width:700px;max-height:70vh;overflow:auto;}
+#popupClose{position:absolute;top:8px;right:12px;cursor:pointer;font-weight:700;}
+#popup h4{margin:0 24px 10px 0;font-size:14px;color:#555;}
+#popup pre{white-space:pre-wrap;word-break:break-word;font-family:inherit;font-size:14px;margin:0;}
+.little-spinner{width:14px;height:14px;border:2px solid #e2e8f0;border-top-color:#fff;border-radius:50%;animation:spin .8s linear infinite;}
 </style>
 </head>
 <body>
@@ -170,18 +137,14 @@ tbody tr:hover td{background:#fafbff}
       </div>
       <div class="spacer"></div>
       <label class="toggle"><input id="autoLoad" type="checkbox" checked /> Auto-load remaining</label>
-      <button class="btn primary" id="reloadBtn">
-        <div class="little-spinner" id="reloadSpin" style="display:none"></div><span>Reload</span>
-      </button>
+      <button class="btn primary" id="reloadBtn"><div class="little-spinner" id="reloadSpin" style="display:none"></div><span>Reload</span></button>
       <button class="btn" id="resetBtn">Reset filters</button>
       <button class="btn" id="exportBtn">Export Excel</button>
     </div>
     <div class="chips" style="margin-top:10px">
       <span id="shown" class="chip">0 shown</span>
       <span id="loaded" class="chip">0 loaded</span>
-      <button id="moreBtn" class="btn" style="height:28px;padding:0 10px">
-        <div class="little-spinner" id="moreSpin" style="display:none"></div><span>Load more</span>
-      </button>
+      <button id="moreBtn" class="btn" style="height:28px;padding:0 10px"><div class="little-spinner" id="moreSpin" style="display:none"></div><span>Load more</span></button>
     </div>
   </div>
 
@@ -319,7 +282,7 @@ tbody tr:hover td{background:#fafbff}
     popup.style.display = 'block';
   }
 
-  // --------- Column mapping (added photos_desc: link4)
+  // --------- Column mapping (incl. photos_desc)
   const COL = {
     name: "name",
     photos_desc: "link4",
@@ -389,7 +352,7 @@ tbody tr:hover td{background:#fafbff}
     min_wage: "numbers985",
     work_comp: "formula5",
     work_details_b: "long_text56",
-    // client-side filters only
+    // client filters only
     final_cost: "formula",
     gpa: "numbers34"
   };
@@ -401,13 +364,13 @@ tbody tr:hover td{background:#fafbff}
 
   // Fast-first render
   async function initialLoad(){
-    items = [];
-    cursor = null;
+    items = []; cursor = null;
     showLoader(true);
     await fetchAndAppend({limit: limitSel.value, cursorParam: null, progressive: false});
     showLoader(false);
     app.style.display = 'block';
     syncTopScrollbar();
+    adjustTableHeight();
     if (autoLoad.checked && cursor) {
       fetchAndAppend({limit: limitSel.value, cursorParam: cursor, progressive: true});
     }
@@ -421,6 +384,7 @@ tbody tr:hover td{background:#fafbff}
       buildStateOptionsFrom(items);
       render();
       syncTopScrollbar();
+      adjustTableHeight();
     }
     cursor = cur || null;
 
@@ -431,6 +395,7 @@ tbody tr:hover td{background:#fafbff}
         buildStateOptionsFrom(items);
         render();
         syncTopScrollbar();
+        adjustTableHeight();
       }
       cursor = nextCur || null;
     }
@@ -455,24 +420,10 @@ tbody tr:hover td{background:#fafbff}
     reloadSpin.style.display = on ? 'inline-block' : 'none';
     moreBtn.querySelector('span').textContent = on ? 'Load more…' : 'Load more';
   }
-  function numberFrom(a){
-    if(a==null) return null;
-    const s = (""+a).replace(/[^\d.\-]/g,''); if(!s) return null;
-    const n = parseFloat(s); return Number.isFinite(n)?n:null;
-  }
-  function formatMoney(n){
-    if(n==null || n==="") return "";
-    try{ return new Intl.NumberFormat('en-US',{style:'currency',currency:'USD',maximumFractionDigits:0}).format(n); }
-    catch{ return "$"+n; }
-  }
-  function formatInt(n){
-    if(n==null || n==="") return "";
-    try{ return new Intl.NumberFormat('en-US',{maximumFractionDigits:0}).format(n); }
-    catch{ return String(n); }
-  }
-  function esc(s){
-    return (s??"").toString().replace(/[&<>"']/g, m=>({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[m]));
-  }
+  function numberFrom(a){ if(a==null) return null; const s = (""+a).replace(/[^\d.\-]/g,''); if(!s) return null; const n = parseFloat(s); return Number.isFinite(n)?n:null; }
+  function formatMoney(n){ if(n==null || n==="") return ""; try{ return new Intl.NumberFormat('en-US',{style:'currency',currency:'USD',maximumFractionDigits:0}).format(n); } catch{ return "$"+n; } }
+  function formatInt(n){ if(n==null || n==="") return ""; try{ return new Intl.NumberFormat('en-US',{maximumFractionDigits:0}).format(n); } catch{ return String(n); } }
+  function esc(s){ return (s??"").toString().replace(/[&<>"']/g, m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
   function readCell(item, colId){
     const v = item.column_values?.find(c=>c.id===colId); if(!v) return "";
     switch(v.type){
@@ -487,8 +438,7 @@ tbody tr:hover td{background:#fafbff}
     }
   }
   function truncCell(content, title){
-    const full = (content ?? '').toString().trim();
-    if(!full) return '';
+    const full = (content ?? '').toString().trim(); if(!full) return '';
     const urlMatch = full.match(/https?:\/\/\S+/);
     if(urlMatch) return `<a class="link" href="${esc(urlMatch[0])}" target="_blank" rel="noopener">Link</a>`;
     return `<span class="trunc" data-title="${esc(title||'Details')}" data-full="${esc(full)}">${esc(full)}</span>`;
@@ -516,7 +466,7 @@ tbody tr:hover td{background:#fafbff}
   }
 
   function toRow(item){
-    const pick = (id) => readCell(item,id);
+    const pick = (id)=>readCell(item,id);
     return {
       name: item.name || "",
       photos_desc: pick(COL.photos_desc),
@@ -586,7 +536,6 @@ tbody tr:hover td{background:#fafbff}
       min_wage: numberFrom(pick(COL.min_wage)),
       work_comp: numberFrom(pick(COL.work_comp)),
       work_details_b: pick(COL.work_details_b),
-      // for client filters:
       final_cost: numberFrom(pick(COL.final_cost)),
       gpa: numberFrom(pick(COL.gpa))
     };
@@ -595,17 +544,13 @@ tbody tr:hover td{background:#fafbff}
   // Render table
   function render(){
     const rows = items.map(toRow);
-    // filters
     const qv = q.value.trim().toLowerCase();
     const st = stateSel.value;
     const fcMinV = numberFrom(fcMin.value), fcMaxV = numberFrom(fcMax.value);
     const gpaMinV = numberFrom(gpaMin.value), gpaMaxV = numberFrom(gpaMax.value);
 
     const filtered = rows.filter(r=>{
-      if(qv){
-        const inText = (r.name+" "+(r.major||"")).toLowerCase();
-        if(!inText.includes(qv)) return false;
-      }
+      if(qv){ const inText = (r.name+" "+(r.major||"")).toLowerCase(); if(!inText.includes(qv)) return false; }
       if(st && r.state!==st) return false;
       if(fcMinV!=null && (r.final_cost==null || r.final_cost<fcMinV)) return false;
       if(fcMaxV!=null && (r.final_cost!=null && r.final_cost>fcMaxV)) return false;
@@ -696,6 +641,8 @@ tbody tr:hover td{background:#fafbff}
     shown.textContent = `${filtered.length} shown`;
     loaded.textContent = `${items.length} loaded`;
     moreBtn.style.display = cursor ? 'inline-flex' : 'none';
+
+    adjustTableHeight();
   }
 
   // Header sort indicators
@@ -713,8 +660,7 @@ tbody tr:hover td{background:#fafbff}
     th.addEventListener('click', ()=>{
       const key = th.dataset.key;
       if(!key) return;
-      if(sort.key===key) sort.dir *= -1;
-      else { sort.key=key; sort.dir=1; }
+      if(sort.key===key) sort.dir *= -1; else { sort.key=key; sort.dir=1; }
       render();
     });
   });
@@ -728,7 +674,7 @@ tbody tr:hover td{background:#fafbff}
     if(full.trim()) openPopup(title, full);
   });
 
-  // Events
+  // Controls
   reloadBtn.onclick = async ()=>{ if(isLoading) return; await initialLoad(); };
   resetBtn.onclick = async ()=>{ if(isLoading) return;
     q.value=''; stateSel.value=''; fcMin.value=''; fcMax.value='';
@@ -774,9 +720,15 @@ tbody tr:hover td{background:#fafbff}
     hScrollTop.scrollLeft = tableWrap.scrollLeft;
     syncingTop = false;
   });
-  const ro = new ResizeObserver(()=> syncTopScrollbar());
-  ro.observe(tbl);
-  ro.observe(tableWrap);
+
+  // ===== Dynamic viewport-fit height so header stays visible while scrolling =====
+  function adjustTableHeight(){
+    // Fill remaining viewport below the top scrollbar
+    const vwTop = tableWrap.getBoundingClientRect().top; // distance from viewport top
+    const maxH = Math.max(360, window.innerHeight - vwTop - 16); // 16px breathing room
+    tableWrap.style.maxHeight = maxH + 'px';
+  }
+  window.addEventListener('resize', ()=>{ syncTopScrollbar(); adjustTableHeight(); });
 
   // Start
   initialLoad();
