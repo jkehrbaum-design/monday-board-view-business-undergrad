@@ -22,7 +22,7 @@
   --thead:#f2f4f8;
   --chip:#f4f6fa;
   --chipText:#49506a;
-  --stickyW:280px;
+  --stickyW:280px; /* Name column width */
 }
 *{box-sizing:border-box}
 html,body{height:100%}
@@ -45,7 +45,7 @@ body{
 .label{font-size:12px; color:var(--muted)}
 input,select{
   height:36px; padding:0 10px; border:1px solid var(--line); border-radius:8px;
-  background:#fff; color:var(--text); min-width:120px;
+  background:#fff; color:#1f2430; min-width:120px;
 }
 .nums{width:110px; text-align:right}
 .btn{
@@ -65,7 +65,7 @@ input,select{
   border:1px solid var(--line); border-radius:10px; margin-bottom:10px;
   height:16px; overflow-x:auto; overflow-y:hidden;
 }
-.hScrollInner{height:1px;} /* width is set in JS */
+.hScrollInner{height:1px;} /* width set in JS */
 
 /* TABLE */
 .tableWrap{
@@ -91,13 +91,13 @@ tbody td{
 }
 tbody td.trunc { cursor:pointer; }
 
-/* Only the first column is frozen */
+/* Only the first column is frozen (left + header) */
 th.sticky, td.sticky{
   position:sticky; left:0; z-index:4; background:#fff;
   min-width:var(--stickyW); max-width:var(--stickyW); box-shadow:1px 0 0 var(--line);
 }
-/* keep sticky header over sticky cells */
-thead th.sticky{ z-index:6; }
+/* keep sticky header above sticky cells and also top-pinned */
+thead th.sticky{ z-index:6; top:0; left:0; }
 
 tbody tr:hover td{background:#fafbff}
 .pill{display:inline-flex; align-items:center; gap:6px; padding:4px 10px; border-radius:999px; background:var(--pill); color:var(--pillText); font-size:12px; }
@@ -194,6 +194,7 @@ tbody tr:hover td{background:#fafbff}
       <thead>
         <tr>
           <th class="sticky sortable" data-key="name">Name</th>
+          <th data-key="photos_desc">Photos &amp; Description (Link) ↗️</th>
           <th class="sortable" data-key="state">State</th>
           <th class="sortable" data-key="geo_area">Geographical Area</th>
           <th data-key="video_state">Video I about the State</th>
@@ -222,7 +223,9 @@ tbody tr:hover td{background:#fafbff}
           <th data-key="sports">Sports Homepage</th>
           <th data-key="uni_home">University Homepage</th>
           <th data-key="intl_adm">International Admission</th>
+          <!-- moved here -->
           <th class="sortable" data-key="major">Bachelor’s Study Areas (B)</th>
+          <!-- then the degrees link -->
           <th data-key="degrees_link">Bachelor’s Degrees Link</th>
           <th data-key="acad_year">Academic Year</th>
           <th data-key="tuition" class="right">Tuition (Annual Cost in USD)</th>
@@ -316,9 +319,10 @@ tbody tr:hover td{background:#fafbff}
     popup.style.display = 'block';
   }
 
-  // --------- Column mapping
+  // --------- Column mapping (added photos_desc: link4)
   const COL = {
     name: "name",
+    photos_desc: "link4",
     state: "state1",
     geo_area: "dropdown30",
     majors: "dropdown73",
@@ -403,7 +407,7 @@ tbody tr:hover td{background:#fafbff}
     await fetchAndAppend({limit: limitSel.value, cursorParam: null, progressive: false});
     showLoader(false);
     app.style.display = 'block';
-    syncTopScrollbar(); // ensure after first paint
+    syncTopScrollbar();
     if (autoLoad.checked && cursor) {
       fetchAndAppend({limit: limitSel.value, cursorParam: cursor, progressive: true});
     }
@@ -515,6 +519,7 @@ tbody tr:hover td{background:#fafbff}
     const pick = (id) => readCell(item,id);
     return {
       name: item.name || "",
+      photos_desc: pick(COL.photos_desc),
       state: pick(COL.state),
       geo_area: pick(COL.geo_area),
       major: pick(COL.majors),
@@ -615,12 +620,12 @@ tbody tr:hover td{background:#fafbff}
     const html = filtered.map(r=> `
       <tr>
         <td class="sticky"><strong>${esc(r.name)}</strong></td>
+        <td>${truncCell(r.photos_desc,'Photos & Description')}</td>
         <td>${esc(r.state)}</td>
         <td class="trunc" data-title="Geographical Area" data-full="${esc(r.geo_area||'')}">${esc(r.geo_area||'')}</td>
-        <td class="trunc" data-title="Bachelor’s Study Areas" data-full="${esc(r.major||'')}">${esc(r.major||'')}</td>
+        <td>${truncCell(r.video_state,'Video I about the State')}</td>
         <td class="trunc" data-title="City" data-full="${esc(r.city)}">${esc(r.city)}</td>
         <td class="trunc mono" data-title="Full address" data-full="${esc(r.address)}">${esc(r.address)}</td>
-        <td>${truncCell(r.video_state,'Video I about the State')}</td>
         <td>${truncCell(r.virtual_tour,'Virtual Campus Tour')}</td>
         <td>${pill(r.fachabitur)}</td>
         <td class="trunc" data-title="Fachabitur Details" data-full="${esc(r.fach_det)}">${esc(r.fach_det)}</td>
@@ -644,6 +649,9 @@ tbody tr:hover td{background:#fafbff}
         <td>${truncCell(r.sports,'Sports Homepage')}</td>
         <td>${truncCell(r.uni_home,'University Homepage')}</td>
         <td>${truncCell(r.intl_adm,'International Admission')}</td>
+        <!-- moved major here -->
+        <td class="trunc" data-title="Bachelor’s Study Areas" data-full="${esc(r.major||'')}">${esc(r.major||'')}</td>
+        <!-- then degrees link -->
         <td>${truncCell(r.degrees_link,'Bachelor’s Degrees Link')}</td>
         <td class="trunc" data-title="Academic Year" data-full="${esc(r.acad_year)}">${esc(r.acad_year)}</td>
         <td class="right">${formatMoney(r.tuition)}</td>
@@ -750,10 +758,8 @@ tbody tr:hover td{background:#fafbff}
   // ===== Top-bottom horizontal scroll sync =====
   let syncingTop = false, syncingBottom = false;
   function syncTopScrollbar(){
-    // match the inner width to table scroll width
     const w = tbl.scrollWidth;
     hScrollInner.style.width = w + 'px';
-    // keep positions aligned
     hScrollTop.scrollLeft = tableWrap.scrollLeft;
   }
   hScrollTop.addEventListener('scroll', ()=>{
@@ -768,7 +774,6 @@ tbody tr:hover td{background:#fafbff}
     hScrollTop.scrollLeft = tableWrap.scrollLeft;
     syncingTop = false;
   });
-  // Resize observer to react to column/viewport changes
   const ro = new ResizeObserver(()=> syncTopScrollbar());
   ro.observe(tbl);
   ro.observe(tableWrap);
