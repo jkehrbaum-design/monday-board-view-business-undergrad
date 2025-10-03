@@ -10,13 +10,34 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <style>
 :root{
-  --bg:#f6f7fb; --card:#ffffff; --text:#1f2430; --muted:#6b7280; --line:#e6e9f0;
-  --primary:#1f76ff; --pill:#eef3ff; --pillText:#1f4fbf; --link:#1f76ff; --thead:#f2f4f8;
-  --chip:#f4f6fa; --chipText:#49506a; --stickyW:280px;
+  /* Airtable-like neutrals */
+  --bg:#f6f7fb;
+  --card:#ffffff;
+  --text:#1f2430;
+  --muted:#6b7280;
+  --line:#eaedf2;                 /* light gridline like Airtable */
+  --primary:#1f76ff;
+  --pill:#eef3ff;
+  --pillText:#1f4fbf;
+  --link:#1f76ff;
+  --thead:#f2f4f8;
+
+  --chip:#f4f6fa;
+  --chipText:#49506a;
+
+  /* Name (frozen) column width – a bit wider for readability */
+  --stickyW:300px;
 }
+
 *{box-sizing:border-box}
 html,body{height:100%}
-body{margin:0;background:var(--bg);color:var(--text);font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,"Helvetica Neue",Arial;}
+body{
+  margin:0;
+  background:var(--bg);
+  color:var(--text);
+  font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,"Helvetica Neue",Arial;
+}
+
 .wrap{max-width:1200px;margin:24px auto;padding:0 20px;}
 .h1{font-size:28px;font-weight:700;margin:8px 0 4px;}
 .sub{color:var(--muted);font-size:13px;margin-bottom:18px;}
@@ -24,9 +45,28 @@ body{margin:0;background:var(--bg);color:var(--text);font-family:Inter,system-ui
 .row{display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end}
 .col{display:flex;flex-direction:column;gap:6px}
 .label{font-size:12px;color:var(--muted)}
-input,select{height:36px;padding:0 10px;border:1px solid var(--line);border-radius:8px;background:#fff;color:#1f2430;min-width:120px;}
+input,select{
+  height:36px;
+  padding:0 10px;
+  border:1px solid var(--line);
+  border-radius:8px;
+  background:#fff;
+  color:#1f2430;
+  min-width:120px;
+}
 .nums{width:110px;text-align:right}
-.btn{height:36px;padding:0 14px;border-radius:8px;border:1px solid var(--line);background:#fff;cursor:pointer;font-weight:600;display:inline-flex;align-items:center;gap:8px;}
+.btn{
+  height:36px;
+  padding:0 14px;
+  border-radius:8px;
+  border:1px solid var(--line);
+  background:#fff;
+  cursor:pointer;
+  font-weight:600;
+  display:inline-flex;
+  align-items:center;
+  gap:8px;
+}
 .btn.primary{background:var(--primary);border-color:var(--primary);color:#fff}
 .chips{display:flex;gap:8px;align-items:center;font-size:12px}
 .chip{background:var(--chip);color:var(--chipText);padding:4px 8px;border-radius:999px}
@@ -34,15 +74,25 @@ input,select{height:36px;padding:0 10px;border:1px solid var(--line);border-radi
 .spacer{flex:1}
 .toggle{display:inline-flex;align-items:center;gap:6px;font-size:12px;color:#444}
 
-/* Toolbar */
+/* Toolbar (compact like Airtable) */
 .toolbar{
   position:sticky; top:0; z-index:20;
-  background:var(--card); border:1px solid var(--line); border-radius:10px;
-  padding:8px; margin-bottom:10px; display:flex; align-items:center; gap:6px;
+  background:var(--card);
+  border:1px solid var(--line);
+  border-radius:10px;
+  padding:8px;
+  margin-bottom:10px;
+  display:flex; align-items:center; gap:6px;
 }
 .tb-btn{
-  height:32px; padding:0 10px; border:1px solid var(--line); background:#fff;
-  border-radius:8px; font-weight:600; display:inline-flex; align-items:center; gap:6px; cursor:pointer;
+  height:30px;                      /* was 32–36 */
+  padding:0 10px;
+  border:1px solid var(--line);
+  background:#fff;
+  border-radius:8px;
+  font-weight:600;
+  display:inline-flex; align-items:center; gap:6px;
+  cursor:pointer;
 }
 .tb-btn .ico{font-size:14px; line-height:1}
 .sr-only{position:absolute; left:-10000px; top:auto; width:1px; height:1px; overflow:hidden}
@@ -50,9 +100,13 @@ input,select{height:36px;padding:0 10px;border:1px solid var(--line);border-radi
 /* Popovers */
 .popover{
   position:absolute; top:44px;
-  background:#fff; border:1px solid var(--line); border-radius:10px;
+  background:#fff;
+  border:1px solid var(--line);
+  border-radius:10px;
   box-shadow:0 12px 30px rgba(0,0,0,.10);
-  padding:12px; display:none; min-width:340px;
+  padding:12px;
+  display:none;
+  min-width:340px;
 }
 .popover.open{display:block}
 #pvHide{min-width:260px}
@@ -62,92 +116,130 @@ input,select{height:36px;padding:0 10px;border:1px solid var(--line);border-radi
 .pv-grid{display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:10px}
 .pv-actions{display:flex; align-items:center; gap:8px; margin-top:8px}
 
-/* Top horizontal scrollbar (mirrors bottom) */
+/* Top horizontal scrollbar (thin & tucked under toolbar) */
 .hScrollTop{
-  position:sticky; top:0; z-index:18; background:var(--card);
-  border:1px solid var(--line); border-radius:10px; margin-bottom:10px;
-  height:16px; overflow-x:auto; overflow-y:hidden;
+  position:sticky; top:0; z-index:18;
+  background:var(--card);
+  border:1px solid var(--line);
+  border-radius:10px;
+  margin-bottom:8px;                /* tighter */
+  height:12px;                      /* was 16 */
+  overflow-x:auto; overflow-y:hidden;
 }
 .hScrollInner{height:1px;}
 
-/* Table */
+/* Table shell */
 .tableWrap{
-  background:var(--card); border:1px solid var(--line); border-radius:10px;
-  overflow:auto; position:relative;
-  max-height:70vh;
+  background:var(--card);
+  border:1px solid var(--line);
+  border-radius:10px;
+  overflow:auto;
+  position:relative;
+  max-height:70vh;                  /* keeps header visible on laptops */
 }
-table{border-collapse:separate;border-spacing:0;width:max-content;min-width:1800px;}
+
+/* Content-driven width but not excessively wide */
+table{
+  border-collapse:separate;
+  border-spacing:0;
+  width:max-content;
+  min-width:1200px;                 /* was 1800; closer to Airtable’s density */
+}
+
+/* Header cells – compact & with a faint rail shadow */
 thead th{
-  position:sticky; top:0; background:var(--thead); z-index:5;
-  font-size:12px; text-transform:uppercase; letter-spacing:.02em; color:#49506a;
-  padding:10px; border-bottom:1px solid var(--line); user-select:none; cursor:pointer;
+  position:sticky; top:0; left:auto;
+  background:var(--thead);
+  z-index:5;
+  font-size:12px;
+  font-weight:600;
+  text-transform:uppercase;
+  letter-spacing:.02em;
+  color:#49506a;
+
+  padding:8px 12px;                 /* compact */
+  min-height:44px;                  /* lock height */
+  border-bottom:1px solid var(--line);
+  user-select:none; cursor:pointer;
+
+  /* subtle rail shadow like Airtable */
+  box-shadow:0 1px 0 var(--line), 0 1px 6px rgba(0,0,0,0.04);
 }
 thead th.sortable::after{content:" ⇅";font-size:10px;color:#999;margin-left:4px;}
 thead th.sort-asc::after{content:" ▲";}
 thead th.sort-desc::after{content:" ▼";}
+
+/* Body cells – dense vertical rhythm */
 tbody td{
-  padding:12px 10px; border-top:1px solid var(--line); vertical-align:top; font-size:14px;
-  max-width:280px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+  padding:10px 12px;                /* compact */
+  line-height:20px;
+  min-height:44px;                  /* lock height similar to Airtable row */
+  border-top:1px solid var(--line);
+  vertical-align:middle;            /* centers text like Airtable */
+  font-size:14px;
+  max-width:280px;
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
 }
 tbody td.trunc{cursor:pointer}
 
 /* Frozen first column (Name) */
 th.sticky, td.sticky{
-  position:sticky; left:0; background:#fff; z-index:6;
-  min-width:var(--stickyW); max-width:var(--stickyW); box-shadow:1px 0 0 var(--line);
+  position:sticky; left:0;
+  background:#fff;
+  z-index:6;
+  min-width:var(--stickyW); max-width:var(--stickyW);
+  box-shadow:1px 0 0 var(--line);
 }
 thead th.sticky{z-index:7; top:0; left:0;}
 
-tbody tr:hover td{background:#fafbff}
-.pill{display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:999px;background:var(--pill);color:var(--pillText);font-size:12px;}
-.link{color:var(--link);text-decoration:none;font-weight:600}
-.mono{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12px}
+/* Hover: very light, like Airtable */
+tbody tr:hover td{background:#f8fafc}
+
+/* Pills / chips (used for status & dropdown colors) */
+.pill{
+  display:inline-flex; align-items:center; gap:6px;
+  padding:4px 10px;
+  border-radius:999px;
+  background:var(--pill);
+  color:var(--pillText);
+  font-size:12px;
+  line-height:18px;
+}
+
+/* Links */
+.link{color:var(--link); text-decoration:none; font-weight:600}
+.mono{font-family:ui-monospace,Menlo,Consolas,monospace; font-size:12px}
 .right{text-align:right}
 
 /* Loader */
-#loader{position:fixed;inset:0;background:#fff;display:flex;align-items:center;justify-content:center;font-size:16px;color:#333;z-index:2000;}
-.spinner{width:48px;height:48px;border:4px solid #eee;border-top-color:var(--primary);border-radius:50%;animation:spin 1s linear infinite;margin-right:12px;}
+#loader{
+  position:fixed; inset:0; background:#fff;
+  display:flex; align-items:center; justify-content:center;
+  font-size:16px; color:#333; z-index:2000;
+}
+.spinner{
+  width:48px; height:48px;
+  border:4px solid #eee; border-top-color:var(--primary);
+  border-radius:50%;
+  animation:spin 1s linear infinite; margin-right:12px;
+}
 @keyframes spin{to{transform:rotate(360deg)}}
 
 /* Popup */
-#popup{display:none;position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:#fff;padding:16px 18px;border:1px solid var(--line);border-radius:10px;box-shadow:0 12px 30px rgba(0,0,0,.15);z-index:3000;max-width:700px;max-height:70vh;overflow:auto;}
-#popupClose{position:absolute;top:8px;right:12px;cursor:pointer;font-weight:700;}
-#popup h4{margin:0 24px 10px 0;font-size:14px;color:#555;}
-#popup pre{white-space:pre-wrap;word-break:break-word;font-family:inherit;font-size:14px;margin:0;}
-.little-spinner{width:14px;height:14px;border:2px solid #e2e8f0;border-top-color:#fff;border-radius:50%;animation:spin .8s linear infinite;}
-
-/* --- Airtable-like density overrides --- */
-thead th{
-  padding:8px 12px;
-  font-size:12px;
-  letter-spacing:.02em;
-  box-shadow:0 1px 0 var(--line), 0 1px 6px rgba(0,0,0,0.04);
+#popup{
+  display:none; position:fixed; top:50%; left:50%;
+  transform:translate(-50%,-50%);
+  background:#fff; padding:16px 18px;
+  border:1px solid var(--line); border-radius:10px;
+  box-shadow:0 12px 30px rgba(0,0,0,.15);
+  z-index:3000; max-width:700px; max-height:70vh; overflow:auto;
 }
-tbody td{
-  padding:10px 12px;
-  line-height:20px;
-}
-.tableWrap{ border-color:#eaedf2; }
-tbody td, thead th{ border-color:#eaedf2; }
-
-:root{ --stickyW:300px; } /* Name column width */
-
-table{
-  width:max-content;
-  min-width:1200px; /* was 1800; lets the layout feel lighter */
-}
-
-/* Top scrollbar more subtle & compact */
-.hScrollTop{ height:12px; margin-bottom:8px; }
-
-/* Toolbar compaction */
-.tb-btn{ height:30px; padding:0 10px; }
-
-/* Optional: slightly lighter hover like Airtable */
-tbody tr:hover td{ background:#f8fafc; }
-
-
+#popupClose{position:absolute; top:8px; right:12px; cursor:pointer; font-weight:700;}
+#popup h4{margin:0 24px 10px 0; font-size:14px; color:#555;}
+#popup pre{white-space:pre-wrap; word-break:break-word; font-family:inherit; font-size:14px; margin:0;}
+.little-spinner{width:14px; height:14px; border:2px solid #e2e8f0; border-top-color:#fff; border-radius:50%; animation:spin .8s linear infinite;}
 </style>
+
 </head>
 <body>
 <!-- Loader -->
