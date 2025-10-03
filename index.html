@@ -120,7 +120,7 @@ tbody tr:hover td{background:#fafbff}
 <body>
 <!-- Loader -->
 <div id="loader"><div class="spinner"></div>Loading data…</div>
-<!-- Error banner (shown if fetch fails) -->
+<!-- Error banner (shown if fetch or JS fails) -->
 <div id="errorBanner" style="display:none;margin:10px 0;padding:10px 12px;border:1px solid #f59e0b;background:#fff8e1;border-radius:8px;color:#7c2d12;font-size:13px"></div>
 
 <div class="wrap" id="app" style="display:none">
@@ -140,7 +140,7 @@ tbody tr:hover td{background:#fafbff}
     <!-- POPUPS -->
     <div class="popover" id="pvHide"></div>
 
-    <!-- Open by default so filters remain usable without extra JS -->
+    <!-- Open by default so filters work immediately -->
     <div class="popover open" id="pvFilter">
       <div class="pv-row">
         <label>Search (Name & Major)</label>
@@ -311,48 +311,67 @@ tbody tr:hover td{background:#fafbff}
 </div>
 
 <script>
-(() => {
+(function(){
+  // --- global error surface so spinner can't get stuck on syntax/runtime
+  window.addEventListener('error', function (e) {
+    var b = document.getElementById('errorBanner');
+    if (b) { b.textContent = 'Script error: ' + (e && e.message ? e.message : 'Unknown'); b.style.display = 'block'; }
+    var l = document.getElementById('loader');
+    if (l) l.style.display = 'none';
+    var app = document.getElementById('app');
+    if (app) app.style.display = 'block';
+  });
+  window.addEventListener('unhandledrejection', function (e) {
+    var b = document.getElementById('errorBanner');
+    var msg = e && e.reason ? (e.reason.message || String(e.reason)) : 'Unknown promise rejection';
+    if (b) { b.textContent = 'Runtime error: ' + msg; b.style.display = 'block'; }
+    var l = document.getElementById('loader');
+    if (l) l.style.display = 'none';
+    var app = document.getElementById('app');
+    if (app) app.style.display = 'block';
+  });
+
   // --------- UI refs
-  const app = document.getElementById('app');
-  const loader = document.getElementById('loader');
-  const q = document.querySelector('#q');
-  const stateSel = document.querySelector('#state');
-  const fcMin = document.querySelector('#fcMin');
-  const fcMax = document.querySelector('#fcMax');
-  const gpaMin = document.querySelector('#gpaMin');
-  const gpaMax = document.querySelector('#gpaMax');
-  const limitSel = document.querySelector('#limit');
-  const autoLoad = document.querySelector('#autoLoad');
-  const reloadBtn = document.getElementById('reloadBtn');
-  const reloadSpin = document.getElementById('reloadSpin');
-  const moreBtn = document.getElementById('moreBtn');
-  const moreSpin = document.getElementById('moreSpin');
-  const resetBtn = document.getElementById('resetBtn');
-  const exportBtn = document.getElementById('exportBtn');
-  const tbody = document.querySelector('#tbody');
-  const shown = document.getElementById('shown');
-  const loaded = document.getElementById('loaded');
+  var app = document.getElementById('app');
+  var loader = document.getElementById('loader');
+  var q = document.getElementById('q');
+  var stateSel = document.getElementById('state');
+  var fcMin = document.getElementById('fcMin');
+  var fcMax = document.getElementById('fcMax');
+  var gpaMin = document.getElementById('gpaMin');
+  var gpaMax = document.getElementById('gpaMax');
+  var limitSel = document.getElementById('limit');
+  var autoLoad = document.getElementById('autoLoad');
+  var reloadBtn = document.getElementById('reloadBtn');
+  var reloadSpin = document.getElementById('reloadSpin');
+  var moreBtn = document.getElementById('moreBtn');
+  var moreSpin = document.getElementById('moreSpin');
+  var resetBtn = document.getElementById('resetBtn');
+  var exportBtn = document.getElementById('exportBtn');
+  var tbody = document.getElementById('tbody');
+  var shown = document.getElementById('shown');
+  var loaded = document.getElementById('loaded');
 
   // Top scrollbar & table wrap
-  const hScrollTop = document.getElementById('hScrollTop');
-  const hScrollInner = document.getElementById('hScrollInner');
-  const tableWrap = document.getElementById('tableWrap');
-  const tbl = document.getElementById('tbl');
+  var hScrollTop = document.getElementById('hScrollTop');
+  var hScrollInner = document.getElementById('hScrollInner');
+  var tableWrap = document.getElementById('tableWrap');
+  var tbl = document.getElementById('tbl');
 
   // Popup
-  const popup = document.getElementById('popup');
-  const popupTitle = document.getElementById('popupTitle');
-  const popupBody = document.getElementById('popupBody');
-  const popupClose = document.getElementById('popupClose');
-  popupClose.onclick = () => popup.style.display = 'none';
+  var popup = document.getElementById('popup');
+  var popupTitle = document.getElementById('popupTitle');
+  var popupBody = document.getElementById('popupBody');
+  var popupClose = document.getElementById('popupClose');
+  popupClose.onclick = function(){ popup.style.display = 'none'; };
   function openPopup(title, text){
     popupTitle.textContent = title || 'Details';
     popupBody.textContent = text || '';
     popup.style.display = 'block';
   }
 
-  // --------- Column mapping (incl. photos_desc)
-  const COL = {
+  // --------- Column mapping
+  var COL = {
     name: "name",
     photos_desc: "link4",
     state: "state1",
@@ -421,148 +440,109 @@ tbody tr:hover td{background:#fafbff}
     min_wage: "numbers985",
     work_comp: "formula5",
     work_details_b: "long_text56",
-    // client-only filters:
     final_cost: "formula",
     gpa: "numbers34"
   };
 
   // --------- Data & state
-  let items = [];
-  let cursor = null;
-  let isLoading = false;
+  var items = [];
+  var cursor = null;
+  var isLoading = false;
+  var sort = {key:null, dir:1};
 
-  // Fast-first render with fail-safe loader/UI
-  async function initialLoad(){
-    items = []; cursor = null;
-    showLoader(true);
-    try {
-      await fetchAndAppend({limit: limitSel?.value, cursorParam: null, progressive: false});
-    } finally {
-      showLoader(false);                // always stop spinner
-      app.style.display = 'block';      // always show UI
-      syncTopScrollbar();
-      adjustTableHeight();
-    }
-    if (autoLoad?.checked && cursor) {
-      fetchAndAppend({limit: limitSel.value, cursorParam: cursor, progressive: true});
-    }
-  }
-
-  async function fetchAndAppend({limit, cursorParam, progressive}){
-    setMoreLoading(true);
-    const {items:batch, cursor:cur} = await fetchBatch({limit, cursorParam});
-    if(Array.isArray(batch) && batch.length){
-      items.push(...batch);
-      buildStateOptionsFrom(items);
-      render();
-      syncTopScrollbar();
-      adjustTableHeight();
-    }
-    cursor = cur || null;
-
-    while(progressive && cursor){
-      const {items:nextBatch, cursor:nextCur} = await fetchBatch({limit, cursorParam: cursor});
-      if(Array.isArray(nextBatch) && nextBatch.length){
-        items.push(...nextBatch);
-        buildStateOptionsFrom(items);
-        render();
-        syncTopScrollbar();
-        adjustTableHeight();
-      }
-      cursor = nextCur || null;
-    }
-    setMoreLoading(false);
-  }
-
-  // Hardened fetch with error banner + shape check
-  async function fetchBatch({limit, cursorParam}){
-    const errorBanner = document.getElementById('errorBanner');
-    const base = location.origin || window.location.href;
-    const url = new URL('/.netlify/functions/items', base);
-    url.searchParams.set('limit', String(limit || '100'));
-    if(cursorParam) url.searchParams.set('cursor', cursorParam);
-
-    try {
-      const resp = await fetch(url.toString(), { cache: 'no-store' });
-      if (!resp.ok) {
-        const txt = await resp.text().catch(()=>String(resp.status));
-        throw new Error(`HTTP ${resp.status}: ${txt.slice(0,300)}`);
-      }
-      const json = await resp.json();
-      if (!json || !Array.isArray(json.items)) {
-        throw new Error(`Unexpected payload: ${JSON.stringify(json).slice(0,300)}`);
-      }
-      if (errorBanner) errorBanner.style.display = 'none';
-      return json; // { items, cursor }
-    } catch (e) {
-      console.error('Fetch failed', e);
-      if (errorBanner) {
-        errorBanner.innerText = `Could not load data. ${e?.message || e}`;
-        errorBanner.style.display = 'block';
-      }
-      return { items: [], cursor: null };
-    }
-  }
-
-  // ---------- Helpers
-  function showLoader(on){ loader.style.display = on ? 'flex' : 'none'; }
+  // Utilities
+  function showLoader(on){ if (loader) loader.style.display = on ? 'flex' : 'none'; }
   function setMoreLoading(on){
     isLoading = on;
     if (moreBtn) moreBtn.disabled = on;
     if (reloadBtn) reloadBtn.disabled = on;
     if (moreSpin) moreSpin.style.display = on ? 'inline-block' : 'none';
     if (reloadSpin) reloadSpin.style.display = on ? 'inline-block' : 'none';
-    moreBtn?.querySelector('span')?.textContent = on ? 'Load more…' : 'Load more';
+    var span = moreBtn ? moreBtn.querySelector('span') : null;
+    if (span) span.textContent = on ? 'Load more…' : 'Load more';
   }
-  function numberFrom(a){ if(a==null) return null; const s = (""+a).replace(/[^\d.\-]/g,''); if(!s) return null; const n = parseFloat(s); return Number.isFinite(n)?n:null; }
-  function formatMoney(n){ if(n==null || n==="") return ""; try{ return new Intl.NumberFormat('en-US',{style:'currency',currency:'USD',maximumFractionDigits:0}).format(n); } catch{ return "$"+n; } }
-  function formatInt(n){ if(n==null || n==="") return ""; try{ return new Intl.NumberFormat('en-US',{maximumFractionDigits:0}).format(n); } catch{ return String(n); } }
-  function esc(s){ return (s??"").toString().replace(/[&<>"']/g, m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
+  function numberFrom(a){
+    if(a==null) return null;
+    var s = (""+a).replace(/[^\d.\-]/g,'');
+    if(!s) return null;
+    var n = parseFloat(s);
+    return isFinite(n)?n:null;
+  }
+  function formatMoney(n){
+    if(n==null || n==="") return "";
+    try{ return new Intl.NumberFormat('en-US',{style:'currency',currency:'USD',maximumFractionDigits:0}).format(n); }
+    catch(e){ return "$"+n; }
+  }
+  function formatInt(n){
+    if(n==null || n==="") return "";
+    try{ return new Intl.NumberFormat('en-US',{maximumFractionDigits:0}).format(n); }
+    catch(e){ return String(n); }
+  }
+  function esc(s){
+    return (s==null?"":String(s)).replace(/[&<>"']/g,function(m){return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]);});
+  }
+  function safeReplaceAll(str, search, repl){
+    // supports older Safari without String.replaceAll
+    return String(str).split(search).join(repl);
+  }
   function readCell(item, colId){
-    const v = item.column_values?.find(c=>c.id===colId); if(!v) return "";
-    switch(v.type){
-      case "text": case "long-text": return v.text||"";
-      case "dropdown": return (v.text||"").replaceAll(";",", ");
-      case "status": return v.text||"";
-      case "numbers": return v.text || v.value || "";
-      case "link": return v.text || v.url || "";
-      case "location": return v.text || "";
-      case "formula": return v.text || "";
-      default: return v.text || "";
-    }
+    var cvs = item && item.column_values ? item.column_values : null;
+    if (!cvs) return "";
+    var v = null;
+    for (var i=0;i<cvs.length;i++){ if (cvs[i].id === colId){ v = cvs[i]; break; } }
+    if (!v) return "";
+    var t = v.type;
+    if (t === "text" || t === "long-text") return v.text || "";
+    if (t === "dropdown") return safeReplaceAll(v.text || "", ";", ", ");
+    if (t === "status") return v.text || "";
+    if (t === "numbers") return v.text || v.value || "";
+    if (t === "link") return v.text || v.url || "";
+    if (t === "location") return v.text || "";
+    if (t === "formula") return v.text || "";
+    return v.text || "";
   }
   function truncCell(content, title){
-    const full = (content ?? '').toString().trim(); if(!full) return '';
-    const urlMatch = full.match(/https?:\/\/\S+/);
-    if(urlMatch) return `<a class="link" href="${esc(urlMatch[0])}" target="_blank" rel="noopener">Link</a>`;
-    return `<span class="trunc" data-title="${esc(title||'Details')}" data-full="${esc(full)}">${esc(full)}</span>`;
+    var full = (content==null?"":String(content)).trim();
+    if(!full) return '';
+    var urlMatch = full.match(/https?:\/\/\S+/);
+    if(urlMatch) return '<a class="link" href="'+esc(urlMatch[0])+'" target="_blank" rel="noopener">Link</a>';
+    return '<span class="trunc" data-title="'+esc(title||'Details')+'" data-full="'+esc(full)+'">'+esc(full)+'</span>';
   }
-  function pill(txt){ if(!txt) return ""; return `<span class="pill">${esc(txt)}</span>`; }
+  function pill(txt){ if(!txt) return ""; return '<span class="pill">'+esc(txt)+'</span>'; }
   function buildStateOptionsFrom(list){
-    const set = new Set();
-    for(const it of list){ const st = readCell(it, COL.state); if(st) set.add(st); }
-    const states = ["", ...Array.from(set).sort()];
-    stateSel.innerHTML = states.map(s=> `<option value="${esc(s)}">${s||'All'}</option>`).join('');
+    var set = Object.create(null);
+    for(var i=0;i<list.length;i++){
+      var st = readCell(list[i], COL.state);
+      if(st) set[st] = true;
+    }
+    var arr = [''];
+    for (var k in set) { if (Object.prototype.hasOwnProperty.call(set,k)) arr.push(k); }
+    arr.sort();
+    if (stateSel) {
+      var opts = '';
+      for (var j=0;j<arr.length;j++){
+        var s = arr[j];
+        opts += '<option value="'+esc(s)+'">'+(s||'All')+'</option>';
+      }
+      stateSel.innerHTML = opts;
+    }
   }
-
-  // ---------- Filters + Sort
-  let sort = {key:null, dir:1};
   function applySort(arr){
     if(!sort.key) return;
-    const k = sort.key, d = sort.dir;
-    arr.sort((a,b)=>{
-      const va = a[k], vb=b[k];
-      const na = (typeof va === 'number')?va:numberFrom(va);
-      const nb = (typeof vb === 'number')?vb:numberFrom(vb);
+    var k = sort.key, d = sort.dir;
+    arr.sort(function(a,b){
+      var va = a[k], vb = b[k];
+      var na = (typeof va === 'number')?va:numberFrom(va);
+      var nb = (typeof vb === 'number')?vb:numberFrom(vb);
       if(na!=null && nb!=null) return (na-nb)*d;
-      return (String(va||'').localeCompare(String(vb||'')))*d;
+      return String(va||'').localeCompare(String(vb||''))*d;
     });
   }
 
   function toRow(item){
-    const pick = (id)=>readCell(item,id);
+    function pick(id){ return readCell(item,id); }
     return {
-      name: item.name || "",
+      name: item && item.name ? item.name : "",
       photos_desc: pick(COL.photos_desc),
       state: pick(COL.state),
       geo_area: pick(COL.geo_area),
@@ -630,201 +610,305 @@ tbody tr:hover td{background:#fafbff}
       min_wage: numberFrom(pick(COL.min_wage)),
       work_comp: numberFrom(pick(COL.work_comp)),
       work_details_b: pick(COL.work_details_b),
-      // client filters
       final_cost: numberFrom(pick(COL.final_cost)),
       gpa: numberFrom(pick(COL.gpa))
     };
   }
 
-  // Render table
   function render(){
-    const rows = items.map(toRow);
-    const qv = q.value.trim().toLowerCase();
-    const st = stateSel.value;
-    const fcMinV = numberFrom(fcMin.value), fcMaxV = numberFrom(fcMax.value);
-    const gpaMinV = numberFrom(gpaMin.value), gpaMaxV = numberFrom(gpaMax.value);
+    var rows = [];
+    for (var i=0;i<items.length;i++) rows.push(toRow(items[i]));
 
-    const filtered = rows.filter(r=>{
-      if(qv){ const inText = (r.name+" "+(r.major||"")).toLowerCase(); if(!inText.includes(qv)) return false; }
-      if(st && r.state!==st) return false;
-      if(fcMinV!=null && (r.final_cost==null || r.final_cost<fcMinV)) return false;
-      if(fcMaxV!=null && (r.final_cost!=null && r.final_cost>fcMaxV)) return false;
-      if(gpaMinV!=null && (r.gpa==null || r.gpa<gpaMinV)) return false;
-      if(gpaMaxV!=null && (r.gpa!=null && r.gpa>gpaMaxV)) return false;
-      return true;
-    });
+    var qv = q && q.value ? q.value.trim().toLowerCase() : '';
+    var st = stateSel ? stateSel.value : '';
+    var fcMinV = numberFrom(fcMin && fcMin.value);
+    var fcMaxV = numberFrom(fcMax && fcMax.value);
+    var gpaMinV = numberFrom(gpaMin && gpaMin.value);
+    var gpaMaxV = numberFrom(gpaMax && gpaMax.value);
+
+    var filtered = [];
+    for (var j=0;j<rows.length;j++){
+      var r = rows[j];
+      if(qv){
+        var inText = (r.name+" "+(r.major||"")).toLowerCase();
+        if(inText.indexOf(qv) === -1) continue;
+      }
+      if(st && r.state!==st) continue;
+      if(fcMinV!=null && (r.final_cost==null || r.final_cost<fcMinV)) continue;
+      if(fcMaxV!=null && (r.final_cost!=null && r.final_cost>fcMaxV)) continue;
+      if(gpaMinV!=null && (r.gpa==null || r.gpa<gpaMinV)) continue;
+      if(gpaMaxV!=null && (r.gpa!=null && r.gpa>gpaMaxV)) continue;
+      filtered.push(r);
+    }
 
     applySort(filtered);
     updateSortIndicators();
 
-    const html = filtered.map(r=> `
-      <tr>
-        <td class="sticky"><strong>${esc(r.name)}</strong></td>
-        <td>${truncCell(r.photos_desc,'Photos & Description')}</td>
-        <td>${esc(r.state)}</td>
-        <td class="trunc" data-title="Geographical Area" data-full="${esc(r.geo_area||'')}">${esc(r.geo_area||'')}</td>
-        <td>${truncCell(r.video_state,'Video I about the State')}</td>
-        <td class="trunc" data-title="City" data-full="${esc(r.city)}">${esc(r.city)}</td>
-        <td class="trunc mono" data-title="Full address" data-full="${esc(r.address)}">${esc(r.address)}</td>
-        <td>${truncCell(r.virtual_tour,'Virtual Campus Tour')}</td>
-        <td>${pill(r.fachabitur)}</td>
-        <td class="trunc" data-title="Fachabitur Details" data-full="${esc(r.fach_det)}">${esc(r.fach_det)}</td>
-        <td class="right mono">${esc(r.usnews_rank)}</td>
-        <td>${truncCell(r.usnews_link,'U.S. News Link')}</td>
-        <td class="trunc" data-title="Type" data-full="${esc(r.type)}">${esc(r.type)}</td>
-        <td class="right">${formatInt(r.enroll)}</td>
-        <td class="right">${esc(r.live_pct)}</td>
-        <td class="right">${formatInt(r.live_num)}</td>
-        <td class="right">${r.ratio??""}</td>
-        <td class="trunc" data-title="Insurance Required?" data-full="${esc(r.insurance)}">${esc(r.insurance)}</td>
-        <td class="trunc" data-title="Health Insurance details" data-full="${esc(r.insurance_info)}">${esc(r.insurance_info)}</td>
-        <td class="right">${esc(r.app_fee)}</td>
-        <td class="trunc" data-title="How to Apply" data-full="${esc(r.how_apply)}">${esc(r.how_apply)}</td>
-        <td>${pill(r.cred_eval)}</td>
-        <td class="trunc" data-title="Credential Eval Info" data-full="${esc(r.cred_info)}">${esc(r.cred_info)}</td>
-        <td>${pill(r.spring_adm)}</td>
-        <td>${pill(r.spring_sch)}</td>
-        <td class="trunc" data-title="Clarification" data-full="${esc(r.clarify)}">${esc(r.clarify)}</td>
-        <td>${truncCell(r.campus_acts,'On Campus Activities')}</td>
-        <td>${truncCell(r.sports,'Sports Homepage')}</td>
-        <td>${truncCell(r.uni_home,'University Homepage')}</td>
-        <td>${truncCell(r.intl_adm,'International Admission')}</td>
-        <td class="trunc" data-title="Bachelor’s Study Areas" data-full="${esc(r.major||'')}">${esc(r.major||'')}</td>
-        <td>${truncCell(r.degrees_link,'Bachelor’s Degrees Link')}</td>
-        <td class="trunc" data-title="Academic Year" data-full="${esc(r.acad_year)}">${esc(r.acad_year)}</td>
-        <td class="right">${formatMoney(r.tuition)}</td>
-        <td class="right">${formatMoney(r.room)}</td>
-        <td class="right">${formatMoney(r.board)}</td>
-        <td class="right">${formatMoney(r.fees)}</td>
-        <td class="right"><strong>${formatMoney(r.total)}</strong></td>
-        <td class="trunc" data-title="Annual Cost Info" data-full="${esc(r.cost_info)}">${esc(r.cost_info)}</td>
-        <td class="trunc" data-title="Admission Requirements" data-full="${esc(r.adm_req)}">${esc(r.adm_req)}</td>
-        <td class="right">${formatMoney(r.sch_low)}</td>
-        <td class="trunc" data-title="Lowest Type" data-full="${esc(r.sch_low_type)}">${esc(r.sch_low_type)}</td>
-        <td class="right">${r.toefl_low??""}</td>
-        <td class="right">${r.gpa_low??""}</td>
-        <td class="right">${r.sat_low??""}</td>
-        <td class="trunc" data-title="Lowest Info" data-full="${esc(r.sch_low_info)}">${esc(r.sch_low_info)}</td>
-        <td class="right">${formatMoney(r.sch_mid)}</td>
-        <td class="trunc" data-title="Mid Type" data-full="${esc(r.sch_mid_type)}">${esc(r.sch_mid_type)}</td>
-        <td class="right">${r.toefl_mid??""}</td>
-        <td class="right">${r.gpa_mid??""}</td>
-        <td class="right">${r.sat_mid??""}</td>
-        <td class="trunc" data-title="Mid Info" data-full="${esc(r.sch_mid_info)}">${esc(r.sch_mid_info)}</td>
-        <td class="right">${formatMoney(r.sch_hi)}</td>
-        <td class="trunc" data-title="High Type" data-full="${esc(r.sch_hi_type)}">${esc(r.sch_hi_type)}</td>
-        <td class="right">${r.toefl_hi??""}</td>
-        <td class="right">${r.gpa_hi??""}</td>
-        <td class="right">${r.sat_hi??""}</td>
-        <td class="trunc" data-title="High Info" data-full="${esc(r.sch_hi_info)}">${esc(r.sch_hi_info)}</td>
-        <td class="right">${esc(r.net_low)}</td>
-        <td class="right">${esc(r.net_mid)}</td>
-        <td class="right">${esc(r.net_hi)}</td>
-        <td class="trunc" data-title="Fall Deadline" data-full="${esc(r.dead_fall)}">${esc(r.dead_fall)}</td>
-        <td class="trunc" data-title="Spring Deadline" data-full="${esc(r.dead_spring)}">${esc(r.dead_spring)}</td>
-        <td>${truncCell(r.dead_link,'Deadline Link')}</td>
-        <td>${pill(r.campus_job)}</td>
-        <td class="right">${r.min_wage==null||r.min_wage==="" ? "" : formatMoney(r.min_wage).replace(".00","")}</td>
-        <td class="right">${formatMoney(r.work_comp)}</td>
-        <td class="trunc" data-title="Bachelor’s Work on Campus Details (B)" data-full="${esc(r.work_details_b)}">${esc(r.work_details_b)}</td>
-      </tr>
-    `).join('');
+    var html = '';
+    for (var k=0;k<filtered.length;k++){
+      var r2 = filtered[k];
+      html += '<tr>'
+        + '<td class="sticky"><strong>'+esc(r2.name)+'</strong></td>'
+        + '<td>'+truncCell(r2.photos_desc,'Photos & Description')+'</td>'
+        + '<td>'+esc(r2.state)+'</td>'
+        + '<td class="trunc" data-title="Geographical Area" data-full="'+esc(r2.geo_area||'')+'">'+esc(r2.geo_area||'')+'</td>'
+        + '<td>'+truncCell(r2.video_state,'Video I about the State')+'</td>'
+        + '<td class="trunc" data-title="City" data-full="'+esc(r2.city)+'">'+esc(r2.city)+'</td>'
+        + '<td class="trunc mono" data-title="Full address" data-full="'+esc(r2.address)+'">'+esc(r2.address)+'</td>'
+        + '<td>'+truncCell(r2.virtual_tour,'Virtual Campus Tour')+'</td>'
+        + '<td>'+pill(r2.fachabitur)+'</td>'
+        + '<td class="trunc" data-title="Fachabitur Details" data-full="'+esc(r2.fach_det)+'">'+esc(r2.fach_det)+'</td>'
+        + '<td class="right mono">'+esc(r2.usnews_rank)+'</td>'
+        + '<td>'+truncCell(r2.usnews_link,'U.S. News Link')+'</td>'
+        + '<td class="trunc" data-title="Type" data-full="'+esc(r2.type)+'">'+esc(r2.type)+'</td>'
+        + '<td class="right">'+formatInt(r2.enroll)+'</td>'
+        + '<td class="right">'+esc(r2.live_pct)+'</td>'
+        + '<td class="right">'+formatInt(r2.live_num)+'</td>'
+        + '<td class="right">'+(r2.ratio==null?"":r2.ratio)+'</td>'
+        + '<td class="trunc" data-title="Insurance Required?" data-full="'+esc(r2.insurance)+'">'+esc(r2.insurance)+'</td>'
+        + '<td class="trunc" data-title="Health Insurance details" data-full="'+esc(r2.insurance_info)+'">'+esc(r2.insurance_info)+'</td>'
+        + '<td class="right">'+esc(r2.app_fee)+'</td>'
+        + '<td class="trunc" data-title="How to Apply" data-full="'+esc(r2.how_apply)+'">'+esc(r2.how_apply)+'</td>'
+        + '<td>'+pill(r2.cred_eval)+'</td>'
+        + '<td class="trunc" data-title="Credential Eval Info" data-full="'+esc(r2.cred_info)+'">'+esc(r2.cred_info)+'</td>'
+        + '<td>'+pill(r2.spring_adm)+'</td>'
+        + '<td>'+pill(r2.spring_sch)+'</td>'
+        + '<td class="trunc" data-title="Clarification" data-full="'+esc(r2.clarify)+'">'+esc(r2.clarify)+'</td>'
+        + '<td>'+truncCell(r2.campus_acts,'On Campus Activities')+'</td>'
+        + '<td>'+truncCell(r2.sports,'Sports Homepage')+'</td>'
+        + '<td>'+truncCell(r2.uni_home,'University Homepage')+'</td>'
+        + '<td>'+truncCell(r2.intl_adm,'International Admission')+'</td>'
+        + '<td class="trunc" data-title="Bachelor’s Study Areas" data-full="'+esc(r2.major||'')+'">'+esc(r2.major||'')+'</td>'
+        + '<td>'+truncCell(r2.degrees_link,'Bachelor’s Degrees Link')+'</td>'
+        + '<td class="trunc" data-title="Academic Year" data-full="'+esc(r2.acad_year)+'">'+esc(r2.acad_year)+'</td>'
+        + '<td class="right">'+formatMoney(r2.tuition)+'</td>'
+        + '<td class="right">'+formatMoney(r2.room)+'</td>'
+        + '<td class="right">'+formatMoney(r2.board)+'</td>'
+        + '<td class="right">'+formatMoney(r2.fees)+'</td>'
+        + '<td class="right"><strong>'+formatMoney(r2.total)+'</strong></td>'
+        + '<td class="trunc" data-title="Annual Cost Info" data-full="'+esc(r2.cost_info)+'">'+esc(r2.cost_info)+'</td>'
+        + '<td class="trunc" data-title="Admission Requirements" data-full="'+esc(r2.adm_req)+'">'+esc(r2.adm_req)+'</td>'
+        + '<td class="right">'+formatMoney(r2.sch_low)+'</td>'
+        + '<td class="trunc" data-title="Lowest Type" data-full="'+esc(r2.sch_low_type)+'">'+esc(r2.sch_low_type)+'</td>'
+        + '<td class="right">'+(r2.toefl_low==null?"":r2.toefl_low)+'</td>'
+        + '<td class="right">'+(r2.gpa_low==null?"":r2.gpa_low)+'</td>'
+        + '<td class="right">'+(r2.sat_low==null?"":r2.sat_low)+'</td>'
+        + '<td class="trunc" data-title="Lowest Info" data-full="'+esc(r2.sch_low_info)+'">'+esc(r2.sch_low_info)+'</td>'
+        + '<td class="right">'+formatMoney(r2.sch_mid)+'</td>'
+        + '<td class="trunc" data-title="Mid Type" data-full="'+esc(r2.sch_mid_type)+'">'+esc(r2.sch_mid_type)+'</td>'
+        + '<td class="right">'+(r2.toefl_mid==null?"":r2.toefl_mid)+'</td>'
+        + '<td class="right">'+(r2.gpa_mid==null?"":r2.gpa_mid)+'</td>'
+        + '<td class="right">'+(r2.sat_mid==null?"":r2.sat_mid)+'</td>'
+        + '<td class="trunc" data-title="Mid Info" data-full="'+esc(r2.sch_mid_info)+'">'+esc(r2.sch_mid_info)+'</td>'
+        + '<td class="right">'+formatMoney(r2.sch_hi)+'</td>'
+        + '<td class="trunc" data-title="High Type" data-full="'+esc(r2.sch_hi_type)+'">'+esc(r2.sch_hi_type)+'</td>'
+        + '<td class="right">'+(r2.toefl_hi==null?"":r2.toefl_hi)+'</td>'
+        + '<td class="right">'+(r2.gpa_hi==null?"":r2.gpa_hi)+'</td>'
+        + '<td class="right">'+(r2.sat_hi==null?"":r2.sat_hi)+'</td>'
+        + '<td class="trunc" data-title="High Info" data-full="'+esc(r2.sch_hi_info)+'">'+esc(r2.sch_hi_info)+'</td>'
+        + '<td class="right">'+esc(r2.net_low)+'</td>'
+        + '<td class="right">'+esc(r2.net_mid)+'</td>'
+        + '<td class="right">'+esc(r2.net_hi)+'</td>'
+        + '<td class="trunc" data-title="Fall Deadline" data-full="'+esc(r2.dead_fall)+'">'+esc(r2.dead_fall)+'</td>'
+        + '<td class="trunc" data-title="Spring Deadline" data-full="'+esc(r2.dead_spring)+'">'+esc(r2.dead_spring)+'</td>'
+        + '<td>'+truncCell(r2.dead_link,'Deadline Link')+'</td>'
+        + '<td>'+pill(r2.campus_job)+'</td>'
+        + '<td class="right">'+(r2.min_wage==null||r2.min_wage==="" ? "" : formatMoney(r2.min_wage).replace(".00",""))+'</td>'
+        + '<td class="right">'+formatMoney(r2.work_comp)+'</td>'
+        + '<td class="trunc" data-title="Bachelor’s Work on Campus Details (B)" data-full="'+esc(r2.work_details_b)+'">'+esc(r2.work_details_b)+'</td>'
+        + '</tr>';
+    }
     tbody.innerHTML = html;
 
-    shown.textContent = `${filtered.length} shown`;
-    loaded.textContent = `${items.length} loaded`;
-    if(moreBtn) moreBtn.style.display = cursor ? 'inline-flex' : 'none';
+    if (shown) shown.textContent = filtered.length + ' shown';
+    if (loaded) loaded.textContent = items.length + ' loaded';
+    if (moreBtn) moreBtn.style.display = cursor ? 'inline-flex' : 'none';
 
     adjustTableHeight();
   }
 
-  // Header sort interactions + indicators
   function updateSortIndicators(){
-    document.querySelectorAll('thead th').forEach(th=>{
+    var ths = document.querySelectorAll('thead th');
+    for (var i=0;i<ths.length;i++){
+      var th = ths[i];
       th.classList.remove('sort-asc','sort-desc');
-      const key = th.dataset.key;
+      var key = th.getAttribute('data-key');
       if(key && key === sort.key){
         th.classList.add(sort.dir===1?'sort-asc':'sort-desc');
       }
-    });
+    }
   }
-  document.querySelectorAll('thead th').forEach(th=>{
-    if(th.dataset.key) th.classList.add('sortable');
-    th.addEventListener('click', ()=>{
-      const key = th.dataset.key;
-      if(!key) return;
-      if(sort.key===key) sort.dir *= -1; else { sort.key=key; sort.dir=1; }
-      render();
-    });
-  });
+  (function attachSortHandlers(){
+    var ths = document.querySelectorAll('thead th');
+    for (var i=0;i<ths.length;i++){
+      (function(th){
+        var key = th.getAttribute('data-key');
+        if (key) th.classList.add('sortable');
+        th.addEventListener('click', function(){
+          if(!key) return;
+          if (sort.key === key) sort.dir *= -1; else { sort.key = key; sort.dir = 1; }
+          render();
+        });
+      })(ths[i]);
+    }
+  })();
 
-  // Delegated click: show popup for truncated text cells
-  document.querySelector('#tbody').addEventListener('click', (e)=>{
-    const target = e.target.closest('.trunc');
-    if(!target) return;
-    const title = target.dataset.title || 'Details';
-    const full = target.dataset.full || target.textContent || '';
-    if(full.trim()) openPopup(title, full);
+  // Delegated click for popup
+  document.getElementById('tbody').addEventListener('click', function(e){
+    var target = e.target;
+    while (target && target !== tbody && !target.classList.contains('trunc')) target = target.parentNode;
+    if(!target || target === tbody) return;
+    var title = target.getAttribute('data-title') || 'Details';
+    var full = target.getAttribute('data-full') || target.textContent || '';
+    if (String(full).trim()) openPopup(title, full);
   });
 
   // Controls
-  reloadBtn?.onclick = async ()=>{ if(isLoading) return; await initialLoad(); };
-  resetBtn?.onclick = async ()=>{ if(isLoading) return;
-    q.value=''; stateSel.value=''; fcMin.value=''; fcMax.value='';
-    gpaMin.value=''; gpaMax.value=''; sort = {key:null, dir:1}; await initialLoad();
+  if (reloadBtn) reloadBtn.onclick = function(){ if(isLoading) return; initialLoad(); };
+  if (resetBtn) resetBtn.onclick = function(){
+    if(isLoading) return;
+    if (q) q.value=''; if (stateSel) stateSel.value='';
+    if (fcMin) fcMin.value=''; if (fcMax) fcMax.value='';
+    if (gpaMin) gpaMin.value=''; if (gpaMax) gpaMax.value='';
+    sort = {key:null, dir:1};
+    initialLoad();
   };
-  moreBtn?.onclick = async ()=>{ if(isLoading || !cursor) return;
-    await fetchAndAppend({limit: limitSel.value, cursorParam: cursor, progressive: autoLoad?.checked});
+  if (moreBtn) moreBtn.onclick = function(){
+    if(isLoading || !cursor) return;
+    fetchAndAppend({limit: (limitSel?limitSel.value:100), cursorParam: cursor, progressive: (autoLoad && autoLoad.checked)});
   };
-  [q,stateSel,fcMin,fcMax,gpaMin,gpaMax,limitSel].forEach(el=>{
-    el?.addEventListener('change', ()=>{ render(); syncTopScrollbar(); });
-    if(el?.tagName === 'INPUT') el.addEventListener('keyup', e=>{ if(e.key==='Enter'){ render(); syncTopScrollbar(); } });
-  });
-
-  // Apply button in Filter popover
-  const applyFiltersBtn = document.getElementById('applyFiltersBtn');
-  applyFiltersBtn?.addEventListener('click', ()=>{ render(); });
+  var inputs = [q,stateSel,fcMin,fcMax,gpaMin,gpaMax,limitSel];
+  for (var ii=0; ii<inputs.length; ii++){
+    var el = inputs[ii];
+    if (!el) continue;
+    el.addEventListener('change', function(){ render(); syncTopScrollbar(); });
+    if (el.tagName === 'INPUT'){
+      el.addEventListener('keyup', function(e){ if(e.key==='Enter'){ render(); syncTopScrollbar(); } });
+    }
+  }
+  var applyFiltersBtn = document.getElementById('applyFiltersBtn');
+  if (applyFiltersBtn) applyFiltersBtn.addEventListener('click', function(){ render(); });
 
   // Excel export
-  exportBtn?.addEventListener('click', ()=>{
-    const headers = Array.from(document.querySelectorAll('thead th')).map(th=>th.textContent.trim());
-    const rows = Array.from(tbody.querySelectorAll('tr')).map(tr =>
-      Array.from(tr.children).map(td => td.textContent.replace(/\s+/g,' ').trim())
-    );
-    const aoa = [headers, ...rows];
-    const ws = XLSX.utils.aoa_to_sheet(aoa);
-    const wb = XLSX.utils.book_new();
+  if (exportBtn) exportBtn.addEventListener('click', function(){
+    var headers = [];
+    var ths = document.querySelectorAll('thead th');
+    for (var i=0;i<ths.length;i++) headers.push(ths[i].textContent.trim());
+    var rows = [];
+    var trs = tbody.querySelectorAll('tr');
+    for (var r=0;r<trs.length;r++){
+      var tds = trs[r].children, row=[];
+      for (var c=0;c<tds.length;c++) row.push(tds[c].textContent.replace(/\s+/g,' ').trim());
+      rows.push(row);
+    }
+    var aoa = [headers].concat(rows);
+    var ws = XLSX.utils.aoa_to_sheet(aoa);
+    var wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, 'Programs');
     XLSX.writeFile(wb, 'bachelors-programs.xlsx');
   });
 
-  // Top-bottom horizontal scroll sync
-  let syncingTop = false, syncingBottom = false;
+  // Scroll sync
+  var syncingTop = false, syncingBottom = false;
   function syncTopScrollbar(){
-    const w = tbl.scrollWidth;
+    if (!tbl || !hScrollInner || !hScrollTop || !tableWrap) return;
+    var w = tbl.scrollWidth;
     hScrollInner.style.width = w + 'px';
     hScrollTop.scrollLeft = tableWrap.scrollLeft;
   }
-  hScrollTop.addEventListener('scroll', ()=>{
+  if (hScrollTop) hScrollTop.addEventListener('scroll', function(){
     if(syncingTop) return;
     syncingBottom = true;
-    tableWrap.scrollLeft = hScrollTop.scrollLeft;
+    if (tableWrap) tableWrap.scrollLeft = hScrollTop.scrollLeft;
     syncingBottom = false;
   });
-  tableWrap.addEventListener('scroll', ()=>{
+  if (tableWrap) tableWrap.addEventListener('scroll', function(){
     if(syncingBottom) return;
     syncingTop = true;
-    hScrollTop.scrollLeft = tableWrap.scrollLeft;
+    if (hScrollTop) hScrollTop.scrollLeft = tableWrap.scrollLeft;
     syncingTop = false;
   });
 
-  // Dynamic height
   function adjustTableHeight(){
-    const vwTop = tableWrap.getBoundingClientRect().top;
-    const maxH = Math.max(360, window.innerHeight - vwTop - 16);
+    if (!tableWrap) return;
+    var vwTop = tableWrap.getBoundingClientRect().top;
+    var maxH = Math.max(360, window.innerHeight - vwTop - 16);
     tableWrap.style.maxHeight = maxH + 'px';
   }
-  window.addEventListener('resize', ()=>{ syncTopScrollbar(); adjustTableHeight(); });
+  window.addEventListener('resize', function(){ syncTopScrollbar(); adjustTableHeight(); });
+
+  // Data fetching
+  async function fetchBatch(params){
+    var errorBanner = document.getElementById('errorBanner');
+    var base = location.origin || window.location.href;
+    var url = new URL('/.netlify/functions/items', base);
+    url.searchParams.set('limit', String(params && params.limit ? params.limit : '100'));
+    if (params && params.cursorParam) url.searchParams.set('cursor', params.cursorParam);
+    try {
+      var resp = await fetch(url.toString(), { cache: 'no-store' });
+      if (!resp.ok) {
+        var txt = '';
+        try { txt = await resp.text(); } catch (_) {}
+        throw new Error('HTTP '+resp.status+': '+String(txt).slice(0,300));
+      }
+      var json = await resp.json();
+      if (!json || !Array.isArray(json.items)) {
+        throw new Error('Unexpected payload: '+JSON.stringify(json).slice(0,300));
+      }
+      if (errorBanner) errorBanner.style.display = 'none';
+      return json;
+    } catch (e) {
+      console.error('Fetch failed', e);
+      if (errorBanner) { errorBanner.textContent = 'Could not load data. ' + (e && e.message ? e.message : String(e)); errorBanner.style.display = 'block'; }
+      return { items: [], cursor: null };
+    }
+  }
+
+  async function fetchAndAppend(opts){
+    setMoreLoading(true);
+    var res = await fetchBatch(opts || {});
+    var batch = res.items || [];
+    var cur = res.cursor || null;
+    if (batch.length){
+      for (var i=0;i<batch.length;i++) items.push(batch[i]);
+      buildStateOptionsFrom(items);
+      render();
+      syncTopScrollbar();
+      adjustTableHeight();
+    }
+    cursor = cur;
+
+    while (opts && opts.progressive && cursor){
+      var resN = await fetchBatch({limit:(limitSel?limitSel.value:100), cursorParam: cursor});
+      var nextBatch = resN.items || [];
+      var nextCur = resN.cursor || null;
+      if (nextBatch.length){
+        for (var j=0;j<nextBatch.length;j++) items.push(nextBatch[j]);
+        buildStateOptionsFrom(items);
+        render();
+        syncTopScrollbar();
+        adjustTableHeight();
+      }
+      cursor = nextCur;
+    }
+    setMoreLoading(false);
+  }
+
+  async function initialLoad(){
+    items = []; cursor = null;
+    showLoader(true);
+    try {
+      await fetchAndAppend({limit: (limitSel?limitSel.value:100), cursorParam: null, progressive: false});
+    } finally {
+      showLoader(false);
+      if (app) app.style.display = 'block';
+      syncTopScrollbar();
+      adjustTableHeight();
+    }
+    if (autoLoad && autoLoad.checked && cursor) {
+      fetchAndAppend({limit: (limitSel?limitSel.value:100), cursorParam: cursor, progressive: true});
+    }
+  }
 
   // Start
   initialLoad();
