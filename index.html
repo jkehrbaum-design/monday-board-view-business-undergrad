@@ -115,6 +115,38 @@ tbody tr:hover td{background:#fafbff}
 #popup h4{margin:0 24px 10px 0;font-size:14px;color:#555;}
 #popup pre{white-space:pre-wrap;word-break:break-word;font-family:inherit;font-size:14px;margin:0;}
 .little-spinner{width:14px;height:14px;border:2px solid #e2e8f0;border-top-color:#fff;border-radius:50%;animation:spin .8s linear infinite;}
+
+/* --- Airtable-like density overrides --- */
+thead th{
+  padding:8px 12px;
+  font-size:12px;
+  letter-spacing:.02em;
+  box-shadow:0 1px 0 var(--line), 0 1px 6px rgba(0,0,0,0.04);
+}
+tbody td{
+  padding:10px 12px;
+  line-height:20px;
+}
+.tableWrap{ border-color:#eaedf2; }
+tbody td, thead th{ border-color:#eaedf2; }
+
+:root{ --stickyW:300px; } /* Name column width */
+
+table{
+  width:max-content;
+  min-width:1200px; /* was 1800; lets the layout feel lighter */
+}
+
+/* Top scrollbar more subtle & compact */
+.hScrollTop{ height:12px; margin-bottom:8px; }
+
+/* Toolbar compaction */
+.tb-btn{ height:30px; padding:0 10px; }
+
+/* Optional: slightly lighter hover like Airtable */
+tbody tr:hover td{ background:#f8fafc; }
+
+
 </style>
 </head>
 <body>
