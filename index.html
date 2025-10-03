@@ -12,7 +12,7 @@
 :root{
   --bg:#f6f7fb; --card:#ffffff; --text:#1f2430; --muted:#6b7280; --line:#e6e9f0;
   --primary:#1f76ff; --pill:#eef3ff; --pillText:#1f4fbf; --link:#1f76ff; --thead:#f2f4f8;
-  --chip:#f4f6fa; --chipText:#49506a; --stickyW:280px;           /* Name col width */
+  --chip:#f4f6fa; --chipText:#49506a; --stickyW:280px;
 }
 *{box-sizing:border-box}
 html,body{height:100%}
@@ -21,12 +21,6 @@ body{margin:0;background:var(--bg);color:var(--text);font-family:Inter,system-ui
 .h1{font-size:28px;font-weight:700;margin:8px 0 4px;}
 .sub{color:var(--muted);font-size:13px;margin-bottom:18px;}
 
-/* Sticky filter card */
-.card{
-  position:sticky; top:0; z-index:20; background:var(--card);
-  border:1px solid var(--line); border-radius:10px; padding:14px; margin-bottom:10px;
-  box-shadow:0 1px 2px rgba(0,0,0,.03);
-}
 .row{display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end}
 .col{display:flex;flex-direction:column;gap:6px}
 .label{font-size:12px;color:var(--muted)}
@@ -40,43 +34,68 @@ input,select{height:36px;padding:0 10px;border:1px solid var(--line);border-radi
 .spacer{flex:1}
 .toggle{display:inline-flex;align-items:center;gap:6px;font-size:12px;color:#444}
 
+/* Toolbar (replaces old .card) */
+.toolbar{
+  position:sticky; top:0; z-index:20;
+  background:var(--card); border:1px solid var(--line); border-radius:10px;
+  padding:8px; margin-bottom:10px; display:flex; align-items:center; gap:6px;
+}
+.tb-btn{
+  height:32px; padding:0 10px; border:1px solid var(--line); background:#fff;
+  border-radius:8px; font-weight:600; display:inline-flex; align-items:center; gap:6px; cursor:pointer;
+}
+.tb-btn .ico{font-size:14px; line-height:1}
+.sr-only{position:absolute; left:-10000px; top:auto; width:1px; height:1px; overflow:hidden}
+
+/* Popovers */
+.popover{
+  position:absolute; top:44px;
+  background:#fff; border:1px solid var(--line); border-radius:10px;
+  box-shadow:0 12px 30px rgba(0,0,0,.10);
+  padding:12px; display:none; min-width:340px;
+}
+.popover.open{display:block}
+#pvHide{min-width:260px}
+#pvSort{min-width:260px}
+.pv-row{display:flex; flex-direction:column; gap:6px; margin-bottom:10px}
+.pv-row-inline{display:flex; gap:6px; align-items:center}
+.pv-grid{display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:10px}
+.pv-actions{display:flex; align-items:center; gap:8px; margin-top:8px}
+
 /* Top horizontal scrollbar (mirrors bottom) */
 .hScrollTop{
   position:sticky; top:0; z-index:18; background:var(--card);
   border:1px solid var(--line); border-radius:10px; margin-bottom:10px;
   height:16px; overflow-x:auto; overflow-y:hidden;
 }
-.hScrollInner{height:1px;} /* width set in JS */
+.hScrollInner{height:1px;}
 
-/* ===== TABLE AREA: own vertical scroll so headers never disappear ===== */
+/* Table area */
 .tableWrap{
   background:var(--card); border:1px solid var(--line); border-radius:10px;
   overflow:auto; position:relative;
-  /* height is set dynamically by JS to fill the viewport */
-  max-height:70vh; /* safe fallback */
+  max-height:70vh;
 }
 table{border-collapse:separate;border-spacing:0;width:max-content;min-width:1800px;}
 thead th{
-  position:sticky; top:0; background:var(--thead); z-index:5;   /* pinned inside .tableWrap */
+  position:sticky; top:0; background:var(--thead); z-index:5;
   font-size:12px; text-transform:uppercase; letter-spacing:.02em; color:#49506a;
   padding:10px; border-bottom:1px solid var(--line); user-select:none; cursor:pointer;
 }
 thead th.sortable::after{content:" ⇅";font-size:10px;color:#999;margin-left:4px;}
 thead th.sort-asc::after{content:" ▲";}
 thead th.sort-desc::after{content:" ▼";}
-
 tbody td{
   padding:12px 10px; border-top:1px solid var(--line); vertical-align:top; font-size:14px;
   max-width:280px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
 }
 tbody td.trunc{cursor:pointer}
 
-/* Only the first column is frozen (left + header) */
+/* Frozen first column (Name) */
 th.sticky, td.sticky{
-  position:sticky; left:0; background:#fff; z-index:6;   /* above other cells */
+  position:sticky; left:0; background:#fff; z-index:6;
   min-width:var(--stickyW); max-width:var(--stickyW); box-shadow:1px 0 0 var(--line);
 }
-/* ensure the sticky header cell is above the sticky body cell */
 thead th.sticky{z-index:7; top:0; left:0;}
 
 tbody tr:hover td{background:#fafbff}
@@ -85,7 +104,7 @@ tbody tr:hover td{background:#fafbff}
 .mono{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12px}
 .right{text-align:right}
 
-/* Full-screen loader */
+/* Loader */
 #loader{position:fixed;inset:0;background:#fff;display:flex;align-items:center;justify-content:center;font-size:16px;color:#333;z-index:2000;}
 .spinner{width:48px;height:48px;border:4px solid #eee;border-top-color:var(--primary);border-radius:50%;animation:spin 1s linear infinite;margin-right:12px;}
 @keyframes spin{to{transform:rotate(360deg)}}
@@ -106,47 +125,97 @@ tbody tr:hover td{background:#fafbff}
   <div class="h1">Bachelor’s Programs – Freshman & Average Student</div>
   <div class="sub">The data comes from a secure Netlify function (read-only). The look and feel is inspired by Monday.</div>
 
-  <!-- FILTERS (sticky) -->
-  <div class="card">
-    <div class="row">
-      <div class="col" style="min-width:260px">
-        <label class="label">Search (Name & Major)</label>
+  <!-- ============ TOOLBAR (replacing previous filter card) ============ -->
+  <div class="toolbar" id="toolbar">
+    <div class="toolbar-title sr-only">Table actions</div>
+    <button class="tb-btn" id="tbHide"><span class="ico">🙈</span> Hide fields</button>
+    <button class="tb-btn" id="tbFilter"><span class="ico">⎚</span> Filter</button>
+    <button class="tb-btn" id="tbGroup"><span class="ico">▦</span> Group</button>
+    <button class="tb-btn" id="tbSort"><span class="ico">↕</span> Sort</button>
+    <div class="spacer"></div>
+    <button class="tb-btn" id="tbMore">…</button>
+
+    <!-- POPUPS -->
+    <div class="popover" id="pvHide"></div>
+
+    <!-- Open by default so filters remain usable without extra JS -->
+    <div class="popover open" id="pvFilter">
+      <div class="pv-row">
+        <label>Search (Name & Major)</label>
         <input id="q" placeholder="Search…" />
       </div>
-      <div class="col">
-        <label class="label">State</label>
+      <div class="pv-row">
+        <label>State</label>
         <select id="state"><option value="">All</option></select>
       </div>
-      <div class="col">
-        <label class="label">Final cost (USD)</label>
-        <div class="row" style="gap:6px">
-          <input id="fcMin" class="nums" placeholder="min $" inputmode="numeric" />
-          <input id="fcMax" class="nums" placeholder="max $" inputmode="numeric" />
+      <div class="pv-grid">
+        <div>
+          <label>Final cost (USD)</label>
+          <div class="pv-row-inline">
+            <input id="fcMin" class="nums" placeholder="min $" inputmode="numeric" />
+            <input id="fcMax" class="nums" placeholder="max $" inputmode="numeric" />
+          </div>
+        </div>
+        <div>
+          <label>GPA</label>
+          <div class="pv-row-inline">
+            <input id="gpaMin" class="nums" placeholder="min" inputmode="decimal" />
+            <input id="gpaMax" class="nums" placeholder="max" inputmode="decimal" />
+          </div>
+        </div>
+        <div>
+          <label>Page size</label>
+          <select id="limit"><option>50</option><option selected>100</option><option>200</option></select>
         </div>
       </div>
-      <div class="col">
-        <label class="label">GPA</label>
-        <div class="row" style="gap:6px">
-          <input id="gpaMin" class="nums" placeholder="min" inputmode="decimal" />
-          <input id="gpaMax" class="nums" placeholder="max" inputmode="decimal" />
-        </div>
+      <div class="pv-actions">
+        <label class="toggle"><input id="autoLoad" type="checkbox" checked /> Auto-load remaining</label>
+        <div class="spacer"></div>
+        <button class="btn" id="resetBtn">Reset</button>
+        <button class="btn primary" id="applyFiltersBtn">Apply</button>
       </div>
-      <div class="col">
-        <label class="label">Page size</label>
-        <select id="limit"><option>50</option><option selected>100</option><option>200</option></select>
-      </div>
-      <div class="spacer"></div>
-      <label class="toggle"><input id="autoLoad" type="checkbox" checked /> Auto-load remaining</label>
-      <button class="btn primary" id="reloadBtn"><div class="little-spinner" id="reloadSpin" style="display:none"></div><span>Reload</span></button>
-      <button class="btn" id="resetBtn">Reset filters</button>
-      <button class="btn" id="exportBtn">Export Excel</button>
     </div>
-    <div class="chips" style="margin-top:10px">
-      <span id="shown" class="chip">0 shown</span>
-      <span id="loaded" class="chip">0 loaded</span>
-      <button id="moreBtn" class="btn" style="height:28px;padding:0 10px"><div class="little-spinner" id="moreSpin" style="display:none"></div><span>Load more</span></button>
+
+    <div class="popover" id="pvGroup">
+      <label>Group by</label>
+      <select id="groupBy">
+        <option value="">None</option>
+        <option value="state">State</option>
+        <option value="type">Type of Institution</option>
+        <option value="geo_area">Geographical Area</option>
+      </select>
+    </div>
+
+    <div class="popover" id="pvSort">
+      <label>Sort by</label>
+      <select id="sortKey">
+        <option value="">None</option>
+        <option value="name">Name</option>
+        <option value="state">State</option>
+        <option value="major">Bachelor’s Study Areas (B)</option>
+        <option value="tuition">Tuition</option>
+        <option value="total">TOTAL</option>
+        <option value="enroll">Enrollment</option>
+      </select>
+      <div class="pv-row-inline">
+        <label><input type="radio" name="sortDir" value="asc" checked /> Asc</label>
+        <label><input type="radio" name="sortDir" value="desc" /> Desc</label>
+      </div>
+    </div>
+
+    <div class="popover" id="pvMore">
+      <div class="pv-row-inline">
+        <button class="btn" id="reloadBtn"><div class="little-spinner" id="reloadSpin" style="display:none"></div>Reload</button>
+        <button class="btn" id="exportBtn">Export Excel</button>
+        <button class="btn" id="moreBtn"><div class="little-spinner" id="moreSpin" style="display:none"></div>Load more</button>
+      </div>
+      <div class="muted" style="margin-top:8px">
+        <span id="shown" class="chip">0 shown</span>
+        <span id="loaded" class="chip">0 loaded</span>
+      </div>
     </div>
   </div>
+  <!-- ============ /TOOLBAR ============ -->
 
   <!-- TOP HORIZONTAL SCROLLBAR -->
   <div class="hScrollTop" id="hScrollTop"><div class="hScrollInner" id="hScrollInner"></div></div>
@@ -186,9 +255,7 @@ tbody tr:hover td{background:#fafbff}
           <th data-key="sports">Sports Homepage</th>
           <th data-key="uni_home">University Homepage</th>
           <th data-key="intl_adm">International Admission</th>
-          <!-- moved here -->
           <th class="sortable" data-key="major">Bachelor’s Study Areas (B)</th>
-          <!-- then the degrees link -->
           <th data-key="degrees_link">Bachelor’s Degrees Link</th>
           <th data-key="acad_year">Academic Year</th>
           <th data-key="tuition" class="right">Tuition (Annual Cost in USD)</th>
@@ -243,7 +310,7 @@ tbody tr:hover td{background:#fafbff}
 
 <script>
 (() => {
-  // --------- UI refs
+  // --------- UI refs (unchanged)
   const app = document.getElementById('app');
   const loader = document.getElementById('loader');
   const q = document.querySelector('#q');
@@ -254,23 +321,23 @@ tbody tr:hover td{background:#fafbff}
   const gpaMax = document.querySelector('#gpaMax');
   const limitSel = document.querySelector('#limit');
   const autoLoad = document.querySelector('#autoLoad');
-  const reloadBtn = document.querySelector('#reloadBtn');
-  const reloadSpin = document.querySelector('#reloadSpin');
-  const moreBtn = document.querySelector('#moreBtn');
-  const moreSpin = document.querySelector('#moreSpin');
-  const resetBtn = document.querySelector('#resetBtn');
-  const exportBtn = document.querySelector('#exportBtn');
+  const reloadBtn = document.getElementById('reloadBtn');
+  const reloadSpin = document.getElementById('reloadSpin');
+  const moreBtn = document.getElementById('moreBtn');
+  const moreSpin = document.getElementById('moreSpin');
+  const resetBtn = document.getElementById('resetBtn');
+  const exportBtn = document.getElementById('exportBtn');
   const tbody = document.querySelector('#tbody');
-  const shown = document.querySelector('#shown');
-  const loaded = document.querySelector('#loaded');
+  const shown = document.getElementById('shown');
+  const loaded = document.getElementById('loaded');
 
-  // Top scrollbar & table wrap
+  // Top scrollbar & table wrap (unchanged)
   const hScrollTop = document.getElementById('hScrollTop');
   const hScrollInner = document.getElementById('hScrollInner');
   const tableWrap = document.getElementById('tableWrap');
   const tbl = document.getElementById('tbl');
 
-  // Popup
+  // Popup (unchanged)
   const popup = document.getElementById('popup');
   const popupTitle = document.getElementById('popupTitle');
   const popupBody = document.getElementById('popupBody');
@@ -282,87 +349,35 @@ tbody tr:hover td{background:#fafbff}
     popup.style.display = 'block';
   }
 
-  // --------- Column mapping (incl. photos_desc)
+  // --------- Column mapping (unchanged, includes photos_desc)
   const COL = {
-    name: "name",
-    photos_desc: "link4",
-    state: "state1",
-    geo_area: "dropdown30",
-    majors: "dropdown73",
-    city: "city",
-    address: "location",
-    video_state: "link_14",
-    virtual_tour: "link_1",
-    fachabitur: "status5",
-    fach_det: "long_text15",
-    usnews_rank: "long_text",
-    usnews_link: "link1",
-    type: "dropdown",
-    enroll: "numbers7",
-    live_pct: "numbers8",
-    live_num: "formula53",
-    ratio: "numbers81",
-    insurance: "dropdown8",
-    insurance_info: "long_text63",
-    app_fee: "temporary_university_s_application_fee_cost__usd_",
-    how_apply: "long_text842",
-    cred_eval: "status38",
-    cred_info: "long_text60",
-    spring_adm: "status45",
-    spring_sch: "status_13",
-    clarify: "long_text9",
-    campus_acts: "link2",
-    sports: "link_198",
-    uni_home: "link3",
-    intl_adm: "link0",
-    degrees_link: "link30",
-    acad_year: "dropdown4",
-    tuition: "annual_tuition_cost",
-    room: "_usd__annual_room_cost",
-    board: "_usd__annual_board_cost",
-    fees: "numbers5",
-    total: "formula",
-    cost_info: "link_s_annual_cost_of_attendance",
-    adm_req: "_link__requirements_admission_information",
-    sch_low: "dup__of_minimum__usd__annual_scholarship_amount6",
-    sch_low_type: "status1",
-    toefl_low: "numbers2",
-    gpa_low: "numbers34",
-    sat_low: "numbers0",
-    sch_low_info: "additional_info_and_link_s_on_minimum_scholarship_amount",
-    sch_mid: "numbers68",
-    sch_mid_type: "status_132",
-    toefl_mid: "numbers54",
-    gpa_mid: "numbers64",
-    sat_mid: "numbers414",
-    sch_mid_info: "long_text31",
-    sch_hi: "numbers11",
-    sch_hi_type: "dup__of_competitive_vs_guaranteed___gpa__3_5__highest_",
-    toefl_hi: "numbers70",
-    gpa_hi: "numbers4",
-    sat_hi: "numbers41",
-    sch_hi_info: "long_text78",
-    net_low: "formula3",
-    net_mid: "formula07",
-    net_hi: "formula9",
-    dead_fall: "deadline_fall_application",
-    dead_spring: "deadline_spring_application",
-    dead_link: "link_104",
-    campus_job: "status_113",
-    min_wage: "numbers985",
-    work_comp: "formula5",
-    work_details_b: "long_text56",
-    // client filters only
-    final_cost: "formula",
-    gpa: "numbers34"
+    name:"name", photos_desc:"link4", state:"state1", geo_area:"dropdown30", majors:"dropdown73",
+    city:"city", address:"location", video_state:"link_14", virtual_tour:"link_1",
+    fachabitur:"status5", fach_det:"long_text15", usnews_rank:"long_text", usnews_link:"link1",
+    type:"dropdown", enroll:"numbers7", live_pct:"numbers8", live_num:"formula53", ratio:"numbers81",
+    insurance:"dropdown8", insurance_info:"long_text63", app_fee:"temporary_university_s_application_fee_cost__usd_",
+    how_apply:"long_text842", cred_eval:"status38", cred_info:"long_text60", spring_adm:"status45",
+    spring_sch:"status_13", clarify:"long_text9", campus_acts:"link2", sports:"link_198", uni_home:"link3",
+    intl_adm:"link0", degrees_link:"link30", acad_year:"dropdown4", tuition:"annual_tuition_cost",
+    room:"_usd__annual_room_cost", board:"_usd__annual_board_cost", fees:"numbers5", total:"formula",
+    cost_info:"link_s_annual_cost_of_attendance", adm_req:"_link__requirements_admission_information",
+    sch_low:"dup__of_minimum__usd__annual_scholarship_amount6", sch_low_type:"status1", toefl_low:"numbers2",
+    gpa_low:"numbers34", sat_low:"numbers0", sch_low_info:"additional_info_and_link_s_on_minimum_scholarship_amount",
+    sch_mid:"numbers68", sch_mid_type:"status_132", toefl_mid:"numbers54", gpa_mid:"numbers64", sat_mid:"numbers414",
+    sch_mid_info:"long_text31", sch_hi:"numbers11", sch_hi_type:"dup__of_competitive_vs_guaranteed___gpa__3_5__highest_",
+    toefl_hi:"numbers70", gpa_hi:"numbers4", sat_hi:"numbers41", sch_hi_info:"long_text78",
+    net_low:"formula3", net_mid:"formula07", net_hi:"formula9",
+    dead_fall:"deadline_fall_application", dead_spring:"deadline_spring_application", dead_link:"link_104",
+    campus_job:"status_113", min_wage:"numbers985", work_comp:"formula5", work_details_b:"long_text56",
+    final_cost:"formula", gpa:"numbers34"
   };
 
-  // --------- Data & state
+  // --------- Data & state (unchanged)
   let items = [];
   let cursor = null;
   let isLoading = false;
 
-  // Fast-first render
+  // Fast-first render (unchanged)
   async function initialLoad(){
     items = []; cursor = null;
     showLoader(true);
@@ -371,7 +386,7 @@ tbody tr:hover td{background:#fafbff}
     app.style.display = 'block';
     syncTopScrollbar();
     adjustTableHeight();
-    if (autoLoad.checked && cursor) {
+    if (autoLoad && autoLoad.checked && cursor) {
       fetchAndAppend({limit: limitSel.value, cursorParam: cursor, progressive: true});
     }
   }
@@ -411,14 +426,15 @@ tbody tr:hover td{background:#fafbff}
     return await resp.json();
   }
 
-  // ---------- Helpers
+  // ---------- Helpers (unchanged)
   function showLoader(on){ loader.style.display = on ? 'flex' : 'none'; }
   function setMoreLoading(on){
     isLoading = on;
-    moreBtn.disabled = on; reloadBtn.disabled = on;
-    moreSpin.style.display = on ? 'inline-block' : 'none';
-    reloadSpin.style.display = on ? 'inline-block' : 'none';
-    moreBtn.querySelector('span').textContent = on ? 'Load more…' : 'Load more';
+    if(moreBtn) moreBtn.disabled = on;
+    if(reloadBtn) reloadBtn.disabled = on;
+    if(moreSpin) moreSpin.style.display = on ? 'inline-block' : 'none';
+    if(reloadSpin) reloadSpin.style.display = on ? 'inline-block' : 'none';
+    if(moreBtn) moreBtn.querySelector('span')?.textContent = on ? 'Load more…' : 'Load more';
   }
   function numberFrom(a){ if(a==null) return null; const s = (""+a).replace(/[^\d.\-]/g,''); if(!s) return null; const n = parseFloat(s); return Number.isFinite(n)?n:null; }
   function formatMoney(n){ if(n==null || n==="") return ""; try{ return new Intl.NumberFormat('en-US',{style:'currency',currency:'USD',maximumFractionDigits:0}).format(n); } catch{ return "$"+n; } }
@@ -451,7 +467,7 @@ tbody tr:hover td{background:#fafbff}
     stateSel.innerHTML = states.map(s=> `<option value="${esc(s)}">${s||'All'}</option>`).join('');
   }
 
-  // ---------- Filters + Sort
+  // ---------- Filters + Sort (unchanged)
   let sort = {key:null, dir:1};
   function applySort(arr){
     if(!sort.key) return;
@@ -468,80 +484,36 @@ tbody tr:hover td{background:#fafbff}
   function toRow(item){
     const pick = (id)=>readCell(item,id);
     return {
-      name: item.name || "",
-      photos_desc: pick(COL.photos_desc),
-      state: pick(COL.state),
-      geo_area: pick(COL.geo_area),
-      major: pick(COL.majors),
-      city: pick(COL.city),
-      address: pick(COL.address),
-      video_state: pick(COL.video_state),
-      virtual_tour: pick(COL.virtual_tour),
-      fachabitur: pick(COL.fachabitur),
-      fach_det: pick(COL.fach_det),
-      usnews_rank: pick(COL.usnews_rank),
-      usnews_link: pick(COL.usnews_link),
-      type: pick(COL.type),
-      enroll: numberFrom(pick(COL.enroll)),
-      live_pct: pick(COL.live_pct),
-      live_num: numberFrom(pick(COL.live_num)),
-      ratio: numberFrom(pick(COL.ratio)),
-      insurance: pick(COL.insurance),
-      insurance_info: pick(COL.insurance_info),
-      app_fee: pick(COL.app_fee),
-      how_apply: pick(COL.how_apply),
-      cred_eval: pick(COL.cred_eval),
-      cred_info: pick(COL.cred_info),
-      spring_adm: pick(COL.spring_adm),
-      spring_sch: pick(COL.spring_sch),
-      clarify: pick(COL.clarify),
-      campus_acts: pick(COL.campus_acts),
-      sports: pick(COL.sports),
-      uni_home: pick(COL.uni_home),
-      intl_adm: pick(COL.intl_adm),
-      degrees_link: pick(COL.degrees_link),
-      acad_year: pick(COL.acad_year),
-      tuition: numberFrom(pick(COL.tuition)),
-      room: numberFrom(pick(COL.room)),
-      board: numberFrom(pick(COL.board)),
-      fees: numberFrom(pick(COL.fees)),
-      total: numberFrom(pick(COL.total)),
-      cost_info: pick(COL.cost_info),
-      adm_req: pick(COL.adm_req),
-      sch_low: numberFrom(pick(COL.sch_low)),
-      sch_low_type: pick(COL.sch_low_type),
-      toefl_low: numberFrom(pick(COL.toefl_low)),
-      gpa_low: numberFrom(pick(COL.gpa_low)),
-      sat_low: numberFrom(pick(COL.sat_low)),
-      sch_low_info: pick(COL.sch_low_info),
-      sch_mid: numberFrom(pick(COL.sch_mid)),
-      sch_mid_type: pick(COL.sch_mid_type),
-      toefl_mid: numberFrom(pick(COL.toefl_mid)),
-      gpa_mid: numberFrom(pick(COL.gpa_mid)),
-      sat_mid: numberFrom(pick(COL.sat_mid)),
-      sch_mid_info: pick(COL.sch_mid_info),
-      sch_hi: numberFrom(pick(COL.sch_hi)),
-      sch_hi_type: pick(COL.sch_hi_type),
-      toefl_hi: numberFrom(pick(COL.toefl_hi)),
-      gpa_hi: numberFrom(pick(COL.gpa_hi)),
-      sat_hi: numberFrom(pick(COL.sat_hi)),
-      sch_hi_info: pick(COL.sch_hi_info),
-      net_low: pick(COL.net_low),
-      net_mid: pick(COL.net_mid),
-      net_hi: pick(COL.net_hi),
-      dead_fall: pick(COL.dead_fall),
-      dead_spring: pick(COL.dead_spring),
-      dead_link: pick(COL.dead_link),
-      campus_job: pick(COL.campus_job),
-      min_wage: numberFrom(pick(COL.min_wage)),
-      work_comp: numberFrom(pick(COL.work_comp)),
-      work_details_b: pick(COL.work_details_b),
-      final_cost: numberFrom(pick(COL.final_cost)),
-      gpa: numberFrom(pick(COL.gpa))
+      name:item.name||"", photos_desc:pick(COL.photos_desc), state:pick(COL.state),
+      geo_area:pick(COL.geo_area), major:pick(COL.majors), city:pick(COL.city),
+      address:pick(COL.address), video_state:pick(COL.video_state), virtual_tour:pick(COL.virtual_tour),
+      fachabitur:pick(COL.fachabitur), fach_det:pick(COL.fach_det),
+      usnews_rank:pick(COL.usnews_rank), usnews_link:pick(COL.usnews_link),
+      type:pick(COL.type), enroll:numberFrom(pick(COL.enroll)), live_pct:pick(COL.live_pct),
+      live_num:numberFrom(pick(COL.live_num)), ratio:numberFrom(pick(COL.ratio)),
+      insurance:pick(COL.insurance), insurance_info:pick(COL.insurance_info),
+      app_fee:pick(COL.app_fee), how_apply:pick(COL.how_apply),
+      cred_eval:pick(COL.cred_eval), cred_info:pick(COL.cred_info),
+      spring_adm:pick(COL.spring_adm), spring_sch:pick(COL.spring_sch),
+      clarify:pick(COL.clarify), campus_acts:pick(COL.campus_acts),
+      sports:pick(COL.sports), uni_home:pick(COL.uni_home), intl_adm:pick(COL.intl_adm),
+      degrees_link:pick(COL.degrees_link), acad_year:pick(COL.acad_year),
+      tuition:numberFrom(pick(COL.tuition)), room:numberFrom(pick(COL.room)), board:numberFrom(pick(COL.board)),
+      fees:numberFrom(pick(COL.fees)), total:numberFrom(pick(COL.total)), cost_info:pick(COL.cost_info),
+      adm_req:pick(COL.adm_req), sch_low:numberFrom(pick(COL.sch_low)), sch_low_type:pick(COL.sch_low_type),
+      toefl_low:numberFrom(pick(COL.toefl_low)), gpa_low:numberFrom(pick(COL.gpa_low)), sat_low:numberFrom(pick(COL.sat_low)),
+      sch_low_info:pick(COL.sch_low_info), sch_mid:numberFrom(pick(COL.sch_mid)), sch_mid_type:pick(COL.sch_mid_type),
+      toefl_mid:numberFrom(pick(COL.toefl_mid)), gpa_mid:numberFrom(pick(COL.gpa_mid)), sat_mid:numberFrom(pick(COL.sat_mid)),
+      sch_mid_info:pick(COL.sch_mid_info), sch_hi:numberFrom(pick(COL.sch_hi)), sch_hi_type:pick(COL.sch_hi_type),
+      toefl_hi:numberFrom(pick(COL.toefl_hi)), gpa_hi:numberFrom(pick(COL.gpa_hi)), sat_hi:numberFrom(pick(COL.sat_hi)),
+      sch_hi_info:pick(COL.sch_hi_info), net_low:pick(COL.net_low), net_mid:pick(COL.net_mid), net_hi:pick(COL.net_hi),
+      dead_fall:pick(COL.dead_fall), dead_spring:pick(COL.dead_spring), dead_link:pick(COL.dead_link),
+      campus_job:pick(COL.campus_job), min_wage:numberFrom(pick(COL.min_wage)), work_comp:numberFrom(pick(COL.work_comp)),
+      work_details_b:pick(COL.work_details_b), final_cost:numberFrom(pick(COL.final_cost)), gpa:numberFrom(pick(COL.gpa))
     };
   }
 
-  // Render table
+  // Render (unchanged)
   function render(){
     const rows = items.map(toRow);
     const qv = q.value.trim().toLowerCase();
@@ -594,9 +566,7 @@ tbody tr:hover td{background:#fafbff}
         <td>${truncCell(r.sports,'Sports Homepage')}</td>
         <td>${truncCell(r.uni_home,'University Homepage')}</td>
         <td>${truncCell(r.intl_adm,'International Admission')}</td>
-        <!-- moved major here -->
         <td class="trunc" data-title="Bachelor’s Study Areas" data-full="${esc(r.major||'')}">${esc(r.major||'')}</td>
-        <!-- then degrees link -->
         <td>${truncCell(r.degrees_link,'Bachelor’s Degrees Link')}</td>
         <td class="trunc" data-title="Academic Year" data-full="${esc(r.acad_year)}">${esc(r.acad_year)}</td>
         <td class="right">${formatMoney(r.tuition)}</td>
@@ -640,12 +610,12 @@ tbody tr:hover td{background:#fafbff}
 
     shown.textContent = `${filtered.length} shown`;
     loaded.textContent = `${items.length} loaded`;
-    moreBtn.style.display = cursor ? 'inline-flex' : 'none';
+    if(moreBtn) moreBtn.style.display = cursor ? 'inline-flex' : 'none';
 
     adjustTableHeight();
   }
 
-  // Header sort indicators
+  // Sort indicators (unchanged)
   function updateSortIndicators(){
     document.querySelectorAll('thead th').forEach(th=>{
       th.classList.remove('sort-asc','sort-desc');
@@ -665,7 +635,7 @@ tbody tr:hover td{background:#fafbff}
     });
   });
 
-  // Delegated click: show popup for truncated text cells
+  // Truncated cell popup (unchanged)
   document.querySelector('#tbody').addEventListener('click', (e)=>{
     const target = e.target.closest('.trunc');
     if(!target) return;
@@ -674,22 +644,26 @@ tbody tr:hover td{background:#fafbff}
     if(full.trim()) openPopup(title, full);
   });
 
-  // Controls
-  reloadBtn.onclick = async ()=>{ if(isLoading) return; await initialLoad(); };
-  resetBtn.onclick = async ()=>{ if(isLoading) return;
+  // Controls (unchanged)
+  if(reloadBtn) reloadBtn.onclick = async ()=>{ if(isLoading) return; await initialLoad(); };
+  if(resetBtn) resetBtn.onclick = async ()=>{ if(isLoading) return;
     q.value=''; stateSel.value=''; fcMin.value=''; fcMax.value='';
     gpaMin.value=''; gpaMax.value=''; sort = {key:null, dir:1}; await initialLoad();
   };
-  moreBtn.onclick = async ()=>{ if(isLoading || !cursor) return;
-    await fetchAndAppend({limit: limitSel.value, cursorParam: cursor, progressive: autoLoad.checked});
+  if(moreBtn) moreBtn.onclick = async ()=>{ if(isLoading || !cursor) return;
+    await fetchAndAppend({limit: limitSel.value, cursorParam: cursor, progressive: autoLoad && autoLoad.checked});
   };
-  [q,stateSel,fcMin,fcMax,gpaMin,gpaMax,limitSel,autoLoad].forEach(el=>{
-    el.addEventListener('change', ()=>{ render(); syncTopScrollbar(); });
-    if(el.tagName === 'INPUT') el.addEventListener('keyup', e=>{ if(e.key==='Enter'){ render(); syncTopScrollbar(); } });
+  [q,stateSel,fcMin,fcMax,gpaMin,gpaMax,limitSel].forEach(el=>{
+    el?.addEventListener('change', ()=>{ render(); syncTopScrollbar(); });
+    if(el?.tagName === 'INPUT') el.addEventListener('keyup', e=>{ if(e.key==='Enter'){ render(); syncTopScrollbar(); } });
   });
 
-  // Excel export
-  exportBtn.onclick = ()=>{
+  // Apply button in Filter popover (triggers render; keeps behavior consistent)
+  const applyFiltersBtn = document.getElementById('applyFiltersBtn');
+  applyFiltersBtn?.addEventListener('click', ()=>{ render(); });
+
+  // Export (unchanged)
+  exportBtn?.addEventListener('click', ()=>{
     const headers = Array.from(document.querySelectorAll('thead th')).map(th=>th.textContent.trim());
     const rows = Array.from(tbody.querySelectorAll('tr')).map(tr =>
       Array.from(tr.children).map(td => td.textContent.replace(/\s+/g,' ').trim())
@@ -699,9 +673,9 @@ tbody tr:hover td{background:#fafbff}
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, 'Programs');
     XLSX.writeFile(wb, 'bachelors-programs.xlsx');
-  };
+  });
 
-  // ===== Top-bottom horizontal scroll sync =====
+  // Top-bottom horizontal scroll sync (unchanged)
   let syncingTop = false, syncingBottom = false;
   function syncTopScrollbar(){
     const w = tbl.scrollWidth;
@@ -721,11 +695,10 @@ tbody tr:hover td{background:#fafbff}
     syncingTop = false;
   });
 
-  // ===== Dynamic viewport-fit height so header stays visible while scrolling =====
+  // Height calc (unchanged)
   function adjustTableHeight(){
-    // Fill remaining viewport below the top scrollbar
-    const vwTop = tableWrap.getBoundingClientRect().top; // distance from viewport top
-    const maxH = Math.max(360, window.innerHeight - vwTop - 16); // 16px breathing room
+    const vwTop = tableWrap.getBoundingClientRect().top;
+    const maxH = Math.max(360, window.innerHeight - vwTop - 16);
     tableWrap.style.maxHeight = maxH + 'px';
   }
   window.addEventListener('resize', ()=>{ syncTopScrollbar(); adjustTableHeight(); });
