@@ -333,8 +333,6 @@ tbody tr:hover td{background:#fafbff}
   var moreSpin = document.getElementById('moreSpin');
   var exportBtn = document.getElementById('exportBtn');
 
-  // (Legacy quick-filter inputs are intentionally absent now; code is null-safe.)
-
   // Popup
   var popup = document.getElementById('popup');
   var popupTitle = document.getElementById('popupTitle');
@@ -436,10 +434,8 @@ tbody tr:hover td{background:#fafbff}
   var fltApplyBtn = document.getElementById('fltApplyBtn');
   var fltResetBtn = document.getElementById('fltResetBtn');
 
-  // Simple single-rule state
   var rule = { col:'', op:'contains', val:'' };
 
-  // Human labels → row keys in render()
   var FILTERABLE = [
     ['Name','name'],
     ['State','state'],
@@ -466,7 +462,6 @@ tbody tr:hover td{background:#fafbff}
     fltCol.innerHTML = opts;
   })();
 
-  // Toggle/open positioning
   if (tbFilter && pvFilter){
     tbFilter.addEventListener('click', function(e){
       e.stopPropagation();
@@ -566,10 +561,84 @@ tbody tr:hover td{background:#fafbff}
     if(urlMatch) return '<a class="link" href="'+esc(urlMatch[0])+'" target="_blank" rel="noopener">Link</a>';
     return '<span class="trunc" data-title="'+esc(title||'Details')+'" data-full="'+esc(full)+'">'+esc(full)+'</span>';
   }
-  function pill(txt){ if(!txt) return ""; return '<span class="pill">'+esc(txt)+'</span>'; }
 
-  // Build state options only if the State control exists (it doesn't now; this is safe)
-  function buildStateOptionsFrom(list){ /* no-op safe build */ }
+  // ======= Chip helpers (colors) =======
+  function chipHTML(text, bg, border, fg){
+    if (!text) return '';
+    return '<span class="pill" style="background:'+bg+';border:1px solid '+border+';color:'+fg+';padding:4px 10px">'+esc(text)+'</span>';
+  }
+
+  // Curated geo palette (like screenshot)
+  var GEO_STYLES = {
+    'Pacific West Coast': ['#FFF4DB','#FFDFA6','#915930'],
+    'West':                ['#FFE8EE','#FFC6D4','#8A2E45'],
+    'Midwest':             ['#E7F7FF','#C8EFFF','#0B5586'],
+    'Southeast':           ['#EFFFF3','#CCF3D7','#1F6B3A'],
+    'Northeast':           ['#F1ECFF','#DDD6FE','#4A38A5'],
+    'Southwest':           ['#FFF0E6','#FFD6BD','#884A1F']
+  };
+
+  // Curated status palette
+  var STATUS_STYLES = {
+    'shareable':      ['#E6F6EA','#BFE7C8','#256D3C'],
+    'working on it':  ['#E6F0FF','#C9D7FF','#2746B3'],
+    'in progress':    ['#E6F0FF','#C9D7FF','#2746B3'],
+    'yes':            ['#E6F6EA','#BFE7C8','#256D3C'],
+    'true':           ['#E6F6EA','#BFE7C8','#256D3C'],
+    'no':             ['#FEEAEA','#F8C7C7','#9F1D1D'],
+    'not shareable':  ['#FEEAEA','#F8C7C7','#9F1D1D'],
+    'false':          ['#FEEAEA','#F8C7C7','#9F1D1D'],
+    'unknown':        ['#F2F4F7','#E4E7EC','#475467'],
+    'n/a':            ['#F2F4F7','#E4E7EC','#475467'],
+    '':               ['#F2F4F7','#E4E7EC','#475467']
+  };
+
+  // Curated type palette
+  var TYPE_STYLES = {
+    'Public':            ['#E7F7FF','#C8EFFF','#0B5586'],
+    'Private':           ['#FFE8EE','#FFC6D4','#8A2E45'],
+    'Community College': ['#FFF4DB','#FFDFA6','#915930']
+  };
+
+  // Deterministic palette for States (12 soft hues)
+  var STATE_HUES = [
+    ['#E6F6EA','#BFE7C8','#256D3C'], // green
+    ['#E6F0FF','#C9D7FF','#2746B3'], // blue
+    ['#FFF4DB','#FFDFA6','#915930'], // amber
+    ['#F1ECFF','#DDD6FE','#4A38A5'], // purple
+    ['#E7F7FF','#C8EFFF','#0B5586'], // cyan
+    ['#FFE8EE','#FFC6D4','#8A2E45'], // pink
+    ['#EFFFF3','#CCF3D7','#1F6B3A'], // mint
+    ['#FFF0E6','#FFD6BD','#884A1F'], // orange
+    ['#F2F4F7','#E4E7EC','#475467'], // gray
+    ['#EAF3FF','#CFE2FF','#23498C'], // indigo
+    ['#FDEBF6','#F8CDE8','#8F2D6A'], // magenta
+    ['#EAFBF7','#CFF3EA','#176D63']  // teal
+  ];
+  function hashIndex(str){
+    var h=0; str=String(str||'');
+    for(var i=0;i<str.length;i++){ h=(h*31 + str.charCodeAt(i))|0; }
+    if (h<0) h=-h;
+    return h % STATE_HUES.length;
+  }
+
+  // Render multi-value chips (comma-separated) with category palette
+  function chipsFor(val, category){
+    if (!val) return '';
+    var parts = String(val).split(',').map(function(s){return s.trim();}).filter(Boolean);
+    var out = '';
+    for (var i=0;i<parts.length;i++){
+      var p = parts[i];
+      var bg='#F4F6FA', bd='#E6E9F0', fg='#49506A';
+      if (category==='geo' && GEO_STYLES[p]) { var g=GEO_STYLES[p]; bg=g[0]; bd=g[1]; fg=g[2]; }
+      else if (category==='status') { var s=(p||'').toLowerCase(); var st=STATUS_STYLES[s] || STATUS_STYLES['unknown']; bg=st[0]; bd=st[1]; fg=st[2]; }
+      else if (category==='type' && TYPE_STYLES[p]) { var t=TYPE_STYLES[p]; bg=t[0]; bd=t[1]; fg=t[2]; }
+      else if (category==='state') { var idx=hashIndex(p); var h=STATE_HUES[idx]; bg=h[0]; bd=h[1]; fg=h[2]; }
+      out += chipHTML(p, bg, bd, fg) + ' ';
+    }
+    return out.trim();
+  }
+  // ======= /Chip helpers =======
 
   // Sorting
   function applySort(arr){
@@ -664,11 +733,10 @@ tbody tr:hover td{background:#fafbff}
     var rows = [];
     for (var i=0;i<items.length;i++) rows.push(toRow(items[i]));
 
+    // Apply single rule (popover)
     var filtered = [];
     for (var j=0;j<rows.length;j++){
       var r = rows[j];
-
-      // Rule builder (applies only if a column is chosen)
       if (rule && rule.col){
         var cell = r[rule.col];
         var s = (cell==null ? '' : String(cell)).toLowerCase();
@@ -681,7 +749,6 @@ tbody tr:hover td{background:#fafbff}
         if (rule.op === 'empty' && s.trim() !== '') continue;
         if (rule.op === 'notempty' && s.trim() === '') continue;
       }
-
       filtered.push(r);
     }
 
@@ -694,17 +761,17 @@ tbody tr:hover td{background:#fafbff}
       html += '<tr>'
         + '<td class="sticky"><strong>'+esc(r2.name)+'</strong></td>'
         + '<td>'+truncCell(r2.photos_desc,'Photos & Description')+'</td>'
-        + '<td>'+esc(r2.state)+'</td>'
-        + '<td class="trunc" data-title="Geographical Area" data-full="'+esc(r2.geo_area||'')+'">'+esc(r2.geo_area||'')+'</td>'
+        + '<td>'+chipsFor(r2.state,'state')+'</td>'
+        + '<td>'+chipsFor(r2.geo_area,'geo')+'</td>'
         + '<td>'+truncCell(r2.video_state,'Video I about the State')+'</td>'
         + '<td class="trunc" data-title="City" data-full="'+esc(r2.city)+'">'+esc(r2.city)+'</td>'
         + '<td class="trunc mono" data-title="Full address" data-full="'+esc(r2.address)+'">'+esc(r2.address)+'</td>'
         + '<td>'+truncCell(r2.virtual_tour,'Virtual Campus Tour')+'</td>'
-        + '<td>'+pill(r2.fachabitur)+'</td>'
+        + '<td>'+chipsFor(r2.fachabitur,'status')+'</td>'
         + '<td class="trunc" data-title="Fachabitur Details" data-full="'+esc(r2.fach_det)+'">'+esc(r2.fach_det)+'</td>'
         + '<td class="right mono">'+esc(r2.usnews_rank)+'</td>'
         + '<td>'+truncCell(r2.usnews_link,'U.S. News Link')+'</td>'
-        + '<td class="trunc" data-title="Type" data-full="'+esc(r2.type)+'">'+esc(r2.type)+'</td>'
+        + '<td>'+chipsFor(r2.type,'type')+'</td>'
         + '<td class="right">'+formatInt(r2.enroll)+'</td>'
         + '<td class="right">'+esc(r2.live_pct)+'</td>'
         + '<td class="right">'+formatInt(r2.live_num)+'</td>'
@@ -713,10 +780,10 @@ tbody tr:hover td{background:#fafbff}
         + '<td class="trunc" data-title="Health Insurance details" data-full="'+esc(r2.insurance_info)+'">'+esc(r2.insurance_info)+'</td>'
         + '<td class="right">'+esc(r2.app_fee)+'</td>'
         + '<td class="trunc" data-title="How to Apply" data-full="'+esc(r2.how_apply)+'">'+esc(r2.how_apply)+'</td>'
-        + '<td>'+pill(r2.cred_eval)+'</td>'
+        + '<td>'+chipsFor(r2.cred_eval,'status')+'</td>'
         + '<td class="trunc" data-title="Credential Eval Info" data-full="'+esc(r2.cred_info)+'">'+esc(r2.cred_info)+'</td>'
-        + '<td>'+pill(r2.spring_adm)+'</td>'
-        + '<td>'+pill(r2.spring_sch)+'</td>'
+        + '<td>'+chipsFor(r2.spring_adm,'status')+'</td>'
+        + '<td>'+chipsFor(r2.spring_sch,'status')+'</td>'
         + '<td class="trunc" data-title="Clarification" data-full="'+esc(r2.clarify)+'">'+esc(r2.clarify)+'</td>'
         + '<td>'+truncCell(r2.campus_acts,'On Campus Activities')+'</td>'
         + '<td>'+truncCell(r2.sports,'Sports Homepage')+'</td>'
@@ -756,7 +823,7 @@ tbody tr:hover td{background:#fafbff}
         + '<td class="trunc" data-title="Fall Deadline" data-full="'+esc(r2.dead_fall)+'">'+esc(r2.dead_fall)+'</td>'
         + '<td class="trunc" data-title="Spring Deadline" data-full="'+esc(r2.dead_spring)+'">'+esc(r2.dead_spring)+'</td>'
         + '<td>'+truncCell(r2.dead_link,'Deadline Link')+'</td>'
-        + '<td>'+pill(r2.campus_job)+'</td>'
+        + '<td>'+chipsFor(r2.campus_job,'status')+'</td>'
         + '<td class="right">'+(r2.min_wage==null||r2.min_wage==="" ? "" : formatMoney(r2.min_wage).replace(".00",""))+'</td>'
         + '<td class="right">'+formatMoney(r2.work_comp)+'</td>'
         + '<td class="trunc" data-title="Bachelor’s Work on Campus Details (B)" data-full="'+esc(r2.work_details_b)+'">'+esc(r2.work_details_b)+'</td>'
@@ -895,7 +962,6 @@ tbody tr:hover td{background:#fafbff}
     var cur = res.cursor || null;
     if (batch.length){
       for (var i=0;i<batch.length;i++) items.push(batch[i]);
-      // state options no-op if control missing
       render();
       syncTopScrollbar();
       adjustTableHeight();
