@@ -120,12 +120,14 @@ tbody tr:hover td{background:#fafbff}
 <body>
 <!-- Loader -->
 <div id="loader"><div class="spinner"></div>Loading data…</div>
+<!-- Error banner (shown if fetch fails) -->
+<div id="errorBanner" style="display:none;margin:10px 0;padding:10px 12px;border:1px solid #f59e0b;background:#fff8e1;border-radius:8px;color:#7c2d12;font-size:13px"></div>
 
 <div class="wrap" id="app" style="display:none">
   <div class="h1">Bachelor’s Programs – Freshman & Average Student</div>
   <div class="sub">The data comes from a secure Netlify function (read-only). The look and feel is inspired by Monday.</div>
 
-  <!-- ============ TOOLBAR (replacing previous filter card) ============ -->
+  <!-- ============ TOOLBAR (filter section) ============ -->
   <div class="toolbar" id="toolbar">
     <div class="toolbar-title sr-only">Table actions</div>
     <button class="tb-btn" id="tbHide"><span class="ico">🙈</span> Hide fields</button>
@@ -310,7 +312,7 @@ tbody tr:hover td{background:#fafbff}
 
 <script>
 (() => {
-  // --------- UI refs (unchanged)
+  // --------- UI refs
   const app = document.getElementById('app');
   const loader = document.getElementById('loader');
   const q = document.querySelector('#q');
@@ -331,13 +333,13 @@ tbody tr:hover td{background:#fafbff}
   const shown = document.getElementById('shown');
   const loaded = document.getElementById('loaded');
 
-  // Top scrollbar & table wrap (unchanged)
+  // Top scrollbar & table wrap
   const hScrollTop = document.getElementById('hScrollTop');
   const hScrollInner = document.getElementById('hScrollInner');
   const tableWrap = document.getElementById('tableWrap');
   const tbl = document.getElementById('tbl');
 
-  // Popup (unchanged)
+  // Popup
   const popup = document.getElementById('popup');
   const popupTitle = document.getElementById('popupTitle');
   const popupBody = document.getElementById('popupBody');
@@ -349,44 +351,99 @@ tbody tr:hover td{background:#fafbff}
     popup.style.display = 'block';
   }
 
-  // --------- Column mapping (unchanged, includes photos_desc)
+  // --------- Column mapping (incl. photos_desc)
   const COL = {
-    name:"name", photos_desc:"link4", state:"state1", geo_area:"dropdown30", majors:"dropdown73",
-    city:"city", address:"location", video_state:"link_14", virtual_tour:"link_1",
-    fachabitur:"status5", fach_det:"long_text15", usnews_rank:"long_text", usnews_link:"link1",
-    type:"dropdown", enroll:"numbers7", live_pct:"numbers8", live_num:"formula53", ratio:"numbers81",
-    insurance:"dropdown8", insurance_info:"long_text63", app_fee:"temporary_university_s_application_fee_cost__usd_",
-    how_apply:"long_text842", cred_eval:"status38", cred_info:"long_text60", spring_adm:"status45",
-    spring_sch:"status_13", clarify:"long_text9", campus_acts:"link2", sports:"link_198", uni_home:"link3",
-    intl_adm:"link0", degrees_link:"link30", acad_year:"dropdown4", tuition:"annual_tuition_cost",
-    room:"_usd__annual_room_cost", board:"_usd__annual_board_cost", fees:"numbers5", total:"formula",
-    cost_info:"link_s_annual_cost_of_attendance", adm_req:"_link__requirements_admission_information",
-    sch_low:"dup__of_minimum__usd__annual_scholarship_amount6", sch_low_type:"status1", toefl_low:"numbers2",
-    gpa_low:"numbers34", sat_low:"numbers0", sch_low_info:"additional_info_and_link_s_on_minimum_scholarship_amount",
-    sch_mid:"numbers68", sch_mid_type:"status_132", toefl_mid:"numbers54", gpa_mid:"numbers64", sat_mid:"numbers414",
-    sch_mid_info:"long_text31", sch_hi:"numbers11", sch_hi_type:"dup__of_competitive_vs_guaranteed___gpa__3_5__highest_",
-    toefl_hi:"numbers70", gpa_hi:"numbers4", sat_hi:"numbers41", sch_hi_info:"long_text78",
-    net_low:"formula3", net_mid:"formula07", net_hi:"formula9",
-    dead_fall:"deadline_fall_application", dead_spring:"deadline_spring_application", dead_link:"link_104",
-    campus_job:"status_113", min_wage:"numbers985", work_comp:"formula5", work_details_b:"long_text56",
-    final_cost:"formula", gpa:"numbers34"
+    name: "name",
+    photos_desc: "link4",
+    state: "state1",
+    geo_area: "dropdown30",
+    majors: "dropdown73",
+    city: "city",
+    address: "location",
+    video_state: "link_14",
+    virtual_tour: "link_1",
+    fachabitur: "status5",
+    fach_det: "long_text15",
+    usnews_rank: "long_text",
+    usnews_link: "link1",
+    type: "dropdown",
+    enroll: "numbers7",
+    live_pct: "numbers8",
+    live_num: "formula53",
+    ratio: "numbers81",
+    insurance: "dropdown8",
+    insurance_info: "long_text63",
+    app_fee: "temporary_university_s_application_fee_cost__usd_",
+    how_apply: "long_text842",
+    cred_eval: "status38",
+    cred_info: "long_text60",
+    spring_adm: "status45",
+    spring_sch: "status_13",
+    clarify: "long_text9",
+    campus_acts: "link2",
+    sports: "link_198",
+    uni_home: "link3",
+    intl_adm: "link0",
+    degrees_link: "link30",
+    acad_year: "dropdown4",
+    tuition: "annual_tuition_cost",
+    room: "_usd__annual_room_cost",
+    board: "_usd__annual_board_cost",
+    fees: "numbers5",
+    total: "formula",
+    cost_info: "link_s_annual_cost_of_attendance",
+    adm_req: "_link__requirements_admission_information",
+    sch_low: "dup__of_minimum__usd__annual_scholarship_amount6",
+    sch_low_type: "status1",
+    toefl_low: "numbers2",
+    gpa_low: "numbers34",
+    sat_low: "numbers0",
+    sch_low_info: "additional_info_and_link_s_on_minimum_scholarship_amount",
+    sch_mid: "numbers68",
+    sch_mid_type: "status_132",
+    toefl_mid: "numbers54",
+    gpa_mid: "numbers64",
+    sat_mid: "numbers414",
+    sch_mid_info: "long_text31",
+    sch_hi: "numbers11",
+    sch_hi_type: "dup__of_competitive_vs_guaranteed___gpa__3_5__highest_",
+    toefl_hi: "numbers70",
+    gpa_hi: "numbers4",
+    sat_hi: "numbers41",
+    sch_hi_info: "long_text78",
+    net_low: "formula3",
+    net_mid: "formula07",
+    net_hi: "formula9",
+    dead_fall: "deadline_fall_application",
+    dead_spring: "deadline_spring_application",
+    dead_link: "link_104",
+    campus_job: "status_113",
+    min_wage: "numbers985",
+    work_comp: "formula5",
+    work_details_b: "long_text56",
+    // client-only filters:
+    final_cost: "formula",
+    gpa: "numbers34"
   };
 
-  // --------- Data & state (unchanged)
+  // --------- Data & state
   let items = [];
   let cursor = null;
   let isLoading = false;
 
-  // Fast-first render (unchanged)
+  // Fast-first render with fail-safe loader/UI
   async function initialLoad(){
     items = []; cursor = null;
     showLoader(true);
-    await fetchAndAppend({limit: limitSel.value, cursorParam: null, progressive: false});
-    showLoader(false);
-    app.style.display = 'block';
-    syncTopScrollbar();
-    adjustTableHeight();
-    if (autoLoad && autoLoad.checked && cursor) {
+    try {
+      await fetchAndAppend({limit: limitSel?.value, cursorParam: null, progressive: false});
+    } finally {
+      showLoader(false);                // always stop spinner
+      app.style.display = 'block';      // always show UI
+      syncTopScrollbar();
+      adjustTableHeight();
+    }
+    if (autoLoad?.checked && cursor) {
       fetchAndAppend({limit: limitSel.value, cursorParam: cursor, progressive: true});
     }
   }
@@ -417,24 +474,45 @@ tbody tr:hover td{background:#fafbff}
     setMoreLoading(false);
   }
 
+  // Hardened fetch with error banner + shape check
   async function fetchBatch({limit, cursorParam}){
-    const url = new URL('/.netlify/functions/items', location.origin);
+    const errorBanner = document.getElementById('errorBanner');
+    const base = location.origin || window.location.href;
+    const url = new URL('/.netlify/functions/items', base);
     url.searchParams.set('limit', String(limit || '100'));
     if(cursorParam) url.searchParams.set('cursor', cursorParam);
-    const resp = await fetch(url, { cache: 'no-store' });
-    if(!resp.ok){ console.error('Fetch failed', resp.status); return {items:[], cursor:null}; }
-    return await resp.json();
+
+    try {
+      const resp = await fetch(url.toString(), { cache: 'no-store' });
+      if (!resp.ok) {
+        const txt = await resp.text().catch(()=>String(resp.status));
+        throw new Error(`HTTP ${resp.status}: ${txt.slice(0,300)}`);
+      }
+      const json = await resp.json();
+      if (!json || !Array.isArray(json.items)) {
+        throw new Error(`Unexpected payload: ${JSON.stringify(json).slice(0,300)}`);
+      }
+      if (errorBanner) errorBanner.style.display = 'none';
+      return json; // { items, cursor }
+    } catch (e) {
+      console.error('Fetch failed', e);
+      if (errorBanner) {
+        errorBanner.innerText = `Could not load data. ${e?.message || e}`;
+        errorBanner.style.display = 'block';
+      }
+      return { items: [], cursor: null };
+    }
   }
 
-  // ---------- Helpers (unchanged)
+  // ---------- Helpers
   function showLoader(on){ loader.style.display = on ? 'flex' : 'none'; }
   function setMoreLoading(on){
     isLoading = on;
-    if(moreBtn) moreBtn.disabled = on;
-    if(reloadBtn) reloadBtn.disabled = on;
-    if(moreSpin) moreSpin.style.display = on ? 'inline-block' : 'none';
-    if(reloadSpin) reloadSpin.style.display = on ? 'inline-block' : 'none';
-    if(moreBtn) moreBtn.querySelector('span')?.textContent = on ? 'Load more…' : 'Load more';
+    if (moreBtn) moreBtn.disabled = on;
+    if (reloadBtn) reloadBtn.disabled = on;
+    if (moreSpin) moreSpin.style.display = on ? 'inline-block' : 'none';
+    if (reloadSpin) reloadSpin.style.display = on ? 'inline-block' : 'none';
+    moreBtn?.querySelector('span')?.textContent = on ? 'Load more…' : 'Load more';
   }
   function numberFrom(a){ if(a==null) return null; const s = (""+a).replace(/[^\d.\-]/g,''); if(!s) return null; const n = parseFloat(s); return Number.isFinite(n)?n:null; }
   function formatMoney(n){ if(n==null || n==="") return ""; try{ return new Intl.NumberFormat('en-US',{style:'currency',currency:'USD',maximumFractionDigits:0}).format(n); } catch{ return "$"+n; } }
@@ -467,7 +545,7 @@ tbody tr:hover td{background:#fafbff}
     stateSel.innerHTML = states.map(s=> `<option value="${esc(s)}">${s||'All'}</option>`).join('');
   }
 
-  // ---------- Filters + Sort (unchanged)
+  // ---------- Filters + Sort
   let sort = {key:null, dir:1};
   function applySort(arr){
     if(!sort.key) return;
@@ -484,36 +562,81 @@ tbody tr:hover td{background:#fafbff}
   function toRow(item){
     const pick = (id)=>readCell(item,id);
     return {
-      name:item.name||"", photos_desc:pick(COL.photos_desc), state:pick(COL.state),
-      geo_area:pick(COL.geo_area), major:pick(COL.majors), city:pick(COL.city),
-      address:pick(COL.address), video_state:pick(COL.video_state), virtual_tour:pick(COL.virtual_tour),
-      fachabitur:pick(COL.fachabitur), fach_det:pick(COL.fach_det),
-      usnews_rank:pick(COL.usnews_rank), usnews_link:pick(COL.usnews_link),
-      type:pick(COL.type), enroll:numberFrom(pick(COL.enroll)), live_pct:pick(COL.live_pct),
-      live_num:numberFrom(pick(COL.live_num)), ratio:numberFrom(pick(COL.ratio)),
-      insurance:pick(COL.insurance), insurance_info:pick(COL.insurance_info),
-      app_fee:pick(COL.app_fee), how_apply:pick(COL.how_apply),
-      cred_eval:pick(COL.cred_eval), cred_info:pick(COL.cred_info),
-      spring_adm:pick(COL.spring_adm), spring_sch:pick(COL.spring_sch),
-      clarify:pick(COL.clarify), campus_acts:pick(COL.campus_acts),
-      sports:pick(COL.sports), uni_home:pick(COL.uni_home), intl_adm:pick(COL.intl_adm),
-      degrees_link:pick(COL.degrees_link), acad_year:pick(COL.acad_year),
-      tuition:numberFrom(pick(COL.tuition)), room:numberFrom(pick(COL.room)), board:numberFrom(pick(COL.board)),
-      fees:numberFrom(pick(COL.fees)), total:numberFrom(pick(COL.total)), cost_info:pick(COL.cost_info),
-      adm_req:pick(COL.adm_req), sch_low:numberFrom(pick(COL.sch_low)), sch_low_type:pick(COL.sch_low_type),
-      toefl_low:numberFrom(pick(COL.toefl_low)), gpa_low:numberFrom(pick(COL.gpa_low)), sat_low:numberFrom(pick(COL.sat_low)),
-      sch_low_info:pick(COL.sch_low_info), sch_mid:numberFrom(pick(COL.sch_mid)), sch_mid_type:pick(COL.sch_mid_type),
-      toefl_mid:numberFrom(pick(COL.toefl_mid)), gpa_mid:numberFrom(pick(COL.gpa_mid)), sat_mid:numberFrom(pick(COL.sat_mid)),
-      sch_mid_info:pick(COL.sch_mid_info), sch_hi:numberFrom(pick(COL.sch_hi)), sch_hi_type:pick(COL.sch_hi_type),
-      toefl_hi:numberFrom(pick(COL.toefl_hi)), gpa_hi:numberFrom(pick(COL.gpa_hi)), sat_hi:numberFrom(pick(COL.sat_hi)),
-      sch_hi_info:pick(COL.sch_hi_info), net_low:pick(COL.net_low), net_mid:pick(COL.net_mid), net_hi:pick(COL.net_hi),
-      dead_fall:pick(COL.dead_fall), dead_spring:pick(COL.dead_spring), dead_link:pick(COL.dead_link),
-      campus_job:pick(COL.campus_job), min_wage:numberFrom(pick(COL.min_wage)), work_comp:numberFrom(pick(COL.work_comp)),
-      work_details_b:pick(COL.work_details_b), final_cost:numberFrom(pick(COL.final_cost)), gpa:numberFrom(pick(COL.gpa))
+      name: item.name || "",
+      photos_desc: pick(COL.photos_desc),
+      state: pick(COL.state),
+      geo_area: pick(COL.geo_area),
+      major: pick(COL.majors),
+      city: pick(COL.city),
+      address: pick(COL.address),
+      video_state: pick(COL.video_state),
+      virtual_tour: pick(COL.virtual_tour),
+      fachabitur: pick(COL.fachabitur),
+      fach_det: pick(COL.fach_det),
+      usnews_rank: pick(COL.usnews_rank),
+      usnews_link: pick(COL.usnews_link),
+      type: pick(COL.type),
+      enroll: numberFrom(pick(COL.enroll)),
+      live_pct: pick(COL.live_pct),
+      live_num: numberFrom(pick(COL.live_num)),
+      ratio: numberFrom(pick(COL.ratio)),
+      insurance: pick(COL.insurance),
+      insurance_info: pick(COL.insurance_info),
+      app_fee: pick(COL.app_fee),
+      how_apply: pick(COL.how_apply),
+      cred_eval: pick(COL.cred_eval),
+      cred_info: pick(COL.cred_info),
+      spring_adm: pick(COL.spring_adm),
+      spring_sch: pick(COL.spring_sch),
+      clarify: pick(COL.clarify),
+      campus_acts: pick(COL.campus_acts),
+      sports: pick(COL.sports),
+      uni_home: pick(COL.uni_home),
+      intl_adm: pick(COL.intl_adm),
+      degrees_link: pick(COL.degrees_link),
+      acad_year: pick(COL.acad_year),
+      tuition: numberFrom(pick(COL.tuition)),
+      room: numberFrom(pick(COL.room)),
+      board: numberFrom(pick(COL.board)),
+      fees: numberFrom(pick(COL.fees)),
+      total: numberFrom(pick(COL.total)),
+      cost_info: pick(COL.cost_info),
+      adm_req: pick(COL.adm_req),
+      sch_low: numberFrom(pick(COL.sch_low)),
+      sch_low_type: pick(COL.sch_low_type),
+      toefl_low: numberFrom(pick(COL.toefl_low)),
+      gpa_low: numberFrom(pick(COL.gpa_low)),
+      sat_low: numberFrom(pick(COL.sat_low)),
+      sch_low_info: pick(COL.sch_low_info),
+      sch_mid: numberFrom(pick(COL.sch_mid)),
+      sch_mid_type: pick(COL.sch_mid_type),
+      toefl_mid: numberFrom(pick(COL.toefl_mid)),
+      gpa_mid: numberFrom(pick(COL.gpa_mid)),
+      sat_mid: numberFrom(pick(COL.sat_mid)),
+      sch_mid_info: pick(COL.sch_mid_info),
+      sch_hi: numberFrom(pick(COL.sch_hi)),
+      sch_hi_type: pick(COL.sch_hi_type),
+      toefl_hi: numberFrom(pick(COL.toefl_hi)),
+      gpa_hi: numberFrom(pick(COL.gpa_hi)),
+      sat_hi: numberFrom(pick(COL.sat_hi)),
+      sch_hi_info: pick(COL.sch_hi_info),
+      net_low: pick(COL.net_low),
+      net_mid: pick(COL.net_mid),
+      net_hi: pick(COL.net_hi),
+      dead_fall: pick(COL.dead_fall),
+      dead_spring: pick(COL.dead_spring),
+      dead_link: pick(COL.dead_link),
+      campus_job: pick(COL.campus_job),
+      min_wage: numberFrom(pick(COL.min_wage)),
+      work_comp: numberFrom(pick(COL.work_comp)),
+      work_details_b: pick(COL.work_details_b),
+      // client filters
+      final_cost: numberFrom(pick(COL.final_cost)),
+      gpa: numberFrom(pick(COL.gpa))
     };
   }
 
-  // Render (unchanged)
+  // Render table
   function render(){
     const rows = items.map(toRow);
     const qv = q.value.trim().toLowerCase();
@@ -615,7 +738,7 @@ tbody tr:hover td{background:#fafbff}
     adjustTableHeight();
   }
 
-  // Sort indicators (unchanged)
+  // Header sort interactions + indicators
   function updateSortIndicators(){
     document.querySelectorAll('thead th').forEach(th=>{
       th.classList.remove('sort-asc','sort-desc');
@@ -635,7 +758,7 @@ tbody tr:hover td{background:#fafbff}
     });
   });
 
-  // Truncated cell popup (unchanged)
+  // Delegated click: show popup for truncated text cells
   document.querySelector('#tbody').addEventListener('click', (e)=>{
     const target = e.target.closest('.trunc');
     if(!target) return;
@@ -644,25 +767,25 @@ tbody tr:hover td{background:#fafbff}
     if(full.trim()) openPopup(title, full);
   });
 
-  // Controls (unchanged)
-  if(reloadBtn) reloadBtn.onclick = async ()=>{ if(isLoading) return; await initialLoad(); };
-  if(resetBtn) resetBtn.onclick = async ()=>{ if(isLoading) return;
+  // Controls
+  reloadBtn?.onclick = async ()=>{ if(isLoading) return; await initialLoad(); };
+  resetBtn?.onclick = async ()=>{ if(isLoading) return;
     q.value=''; stateSel.value=''; fcMin.value=''; fcMax.value='';
     gpaMin.value=''; gpaMax.value=''; sort = {key:null, dir:1}; await initialLoad();
   };
-  if(moreBtn) moreBtn.onclick = async ()=>{ if(isLoading || !cursor) return;
-    await fetchAndAppend({limit: limitSel.value, cursorParam: cursor, progressive: autoLoad && autoLoad.checked});
+  moreBtn?.onclick = async ()=>{ if(isLoading || !cursor) return;
+    await fetchAndAppend({limit: limitSel.value, cursorParam: cursor, progressive: autoLoad?.checked});
   };
   [q,stateSel,fcMin,fcMax,gpaMin,gpaMax,limitSel].forEach(el=>{
     el?.addEventListener('change', ()=>{ render(); syncTopScrollbar(); });
     if(el?.tagName === 'INPUT') el.addEventListener('keyup', e=>{ if(e.key==='Enter'){ render(); syncTopScrollbar(); } });
   });
 
-  // Apply button in Filter popover (triggers render; keeps behavior consistent)
+  // Apply button in Filter popover
   const applyFiltersBtn = document.getElementById('applyFiltersBtn');
   applyFiltersBtn?.addEventListener('click', ()=>{ render(); });
 
-  // Export (unchanged)
+  // Excel export
   exportBtn?.addEventListener('click', ()=>{
     const headers = Array.from(document.querySelectorAll('thead th')).map(th=>th.textContent.trim());
     const rows = Array.from(tbody.querySelectorAll('tr')).map(tr =>
@@ -675,7 +798,7 @@ tbody tr:hover td{background:#fafbff}
     XLSX.writeFile(wb, 'bachelors-programs.xlsx');
   });
 
-  // Top-bottom horizontal scroll sync (unchanged)
+  // Top-bottom horizontal scroll sync
   let syncingTop = false, syncingBottom = false;
   function syncTopScrollbar(){
     const w = tbl.scrollWidth;
@@ -695,7 +818,7 @@ tbody tr:hover td{background:#fafbff}
     syncingTop = false;
   });
 
-  // Height calc (unchanged)
+  // Dynamic height
   function adjustTableHeight(){
     const vwTop = tableWrap.getBoundingClientRect().top;
     const maxH = Math.max(360, window.innerHeight - vwTop - 16);
