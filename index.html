@@ -34,7 +34,7 @@ input,select{height:36px;padding:0 10px;border:1px solid var(--line);border-radi
 .spacer{flex:1}
 .toggle{display:inline-flex;align-items:center;gap:6px;font-size:12px;color:#444}
 
-/* Toolbar (replaces old .card) */
+/* Toolbar */
 .toolbar{
   position:sticky; top:0; z-index:20;
   background:var(--card); border:1px solid var(--line); border-radius:10px;
@@ -58,7 +58,7 @@ input,select{height:36px;padding:0 10px;border:1px solid var(--line);border-radi
 #pvHide{min-width:260px}
 #pvSort{min-width:260px}
 .pv-row{display:flex; flex-direction:column; gap:6px; margin-bottom:10px}
-.pv-row-inline{display:flex; gap:6px; align-items:center}
+.pv-row-inline{display:flex; gap:10px; align-items:center}
 .pv-grid{display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:10px}
 .pv-actions{display:flex; align-items:center; gap:8px; margin-top:8px}
 
@@ -70,7 +70,7 @@ input,select{height:36px;padding:0 10px;border:1px solid var(--line);border-radi
 }
 .hScrollInner{height:1px;}
 
-/* Table area */
+/* Table */
 .tableWrap{
   background:var(--card); border:1px solid var(--line); border-radius:10px;
   overflow:auto; position:relative;
@@ -120,14 +120,14 @@ tbody tr:hover td{background:#fafbff}
 <body>
 <!-- Loader -->
 <div id="loader"><div class="spinner"></div>Loading data…</div>
-<!-- Error banner (shown if fetch or JS fails) -->
+<!-- Error banner -->
 <div id="errorBanner" style="display:none;margin:10px 0;padding:10px 12px;border:1px solid #f59e0b;background:#fff8e1;border-radius:8px;color:#7c2d12;font-size:13px"></div>
 
 <div class="wrap" id="app" style="display:none">
   <div class="h1">Bachelor’s Programs – Freshman & Average Student</div>
   <div class="sub">The data comes from a secure Netlify function (read-only). The look and feel is inspired by Monday.</div>
 
-  <!-- ============ TOOLBAR (filter section) ============ -->
+  <!-- ======= TOOLBAR ======= -->
   <div class="toolbar" id="toolbar">
     <div class="toolbar-title sr-only">Table actions</div>
     <button class="tb-btn" id="tbHide"><span class="ico">🙈</span> Hide fields</button>
@@ -140,41 +140,27 @@ tbody tr:hover td{background:#fafbff}
     <!-- POPUPS -->
     <div class="popover" id="pvHide"></div>
 
-    <!-- Open by default so filters work immediately -->
-    <div class="popover open" id="pvFilter">
+    <!-- FILTER POPOVER (click to open) -->
+    <div class="popover" id="pvFilter">
       <div class="pv-row">
-        <label>Search (Name & Major)</label>
-        <input id="q" placeholder="Search…" />
+        <label style="font-weight:600">Add a filter</label>
       </div>
-      <div class="pv-row">
-        <label>State</label>
-        <select id="state"><option value="">All</option></select>
-      </div>
-      <div class="pv-grid">
-        <div>
-          <label>Final cost (USD)</label>
-          <div class="pv-row-inline">
-            <input id="fcMin" class="nums" placeholder="min $" inputmode="numeric" />
-            <input id="fcMax" class="nums" placeholder="max $" inputmode="numeric" />
-          </div>
-        </div>
-        <div>
-          <label>GPA</label>
-          <div class="pv-row-inline">
-            <input id="gpaMin" class="nums" placeholder="min" inputmode="decimal" />
-            <input id="gpaMax" class="nums" placeholder="max" inputmode="decimal" />
-          </div>
-        </div>
-        <div>
-          <label>Page size</label>
-          <select id="limit"><option>50</option><option selected>100</option><option>200</option></select>
-        </div>
+      <div class="pv-row-inline">
+        <select id="fltCol" style="min-width:240px"></select>
+        <select id="fltOp" style="min-width:140px">
+          <option value="contains" selected>contains</option>
+          <option value="equals">equals</option>
+          <option value="starts">starts with</option>
+          <option value="ends">ends with</option>
+          <option value="empty">is empty</option>
+          <option value="notempty">is not empty</option>
+        </select>
+        <input id="fltVal" placeholder="value…" style="min-width:220px" />
       </div>
       <div class="pv-actions">
-        <label class="toggle"><input id="autoLoad" type="checkbox" checked /> Auto-load remaining</label>
         <div class="spacer"></div>
-        <button class="btn" id="resetBtn">Reset</button>
-        <button class="btn primary" id="applyFiltersBtn">Apply</button>
+        <button class="btn" id="fltResetBtn">Reset</button>
+        <button class="btn primary" id="fltApplyBtn">Apply</button>
       </div>
     </div>
 
@@ -217,7 +203,7 @@ tbody tr:hover td{background:#fafbff}
       </div>
     </div>
   </div>
-  <!-- ============ /TOOLBAR ============ -->
+  <!-- ======= /TOOLBAR ======= -->
 
   <!-- TOP HORIZONTAL SCROLLBAR -->
   <div class="hScrollTop" id="hScrollTop"><div class="hScrollInner" id="hScrollInner"></div></div>
@@ -312,42 +298,24 @@ tbody tr:hover td{background:#fafbff}
 
 <script>
 (function(){
-  // --- global error surface so spinner can't get stuck on syntax/runtime
+  // --- global error surface
   window.addEventListener('error', function (e) {
     var b = document.getElementById('errorBanner');
     if (b) { b.textContent = 'Script error: ' + (e && e.message ? e.message : 'Unknown'); b.style.display = 'block'; }
-    var l = document.getElementById('loader');
-    if (l) l.style.display = 'none';
-    var app = document.getElementById('app');
-    if (app) app.style.display = 'block';
+    var l = document.getElementById('loader'); if (l) l.style.display = 'none';
+    var app = document.getElementById('app'); if (app) app.style.display = 'block';
   });
   window.addEventListener('unhandledrejection', function (e) {
     var b = document.getElementById('errorBanner');
     var msg = e && e.reason ? (e.reason.message || String(e.reason)) : 'Unknown promise rejection';
     if (b) { b.textContent = 'Runtime error: ' + msg; b.style.display = 'block'; }
-    var l = document.getElementById('loader');
-    if (l) l.style.display = 'none';
-    var app = document.getElementById('app');
-    if (app) app.style.display = 'block';
+    var l = document.getElementById('loader'); if (l) l.style.display = 'none';
+    var app = document.getElementById('app'); if (app) app.style.display = 'block';
   });
 
   // --------- UI refs
   var app = document.getElementById('app');
   var loader = document.getElementById('loader');
-  var q = document.getElementById('q');
-  var stateSel = document.getElementById('state');
-  var fcMin = document.getElementById('fcMin');
-  var fcMax = document.getElementById('fcMax');
-  var gpaMin = document.getElementById('gpaMin');
-  var gpaMax = document.getElementById('gpaMax');
-  var limitSel = document.getElementById('limit');
-  var autoLoad = document.getElementById('autoLoad');
-  var reloadBtn = document.getElementById('reloadBtn');
-  var reloadSpin = document.getElementById('reloadSpin');
-  var moreBtn = document.getElementById('moreBtn');
-  var moreSpin = document.getElementById('moreSpin');
-  var resetBtn = document.getElementById('resetBtn');
-  var exportBtn = document.getElementById('exportBtn');
   var tbody = document.getElementById('tbody');
   var shown = document.getElementById('shown');
   var loaded = document.getElementById('loaded');
@@ -357,6 +325,15 @@ tbody tr:hover td{background:#fafbff}
   var hScrollInner = document.getElementById('hScrollInner');
   var tableWrap = document.getElementById('tableWrap');
   var tbl = document.getElementById('tbl');
+
+  // Buttons
+  var reloadBtn = document.getElementById('reloadBtn');
+  var reloadSpin = document.getElementById('reloadSpin');
+  var moreBtn = document.getElementById('moreBtn');
+  var moreSpin = document.getElementById('moreSpin');
+  var exportBtn = document.getElementById('exportBtn');
+
+  // (Legacy quick-filter inputs are intentionally absent now; code is null-safe.)
 
   // Popup
   var popup = document.getElementById('popup');
@@ -450,7 +427,89 @@ tbody tr:hover td{background:#fafbff}
   var isLoading = false;
   var sort = {key:null, dir:1};
 
-  // Utilities
+  // ========= Filter popover (rule builder) =========
+  var pvFilter = document.getElementById('pvFilter');
+  var tbFilter = document.getElementById('tbFilter');
+  var fltCol = document.getElementById('fltCol');
+  var fltOp = document.getElementById('fltOp');
+  var fltVal = document.getElementById('fltVal');
+  var fltApplyBtn = document.getElementById('fltApplyBtn');
+  var fltResetBtn = document.getElementById('fltResetBtn');
+
+  // Simple single-rule state
+  var rule = { col:'', op:'contains', val:'' };
+
+  // Human labels → row keys in render()
+  var FILTERABLE = [
+    ['Name','name'],
+    ['State','state'],
+    ['Geographical Area','geo_area'],
+    ['City','city'],
+    ['Full address','address'],
+    ['Type of Institution','type'],
+    ['International Admission (link/text)','intl_adm'],
+    ['Bachelor’s Study Areas (B)','major'],
+    ['U.S. News Ranking','usnews_rank'],
+    ['University Homepage (link/text)','uni_home'],
+    ['Photos & Description (link/text)','photos_desc'],
+    ['Tuition','tuition'],
+    ['TOTAL','total'],
+    ['Enrollment','enroll']
+  ];
+
+  (function initFilterCols(){
+    if (!fltCol) return;
+    var opts = '<option value="">Select a column…</option>';
+    for (var i=0;i<FILTERABLE.length;i++){
+      opts += '<option value="'+FILTERABLE[i][1]+'">'+FILTERABLE[i][0]+'</option>';
+    }
+    fltCol.innerHTML = opts;
+  })();
+
+  // Toggle/open positioning
+  if (tbFilter && pvFilter){
+    tbFilter.addEventListener('click', function(e){
+      e.stopPropagation();
+      pvFilter.classList.toggle('open');
+      if (pvFilter.classList.contains('open')) {
+        var r = tbFilter.getBoundingClientRect();
+        pvFilter.style.left = (r.left) + 'px';
+        pvFilter.style.top  = (r.bottom + window.scrollY + 8) + 'px';
+        if (fltVal) setTimeout(function(){ fltVal.focus(); }, 0);
+      }
+    });
+    document.addEventListener('click', function(e){
+      if (!pvFilter.contains(e.target) && e.target !== tbFilter){
+        pvFilter.classList.remove('open');
+      }
+    });
+    document.addEventListener('keydown', function(e){
+      if (e.key === 'Escape') pvFilter.classList.remove('open');
+    });
+  }
+
+  if (fltApplyBtn){
+    fltApplyBtn.addEventListener('click', function(){
+      rule.col = fltCol ? fltCol.value : '';
+      rule.op  = fltOp ? fltOp.value : 'contains';
+      rule.val = fltVal ? fltVal.value : '';
+      if (pvFilter) pvFilter.classList.remove('open');
+      render();
+    });
+  }
+  if (fltResetBtn){
+    fltResetBtn.addEventListener('click', function(){
+      rule = { col:'', op:'contains', val:'' };
+      if (fltCol) fltCol.value = '';
+      if (fltOp)  fltOp.value  = 'contains';
+      if (fltVal) fltVal.value = '';
+      if (pvFilter) pvFilter.classList.remove('open');
+      render();
+    });
+  }
+  // ========= /Filter popover =========
+
+  // --------- Utils
   function showLoader(on){ if (loader) loader.style.display = on ? 'flex' : 'none'; }
   function setMoreLoading(on){
     isLoading = on;
@@ -482,7 +541,6 @@ tbody tr:hover td{background:#fafbff}
     return (s==null?"":String(s)).replace(/[&<>"']/g,function(m){return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]);});
   }
   function safeReplaceAll(str, search, repl){
-    // supports older Safari without String.replaceAll
     return String(str).split(search).join(repl);
   }
   function readCell(item, colId){
@@ -509,24 +567,11 @@ tbody tr:hover td{background:#fafbff}
     return '<span class="trunc" data-title="'+esc(title||'Details')+'" data-full="'+esc(full)+'">'+esc(full)+'</span>';
   }
   function pill(txt){ if(!txt) return ""; return '<span class="pill">'+esc(txt)+'</span>'; }
-  function buildStateOptionsFrom(list){
-    var set = Object.create(null);
-    for(var i=0;i<list.length;i++){
-      var st = readCell(list[i], COL.state);
-      if(st) set[st] = true;
-    }
-    var arr = [''];
-    for (var k in set) { if (Object.prototype.hasOwnProperty.call(set,k)) arr.push(k); }
-    arr.sort();
-    if (stateSel) {
-      var opts = '';
-      for (var j=0;j<arr.length;j++){
-        var s = arr[j];
-        opts += '<option value="'+esc(s)+'">'+(s||'All')+'</option>';
-      }
-      stateSel.innerHTML = opts;
-    }
-  }
+
+  // Build state options only if the State control exists (it doesn't now; this is safe)
+  function buildStateOptionsFrom(list){ /* no-op safe build */ }
+
+  // Sorting
   function applySort(arr){
     if(!sort.key) return;
     var k = sort.key, d = sort.dir;
@@ -619,25 +664,24 @@ tbody tr:hover td{background:#fafbff}
     var rows = [];
     for (var i=0;i<items.length;i++) rows.push(toRow(items[i]));
 
-    var qv = q && q.value ? q.value.trim().toLowerCase() : '';
-    var st = stateSel ? stateSel.value : '';
-    var fcMinV = numberFrom(fcMin && fcMin.value);
-    var fcMaxV = numberFrom(fcMax && fcMax.value);
-    var gpaMinV = numberFrom(gpaMin && gpaMin.value);
-    var gpaMaxV = numberFrom(gpaMax && gpaMax.value);
-
     var filtered = [];
     for (var j=0;j<rows.length;j++){
       var r = rows[j];
-      if(qv){
-        var inText = (r.name+" "+(r.major||"")).toLowerCase();
-        if(inText.indexOf(qv) === -1) continue;
+
+      // Rule builder (applies only if a column is chosen)
+      if (rule && rule.col){
+        var cell = r[rule.col];
+        var s = (cell==null ? '' : String(cell)).toLowerCase();
+        var v = String(rule.val || '').toLowerCase();
+
+        if (rule.op === 'contains' && v && s.indexOf(v) === -1) continue;
+        if (rule.op === 'equals' && s !== v) continue;
+        if (rule.op === 'starts' && v && s.lastIndexOf(v, 0) !== 0) continue;
+        if (rule.op === 'ends' && v && s.slice(-v.length) !== v) continue;
+        if (rule.op === 'empty' && s.trim() !== '') continue;
+        if (rule.op === 'notempty' && s.trim() === '') continue;
       }
-      if(st && r.state!==st) continue;
-      if(fcMinV!=null && (r.final_cost==null || r.final_cost<fcMinV)) continue;
-      if(fcMaxV!=null && (r.final_cost!=null && r.final_cost>fcMaxV)) continue;
-      if(gpaMinV!=null && (r.gpa==null || r.gpa<gpaMinV)) continue;
-      if(gpaMaxV!=null && (r.gpa!=null && r.gpa>gpaMaxV)) continue;
+
       filtered.push(r);
     }
 
@@ -765,29 +809,10 @@ tbody tr:hover td{background:#fafbff}
 
   // Controls
   if (reloadBtn) reloadBtn.onclick = function(){ if(isLoading) return; initialLoad(); };
-  if (resetBtn) resetBtn.onclick = function(){
-    if(isLoading) return;
-    if (q) q.value=''; if (stateSel) stateSel.value='';
-    if (fcMin) fcMin.value=''; if (fcMax) fcMax.value='';
-    if (gpaMin) gpaMin.value=''; if (gpaMax) gpaMax.value='';
-    sort = {key:null, dir:1};
-    initialLoad();
-  };
   if (moreBtn) moreBtn.onclick = function(){
     if(isLoading || !cursor) return;
-    fetchAndAppend({limit: (limitSel?limitSel.value:100), cursorParam: cursor, progressive: (autoLoad && autoLoad.checked)});
+    fetchAndAppend({limit: 100, cursorParam: cursor, progressive: true});
   };
-  var inputs = [q,stateSel,fcMin,fcMax,gpaMin,gpaMax,limitSel];
-  for (var ii=0; ii<inputs.length; ii++){
-    var el = inputs[ii];
-    if (!el) continue;
-    el.addEventListener('change', function(){ render(); syncTopScrollbar(); });
-    if (el.tagName === 'INPUT'){
-      el.addEventListener('keyup', function(e){ if(e.key==='Enter'){ render(); syncTopScrollbar(); } });
-    }
-  }
-  var applyFiltersBtn = document.getElementById('applyFiltersBtn');
-  if (applyFiltersBtn) applyFiltersBtn.addEventListener('click', function(){ render(); });
 
   // Excel export
   if (exportBtn) exportBtn.addEventListener('click', function(){
@@ -847,8 +872,7 @@ tbody tr:hover td{background:#fafbff}
     try {
       var resp = await fetch(url.toString(), { cache: 'no-store' });
       if (!resp.ok) {
-        var txt = '';
-        try { txt = await resp.text(); } catch (_) {}
+        var txt = ''; try { txt = await resp.text(); } catch (_) {}
         throw new Error('HTTP '+resp.status+': '+String(txt).slice(0,300));
       }
       var json = await resp.json();
@@ -871,7 +895,7 @@ tbody tr:hover td{background:#fafbff}
     var cur = res.cursor || null;
     if (batch.length){
       for (var i=0;i<batch.length;i++) items.push(batch[i]);
-      buildStateOptionsFrom(items);
+      // state options no-op if control missing
       render();
       syncTopScrollbar();
       adjustTableHeight();
@@ -879,12 +903,11 @@ tbody tr:hover td{background:#fafbff}
     cursor = cur;
 
     while (opts && opts.progressive && cursor){
-      var resN = await fetchBatch({limit:(limitSel?limitSel.value:100), cursorParam: cursor});
+      var resN = await fetchBatch({limit:100, cursorParam: cursor});
       var nextBatch = resN.items || [];
       var nextCur = resN.cursor || null;
       if (nextBatch.length){
         for (var j=0;j<nextBatch.length;j++) items.push(nextBatch[j]);
-        buildStateOptionsFrom(items);
         render();
         syncTopScrollbar();
         adjustTableHeight();
@@ -897,17 +920,14 @@ tbody tr:hover td{background:#fafbff}
   async function initialLoad(){
     items = []; cursor = null;
     showLoader(true);
-    try {
-      await fetchAndAppend({limit: (limitSel?limitSel.value:100), cursorParam: null, progressive: false});
-    } finally {
+    try { await fetchAndAppend({limit:100, cursorParam:null, progressive:false}); }
+    finally {
       showLoader(false);
       if (app) app.style.display = 'block';
       syncTopScrollbar();
       adjustTableHeight();
     }
-    if (autoLoad && autoLoad.checked && cursor) {
-      fetchAndAppend({limit: (limitSel?limitSel.value:100), cursorParam: cursor, progressive: true});
-    }
+    if (cursor) { fetchAndAppend({limit:100, cursorParam:cursor, progressive:true}); }
   }
 
   // Start
