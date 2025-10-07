@@ -97,6 +97,103 @@ export const handler = async (event) => {
       };
     });
 
+  // ======== ADD: Enrich missing formula values so UI always sees them ========
+  // Column IDs used in formulas and fallbacks
+  const FORM_COL = {
+    tuition: 'annual_tuition_cost',
+    room: '_usd__annual_room_cost',
+    board: '_usd__annual_board_cost',
+    fees: 'numbers5',
+
+    total: 'formula',      // TOTAL (Approximate Annual Cost in USD)
+
+    schLow: 'dup__of_minimum__usd__annual_scholarship_amount6',
+    schMid: 'numbers68',
+    schHi:  'numbers11',
+
+    netLow: 'formula3',    // (Lowest) Possible Net Cost of Attendance
+    netMid: 'formula07',   // (Mid-Range) Possible Net Cost of Attendance
+    netHi:  'formula9',    // (Highest) Possible Net Cost of Attendance
+
+    workComp:   'formula5',   // Annual Work on Campus Compensation (Most Probable)
+    minWage:    'numbers985',
+    workDetail: 'long_text56' // “Work on Campus Details”
+  };
+
+  function amt(x){
+    if (x == null) return null;
+    const s = String(x).replace(/[^\d.\-]/g,'');
+    if (!s) return null;
+    const n = parseFloat(s);
+    return Number.isFinite(n) ? n : null;
+  }
+  function findCV(cols, id){ return (cols||[]).find(c => c.id === id); }
+  function getNumCV(cols, id){
+    const cv = findCV(cols, id);
+    return amt(cv?.text ?? cv?.value);
+  }
+  function setTextCV(rowOrItem, id, text){
+    const t = (text == null) ? '' : String(text);
+    const cols = (rowOrItem.column_values ||= []);
+    const cv = cols.find(c => c.id === id);
+    if (cv){
+      cv.text = t;
+      cv.value = t;
+    } else {
+      cols.push({ id, type:'text', text:t, value:t });
+    }
+  }
+  const r0 = (n) => (n == null ? null : Math.round(n));
+  function deriveWorkComp(minWage, details){
+    if (!minWage || !details) return null;
+    const m = String(details).match(/(\d+)\s*hours?\s*\/?\s*week.*?(\d+)\s*weeks?/i);
+    if (!m) return null;
+    const hrs = parseInt(m[1],10); const wks = parseInt(m[2],10);
+    if (!hrs || !wks) return null;
+    return minWage * hrs * wks;
+  }
+
+  for (const row of prepped){
+    const cols = row.column_values || [];
+
+    const tuition = getNumCV(cols, FORM_COL.tuition) || 0;
+    const room    = getNumCV(cols, FORM_COL.room)    || 0;
+    const board   = getNumCV(cols, FORM_COL.board)   || 0;
+    const fees    = getNumCV(cols, FORM_COL.fees)    || 0;
+
+    // 1) TOTAL = Tuition + Room + Board + Fees (if Monday didn't send it)
+    let total = getNumCV(cols, FORM_COL.total);
+    if (total == null) {
+      total = tuition + room + board + fees;
+      setTextCV(row, FORM_COL.total, r0(total));
+    }
+    if (row.totalCost == null) row.totalCost = total;
+
+    // 2) Net costs
+    const schLow = getNumCV(cols, FORM_COL.schLow) || 0;
+    const schMid = getNumCV(cols, FORM_COL.schMid) || 0;
+    const schHi  = getNumCV(cols, FORM_COL.schHi)  || 0;
+
+    const netLow = total - schHi;  // (Lowest) = TOTAL - Highest scholarship
+    const netMid = total - schMid; // (Mid)    = TOTAL - Mid scholarship
+    const netHi  = total - schLow; // (Highest)= TOTAL - Lowest scholarship
+
+    setTextCV(row, FORM_COL.netLow, r0(netLow));
+    setTextCV(row, FORM_COL.netMid, r0(netMid));
+    setTextCV(row, FORM_COL.netHi,  r0(netHi));
+
+    // 3) Work compensation (use Monday if present; else derive conservatively)
+    let wc = getNumCV(cols, FORM_COL.workComp);
+    if (wc == null){
+      const minW = getNumCV(cols, FORM_COL.minWage);
+      const det  = findCV(cols, FORM_COL.workDetail)?.text || '';
+      const derived = deriveWorkComp(minW, det);
+      if (derived != null) wc = derived;
+    }
+    if (wc != null) setTextCV(row, FORM_COL.workComp, r0(wc));
+  }
+  // ======== /formula enrichment ========
+
   // Optional backend filters to reduce payload early
   const filtered = prepped.filter(row => {
     if (q) {
