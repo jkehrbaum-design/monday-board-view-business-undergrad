@@ -201,4 +201,526 @@ tbody tr:hover td{background:#f8fafc}
     { key:'name',           title:'Name', sticky:true,  sortable:true, type:'text',  colId:'name' },
     { key:'photos_desc',    title:'Photos & Description (Link) ↗️', type:'link',   colId:'link4' },
     { key:'state',          title:'State',              sortable:true, type:'chip',  colId:'state1', chipCategory:'state' },
-    { key:'geo_area',       title:'Geo_
+    { key:'geo_area',       title:'Geographical Area',  sortable:true, type:'chip',  colId:'dropdown30', chipCategory:'geo' },
+    { key:'video_state',    title:'Video I about the State',          type:'link',  colId:'link_14' },
+    { key:'city',           title:'City',               trunc:true,    type:'text',  colId:'city' },
+    { key:'address',        title:'Full address',       trunc:true,    type:'mono',  colId:'location' },
+    { key:'virtual_tour',   title:'Virtual Campus Tour?',             type:'link',  colId:'link_1' },
+    { key:'fachabitur',     title:'Fachabitur?',        type:'chip',   colId:'status5', chipCategory:'status' },
+    { key:'fach_det',       title:'Fachabitur Details', trunc:true,    type:'text',  colId:'long_text15' },
+    { key:'usnews_rank',    title:'U.S. News Ranking',  align:'right', type:'mono',  colId:'long_text' },
+    { key:'usnews_link',    title:'U.S. News Link',                   type:'link',  colId:'link1' },
+    { key:'type',           title:'Type of Institution',              type:'chip',  colId:'dropdown', chipCategory:'type' },
+    { key:'enroll',         title:'Total Enrollment',   align:'right', type:'number',colId:'numbers7' },
+    { key:'live_pct',       title:'% Live on Campus',   align:'right', type:'text',  colId:'numbers8' },
+    { key:'live_num',       title:'# Live on Campus',   align:'right', type:'number',colId:'formula53' },
+    { key:'ratio',          title:'Student-Faculty Ratio',align:'right',type:'number',colId:'numbers81' },
+    { key:'insurance',      title:'University Insurance Required?',    trunc:true,  type:'text',  colId:'dropdown8' },
+    { key:'insurance_info', title:'More Health Insurance Details',     trunc:true,  type:'text',  colId:'long_text63' },
+    { key:'app_fee',        title:'Application Fee',    align:'right', type:'text',  colId:'temporary_university_s_application_fee_cost__usd_' },
+    { key:'how_apply',      title:'How to Apply',       trunc:true,    type:'text',  colId:'long_text842' },
+    { key:'cred_eval',      title:'Credential Eval Required',          type:'chip',  colId:'status38', chipCategory:'status' },
+    { key:'cred_info',      title:'+Info on Credential Evaluation',    trunc:true,  type:'text',  colId:'long_text60' },
+    { key:'spring_adm',     title:'Spring Admission?',                 type:'chip',  colId:'status45', chipCategory:'status' },
+    { key:'spring_sch',     title:'Spring Scholarships?',              type:'chip',  colId:'status_13', chipCategory:'status' },
+    { key:'clarify',        title:'Clarification on Additional Information', trunc:true, type:'text', colId:'long_text9' },
+    { key:'campus_acts',    title:'On Campus Activities',              type:'link',  colId:'link2' },
+    { key:'sports',         title:'Sports Homepage',                   type:'link',  colId:'link_198' },
+    { key:'uni_home',       title:'University Homepage',               type:'link',  colId:'link3' },
+    { key:'intl_adm',       title:'International Admission',           type:'link',  colId:'link0' },
+    { key:'major',          title:'Bachelor’s Study Areas (B)', sortable:true, trunc:true, type:'text', colId:'dropdown73' },
+    { key:'degrees_link',   title:'Bachelor’s Degrees Link',           type:'link',  colId:'link30' },
+    { key:'acad_year',      title:'Academic Year',      trunc:true,    type:'text',  colId:'dropdown4' },
+    { key:'tuition',        title:'Tuition (Annual Cost in USD)', align:'right', type:'money', colId:'annual_tuition_cost' },
+    { key:'room',           title:'Room (Annual Cost in USD)',    align:'right', type:'money', colId:'_usd__annual_room_cost' },
+    { key:'board',          title:'Board (Annual Cost in USD)',    align:'right', type:'money', colId:'_usd__annual_board_cost' },
+    { key:'fees',           title:'Required Fees (Annual Cost in USD)', align:'right', type:'money', colId:'numbers5' },
+    { key:'total',          title:'TOTAL (Approximate Annual Cost in USD)', align:'right', type:'money', colId:'formula' },
+    { key:'cost_info',      title:'Additional Info and Link/s Annual Cost of Attendance', trunc:true, type:'text', colId:'link_s_annual_cost_of_attendance' },
+    { key:'adm_req',        title:'Admission Requirements', trunc:true, type:'text', colId:'_link__requirements_admission_information' },
+    { key:'sch_low',        title:'Lowest (USD) Annual Scholarship Amount', align:'right', type:'money', colId:'dup__of_minimum__usd__annual_scholarship_amount6' },
+    { key:'sch_low_type',   title:'Competitive vs Guaranteed? (Lowest)', trunc:true, type:'text', colId:'status1' },
+    { key:'toefl_low',      title:'TOEFL iBT Minimum (Lowest Scholarship)', align:'right', type:'number', colId:'numbers2' },
+    { key:'gpa_low',        title:'GPA Minimum (Lowest Scholarship)', align:'right', type:'number', colId:'numbers34' },
+    { key:'sat_low',        title:'SAT Minimum (Lowest Scholarship)', align:'right', type:'number', colId:'numbers0' },
+    { key:'sch_low_info',   title:'Additional Info and Link/s on Lowest Scholarship Amount (Lowest)', trunc:true, type:'text', colId:'additional_info_and_link_s_on_minimum_scholarship_amount' },
+    { key:'sch_mid',        title:'Mid-Range (USD) Annual Scholarship Amount (F) (Mid-Range Scholarship)', align:'right', type:'money', colId:'numbers68' },
+    { key:'sch_mid_type',   title:'Competitive vs Guaranteed? (F) (Mid-Range Scholarship)', trunc:true, type:'text', colId:'status_132' },
+    { key:'toefl_mid',      title:'TOEFL iBT Minimum (Most Probable Scholarship)', align:'right', type:'number', colId:'numbers54' },
+    { key:'gpa_mid',        title:'GPA Minimum (Most Probable Scholarship)', align:'right', type:'number', colId:'numbers64' },
+    { key:'sat_mid',        title:'SAT Minimum (Most Probable Scholarship)', align:'right', type:'number', colId:'numbers414' },
+    { key:'sch_mid_info',   title:'Additional Info and Link/s on Mid-Range Scholarship Amount (F) (Mid-Range Scholarship)', trunc:true, type:'text', colId:'long_text31' },
+    { key:'sch_hi',         title:'Highest (USD) Annual Scholarship Amount', align:'right', type:'money', colId:'numbers11' },
+    { key:'sch_hi_type',    title:'High: Type', trunc:true, type:'text', colId:'dup__of_competitive_vs_guaranteed___gpa__3_5__highest_' },
+    { key:'toefl_hi',       title:'TOEFL iBT Minimum (Highest Scholarship)', align:'right', type:'number', colId:'numbers70' },
+    { key:'gpa_hi',         title:'GPA Minimum (Highest Scholarship)', align:'right', type:'number', colId:'numbers4' },
+    { key:'sat_hi',         title:'SAT Minimum (Highest Scholarship)', align:'right', type:'number', colId:'numbers41' },
+    { key:'sch_hi_info',    title:'Additional Info and Link/s on Highest Scholarship Amount (Highest)', trunc:true, type:'text', colId:'long_text78' },
+    { key:'net_low',        title:'(Lowest) Possible Net Cost of Attendance', align:'right', type:'text', colId:'formula3' },
+    { key:'net_mid',        title:'(Mid-Range) Possible Net Cost of Attendance (F)', align:'right', type:'text', colId:'formula07' },
+    { key:'net_hi',         title:'(Highest) Possible Net Cost of Attendance', align:'right', type:'text', colId:'formula9' },
+    { key:'dead_fall',      title:'Fall Application Deadline', trunc:true, type:'text', colId:'deadline_fall_application' },
+    { key:'dead_spring',    title:'Spring Application Deadline', trunc:true, type:'text', colId:'deadline_spring_application' },
+    { key:'dead_link',      title:'Deadline Link', type:'link', colId:'link_104' },
+    { key:'campus_job',     title:'Campus Employment?', type:'chip', colId:'status_113', chipCategory:'status' },
+    { key:'min_wage',       title:'2025 Min Wage', align:'right', type:'money', colId:'numbers985' },
+    { key:'work_comp',      title:'Annual Work on Campus Compensation (Most Probable)', align:'right', type:'money', colId:'formula5' },
+    { key:'work_details_b', title:'Work on Campus Details', trunc:true, type:'text', colId:'long_text56' },
+  ];
+
+  // ===== 2) (Optional) default filterable fields come from columns ===========
+  const DEFAULT_FILTERABLE_KEYS = [
+    'name','state','geo_area','city','address','type','intl_adm','major','usnews_rank','uni_home','photos_desc','tuition','total','enroll'
+  ];
+  // =========================================================================
+
+  // --- global error surface
+  window.addEventListener('error', function (e) {
+    const b = document.getElementById('errorBanner');
+    if (b) { b.textContent = 'Script error: ' + (e && e.message ? e.message : 'Unknown'); b.style.display = 'block'; }
+    const l = document.getElementById('loader'); if (l) l.style.display = 'none';
+    const app = document.getElementById('app'); if (app) app.style.display = 'block';
+  });
+  window.addEventListener('unhandledrejection', function (e) {
+    const b = document.getElementById('errorBanner');
+    const msg = e && e.reason ? (e.reason.message || String(e.reason)) : 'Unknown promise rejection';
+    if (b) { b.textContent = 'Runtime error: ' + msg; b.style.display = 'block'; }
+    const l = document.getElementById('loader'); if (l) l.style.display = 'none';
+    const app = document.getElementById('app'); if (app) app.style.display = 'block';
+  });
+
+  // --------- UI refs
+  const app = document.getElementById('app');
+  const loader = document.getElementById('loader');
+  const tbody = document.getElementById('tbody');
+  const theadRow = document.getElementById('thead-row');
+  const shown = document.getElementById('shown');
+  const loaded = document.getElementById('loaded');
+
+  // Top scrollbar & table wrap
+  const hScrollTop = document.getElementById('hScrollTop');
+  const hScrollInner = document.getElementById('hScrollInner');
+  const tableWrap = document.getElementById('tableWrap');
+  const tbl = document.getElementById('tbl');
+
+  // Buttons
+  const reloadBtn = document.getElementById('reloadBtn');
+  const reloadSpin = document.getElementById('reloadSpin');
+  const moreBtn = document.getElementById('moreBtn');
+  const moreSpin = document.getElementById('moreSpin');
+  const exportBtn = document.getElementById('exportBtn');
+
+  // Popup
+  const popup = document.getElementById('popup');
+  const popupTitle = document.getElementById('popupTitle');
+  const popupBody = document.getElementById('popupBody');
+  const popupClose = document.getElementById('popupClose');
+  popupClose.onclick = () => popup.style.display = 'none';
+  function openPopup(title, text){ popupTitle.textContent = title || 'Details'; popupBody.textContent = text || ''; popup.style.display = 'block'; }
+
+  // --------- Color chip helpers (same palettes you had)
+  function chipHTML(text, bg, border, fg){ if (!text) return ''; return '<span class="pill" style="background:'+bg+';border:1px solid '+border+';color:'+fg+';padding:4px 10px">'+esc(text)+'</span>'; }
+
+  const GEO_STYLES = {
+    'Pacific West Coast':['#FFF4DB','#FFDFA6','#915930'],'West':['#FFE8EE','#FFC6D4','#8A2E45'],
+    'Midwest':['#E7F7FF','#C8EFFF','#0B5586'],'Southeast':['#EFFFF3','#CCF3D7','#1F6B3A'],
+    'Northeast':['#F1ECFF','#DDD6FE','#4A38A5'],'Southwest':['#FFF0E6','#FFD6BD','#884A1F']
+  };
+  const STATUS_STYLES = {
+    'shareable':['#E6F6EA','#BFE7C8','#256D3C'], 'working on it':['#E6F0FF','#C9D7FF','#2746B3'],
+    'in progress':['#E6F0FF','#C9D7FF','#2746B3'], 'yes':['#E6F6EA','#BFE7C8','#256D3C'],
+    'true':['#E6F6EA','#BFE7C8','#256D3C'], 'no':['#FEEAEA','#F8C7C7','#9F1D1D'],
+    'not shareable':['#FEEAEA','#F8C7C7','#9F1D1D'], 'false':['#FEEAEA','#F8C7C7','#9F1D1D'],
+    'unknown':['#F2F4F7','#E4E7EC','#475467'], 'n/a':['#F2F4F7','#E4E7EC','#475467'], '':['#F2F4F7','#E4E7EC','#475467']
+  };
+  const TYPE_STYLES = {
+    'Public':['#E7F7FF','#C8EFFF','#0B5586'], 'Private':['#FFE8EE','#FFC6D4','#8A2E45'],
+    'Community College':['#FFF4DB','#FFDFA6','#915930']
+  };
+  const STATE_HUES = [
+    ['#E6F6EA','#BFE7C8','#256D3C'],['#E6F0FF','#C9D7FF','#2746B3'],['#FFF4DB','#FFDFA6','#915930'],
+    ['#F1ECFF','#DDD6FE','#4A38A5'],['#E7F7FF','#C8EFFF','#0B5586'],['#FFE8EE','#FFC6D4','#8A2E45'],
+    ['#EFFFF3','#CCF3D7','#1F6B3A'],['#FFF0E6','#FFD6BD','#884A1F'],['#F2F4F7','#E4E7EC','#475467'],
+    ['#EAF3FF','#CFE2FF','#23498C'],['#FDEBF6','#F8CDE8','#8F2D6A'],['#EAFBF7','#CFF3EA','#176D63']
+  ];
+  function hashIndex(str){ let h=0; str=String(str||''); for(let i=0;i<str.length;i++){ h=(h*31 + str.charCodeAt(i))|0; } if(h<0) h=-h; return h % STATE_HUES.length; }
+  function chipsFor(val, category){
+    if (!val) return '';
+    const parts = String(val).split(',').map(s=>s.trim()).filter(Boolean);
+    let out = '';
+    for (const p of parts){
+      let bg='#F4F6FA', bd='#E6E9F0', fg='#49506A';
+      if (category==='geo' && GEO_STYLES[p]) [bg,bd,fg]=GEO_STYLES[p];
+      else if (category==='status'){ const st=STATUS_STYLES[(p||'').toLowerCase()] || STATUS_STYLES['unknown']; [bg,bd,fg]=st; }
+      else if (category==='type' && TYPE_STYLES[p]) [bg,bd,fg]=TYPE_STYLES[p];
+      else if (category==='state'){ const h=STATE_HUES[hashIndex(p)]; [bg,bd,fg]=h; }
+      out += chipHTML(p, bg, bd, fg) + ' ';
+    }
+    return out.trim();
+  }
+
+  // --------- Monday read helpers
+  function safeReplaceAll(str, search, repl){ return String(str).split(search).join(repl); }
+  function readCell(item, colId){
+    const cvs = item && item.column_values ? item.column_values : null; if (!cvs) return "";
+    const v = cvs.find(c=>c.id===colId); if (!v) return "";
+    const t = v.type;
+    if (t === "text" || t === "long-text") return v.text || "";
+    if (t === "dropdown") return safeReplaceAll(v.text || "", ";", ", ");
+    if (t === "status") return v.text || "";
+    if (t === "numbers") return v.text || v.value || "";
+    if (t === "link") return v.text || v.url || "";
+    if (t === "location") return v.text || "";
+    if (t === "formula") return v.text || "";
+    return v.text || "";
+  }
+
+  // --------- Format helpers
+  function numberFrom(a){ if(a==null) return null; const s = (""+a).replace(/[^\d.\-]/g,''); if(!s) return null; const n = parseFloat(s); return Number.isFinite(n)?n:null; }
+  function formatMoney(n){ if(n==null || n==="") return ""; try{ return new Intl.NumberFormat('en-US',{style:'currency',currency:'USD',maximumFractionDigits:0}).format(n); } catch{ return "$"+n; } }
+  function formatInt(n){ if(n==null || n==="") return ""; try{ return new Intl.NumberFormat('en-US',{maximumFractionDigits:0}).format(n); } catch{ return String(n); } }
+  function esc(s){ return (s==null?"":String(s)).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
+  function truncCell(content, title){
+    const full = (content==null?"":String(content)).trim(); if(!full) return '';
+    const urlMatch = full.match(/https?:\/\/\S+/); if(urlMatch) return '<a class="link" href="'+esc(urlMatch[0])+'" target="_blank" rel="noopener">Link</a>';
+    return '<span class="trunc" data-title="'+esc(title||'Details')+'" data-full="'+esc(full)+'">'+esc(full)+'</span>';
+  }
+
+  // --------- Build THEAD from COLUMNS
+  function buildThead(){
+    theadRow.innerHTML = COLUMNS.map(col=>{
+      const cls = [
+        col.sticky ? 'sticky':'',
+        col.sortable ? 'sortable':'',
+        col.align==='right' ? 'right':''
+      ].filter(Boolean).join(' ');
+      return `<th class="${cls}" data-key="${esc(col.key)}">${esc(col.title)}</th>`;
+    }).join('');
+  }
+
+  // --------- Filter popover config (auto from columns)
+  const pvFilter = document.getElementById('pvFilter');
+  const tbFilter = document.getElementById('tbFilter');
+  const fltCol = document.getElementById('fltCol');
+  const fltOp = document.getElementById('fltOp');
+  const fltVal = document.getElementById('fltVal');
+  const fltApplyBtn = document.getElementById('fltApplyBtn');
+  const fltResetBtn = document.getElementById('fltResetBtn');
+  let rule = { col:'', op:'contains', val:'' };
+
+  function initFilterCols(){
+    const allowed = new Set(DEFAULT_FILTERABLE_KEYS);
+    const opts = ['<option value="">Select a column…</option>']
+      .concat(COLUMNS
+        .filter(c=>allowed.has(c.key))
+        .map(c=>`<option value="${esc(c.key)}">${esc(c.title)}</option>`));
+    fltCol.innerHTML = opts.join('');
+  }
+
+  // --------- Sort state
+  let sort = {key:null, dir:1};
+  function applySort(arr){
+    if(!sort.key) return;
+    const meta = COLUMNS.find(c=>c.key===sort.key);
+    const d = sort.dir;
+    const type = meta && (meta.type==='money' || meta.type==='number') ? 'number':'text';
+    arr.sort((a,b)=>{
+      let va = a[sort.key], vb = b[sort.key];
+      if (type==='number'){
+        const na = numberFrom(va), nb = numberFrom(vb);
+        if(na!=null && nb!=null) return (na-nb)*d;
+      }
+      return String(va||'').localeCompare(String(vb||''))*d;
+    });
+  }
+  function updateSortIndicators(){
+    document.querySelectorAll('thead th').forEach(th=>{
+      th.classList.remove('sort-asc','sort-desc');
+      const key = th.getAttribute('data-key');
+      if(key && key === sort.key) th.classList.add(sort.dir===1?'sort-asc':'sort-desc');
+    });
+  }
+  function attachSortHandlers(){
+    document.querySelectorAll('thead th').forEach(th=>{
+      const key = th.getAttribute('data-key');
+      if (COLUMNS.find(c=>c.key===key && c.sortable)){
+        th.classList.add('sortable');
+        th.addEventListener('click', ()=>{
+          if (sort.key===key) sort.dir*=-1; else { sort.key=key; sort.dir=1; }
+          render();
+        });
+      }
+    });
+  }
+
+  // --------- Map item -> row object matching COLUMNS keys
+  function itemToRow(item){
+    const row = {};
+    for (const col of COLUMNS){
+      let raw = (col.key==='name') ? (item && item.name ? item.name : '') : readCell(item, col.colId);
+      // Normalize for numbers/money
+      if (col.type==='number' || col.type==='money') raw = numberFrom(raw);
+      row[col.key] = raw;
+    }
+    // extra derived fields if needed later...
+    return row;
+  }
+
+  // --------- Cell renderer using column meta
+  function renderCell(col, val){
+    const title = col.title;
+    if (col.type==='link')       return truncCell(val, title);
+    if (col.type==='mono')       return `<span class="trunc mono" data-title="${esc(title)}" data-full="${esc(val||'')}">${esc(val||'')}</span>`;
+    if (col.type==='chip')       return chipsFor(val, col.chipCategory);
+    if (col.type==='money')      return (val==null? '' : formatMoney(val));
+    if (col.type==='number')     return (val==null? '' : formatInt(val));
+    if (col.trunc===true)        return `<span class="trunc" data-title="${esc(title)}" data-full="${esc(val||'')}">${esc(val||'')}</span>`;
+    return esc(val||'');
+  }
+
+  // --------- Data & state
+  let items = [];
+  let cursor = null;
+  let isLoading = false;
+
+  // --------- Render table
+  function render(){
+    const rows = items.map(itemToRow);
+
+    // Apply filter rule
+    const filtered = [];
+    for (const r of rows){
+      if (rule && rule.col){
+        const cell = r[rule.col];
+        const s = (cell==null ? '' : String(cell)).toLowerCase();
+        const v = String(rule.val || '').toLowerCase();
+        if (rule.op === 'contains' && v && s.indexOf(v) === -1) continue;
+        if (rule.op === 'equals' && s !== v) continue;
+        if (rule.op === 'starts' && v && s.lastIndexOf(v, 0) !== 0) continue;
+        if (rule.op === 'ends' && v && s.slice(-v.length) !== v) continue;
+        if (rule.op === 'empty' && s.trim() !== '') continue;
+        if (rule.op === 'notempty' && s.trim() === '') continue;
+      }
+      filtered.push(r);
+    }
+
+    applySort(filtered);
+    updateSortIndicators();
+
+    // Build rows
+    let html = '';
+    for (const r of filtered){
+      html += '<tr>';
+      for (const col of COLUMNS){
+        const cls = [
+          col.sticky ? 'sticky':'',
+          col.align==='right' ? 'right':'',
+          col.trunc ? 'trunc-cell':''
+        ].filter(Boolean).join(' ');
+        const tdClass = cls ? ` class="${cls}"` : '';
+        html += `<td${tdClass}>${renderCell(col, r[col.key])}</td>`;
+      }
+      html += '</tr>';
+    }
+    tbody.innerHTML = html;
+
+    if (shown) shown.textContent = filtered.length + ' shown';
+    if (loaded) loaded.textContent = items.length + ' loaded';
+    if (moreBtn) moreBtn.style.display = cursor ? 'inline-flex' : 'none';
+
+    adjustTableHeight();
+    syncTopScrollbar();
+  }
+
+  // --------- Head actions & popover wiring
+  function wirePopovers(){
+    const pvFilter = document.getElementById('pvFilter');
+    const tbFilter = document.getElementById('tbFilter');
+    if (tbFilter && pvFilter){
+      tbFilter.addEventListener('click', (e)=>{
+        e.stopPropagation();
+        pvFilter.classList.toggle('open');
+        if (pvFilter.classList.contains('open')) {
+          const r = tbFilter.getBoundingClientRect();
+          pvFilter.style.left = (r.left) + 'px';
+          pvFilter.style.top  = (r.bottom + window.scrollY + 8) + 'px';
+          if (fltVal) setTimeout(()=>fltVal.focus(), 0);
+        }
+      });
+      document.addEventListener('click', (e)=>{
+        if (!pvFilter.contains(e.target) && e.target !== tbFilter) pvFilter.classList.remove('open');
+      });
+      document.addEventListener('keydown', (e)=>{
+        if (e.key === 'Escape') pvFilter.classList.remove('open');
+      });
+    }
+    if (fltApplyBtn){
+      fltApplyBtn.addEventListener('click', ()=>{
+        rule.col = fltCol ? fltCol.value : '';
+        rule.op  = fltOp ? fltOp.value : 'contains';
+        rule.val = fltVal ? fltVal.value : '';
+        pvFilter.classList.remove('open');
+        render();
+      });
+    }
+    if (fltResetBtn){
+      fltResetBtn.addEventListener('click', ()=>{
+        rule = { col:'', op:'contains', val:'' };
+        if (fltCol) fltCol.value = '';
+        if (fltOp)  fltOp.value  = 'contains';
+        if (fltVal) fltVal.value = '';
+        pvFilter.classList.remove('open');
+        render();
+      });
+    }
+  }
+
+  // Delegated click for popup (for .trunc spans)
+  document.getElementById('tbody').addEventListener('click', (e)=>{
+    let target = e.target;
+    while (target && target !== tbody && !target.classList.contains('trunc')) target = target.parentNode;
+    if(!target || target === tbody) return;
+    const title = target.getAttribute('data-title') || 'Details';
+    const full = target.getAttribute('data-full') || target.textContent || '';
+    if (String(full).trim()) openPopup(title, full);
+  });
+
+  // Controls
+  if (reloadBtn) reloadBtn.onclick = ()=>{ if(isLoading) return; initialLoad(); };
+  if (moreBtn) moreBtn.onclick = ()=>{
+    if(isLoading || !cursor) return;
+    fetchAndAppend({limit: 100, cursorParam: cursor, progressive: true});
+  };
+
+  // Excel export (uses dynamic headers)
+  if (exportBtn) exportBtn.addEventListener('click', function(){
+    const headers = COLUMNS.map(c=>c.title);
+    const rows = Array.from(tbody.querySelectorAll('tr')).map(tr =>
+      Array.from(tr.children).map(td => td.textContent.replace(/\s+/g,' ').trim())
+    );
+    const aoa = [headers, ...rows];
+    const ws = XLSX.utils.aoa_to_sheet(aoa);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Programs');
+    XLSX.writeFile(wb, 'bachelors-programs.xlsx');
+  });
+
+  // Scroll sync
+  let syncingTop = false, syncingBottom = false;
+  function syncTopScrollbar(){
+    if (!tbl || !hScrollInner || !hScrollTop || !tableWrap) return;
+    const w = tbl.scrollWidth;
+    hScrollInner.style.width = w + 'px';
+    hScrollTop.scrollLeft = tableWrap.scrollLeft;
+  }
+  if (hScrollTop) hScrollTop.addEventListener('scroll', function(){
+    if(syncingTop) return; syncingBottom = true;
+    if (tableWrap) tableWrap.scrollLeft = hScrollTop.scrollLeft;
+    syncingBottom = false;
+  });
+  if (tableWrap) tableWrap.addEventListener('scroll', function(){
+    if(syncingBottom) return; syncingTop = true;
+    if (hScrollTop) hScrollTop.scrollLeft = tableWrap.scrollLeft;
+    syncingTop = false;
+  });
+  function adjustTableHeight(){
+    if (!tableWrap) return;
+    const vwTop = tableWrap.getBoundingClientRect().top;
+    const maxH = Math.max(360, window.innerHeight - vwTop - 16);
+    tableWrap.style.maxHeight = maxH + 'px';
+  }
+  window.addEventListener('resize', function(){ syncTopScrollbar(); adjustTableHeight(); });
+
+  // Data fetching (unchanged)
+  async function fetchBatch(params){
+    const errorBanner = document.getElementById('errorBanner');
+    const base = location.origin || window.location.href;
+    const url = new URL('/.netlify/functions/items', base);
+    url.searchParams.set('limit', String(params && params.limit ? params.limit : '100'));
+    if (params && params.cursorParam) url.searchParams.set('cursor', params.cursorParam);
+    try {
+      const resp = await fetch(url.toString(), { cache: 'no-store' });
+      if (!resp.ok) {
+        let txt=''; try{ txt = await resp.text(); }catch(_){}
+        throw new Error('HTTP '+resp.status+': '+String(txt).slice(0,300));
+      }
+      const json = await resp.json();
+      if (!json || !Array.isArray(json.items)) throw new Error('Unexpected payload: '+JSON.stringify(json).slice(0,300));
+      if (errorBanner) errorBanner.style.display = 'none';
+      return json;
+    } catch (e) {
+      console.error('Fetch failed', e);
+      if (errorBanner) { errorBanner.textContent = 'Could not load data. ' + (e && e.message ? e.message : String(e)); errorBanner.style.display = 'block'; }
+      return { items: [], cursor: null };
+    }
+  }
+  async function fetchAndAppend(opts){
+    setMoreLoading(true);
+    const res = await fetchBatch(opts || {});
+    const batch = res.items || [];
+    const cur = res.cursor || null;
+    if (batch.length){
+      items.push(...batch);
+      render();
+    }
+    cursor = cur;
+
+    while (opts && opts.progressive && cursor){
+      const resN = await fetchBatch({limit:100, cursorParam: cursor});
+      const nextBatch = resN.items || [];
+      const nextCur = resN.cursor || null;
+      if (nextBatch.length){
+        items.push(...nextBatch);
+        render();
+      }
+      cursor = nextCur;
+    }
+    setMoreLoading(false);
+  }
+  function showLoader(on){ if (loader) loader.style.display = on ? 'flex' : 'none'; }
+  function setMoreLoading(on){
+    isLoading = on;
+    if (moreBtn) moreBtn.disabled = on;
+    if (reloadBtn) reloadBtn.disabled = on;
+    if (moreSpin) moreSpin.style.display = on ? 'inline-block' : 'none';
+    if (reloadSpin) reloadSpin.style.display = on ? 'inline-block' : 'none';
+    const span = moreBtn ? moreBtn.querySelector('span') : null;
+    if (span) span.textContent = on ? 'Load more…' : 'Load more';
+  }
+
+  // --------- Init
+  function initialHeadersAndUI(){
+    buildThead();
+    attachSortHandlers();
+    // populate Sort select with sortable columns
+    const sortKeySel = document.getElementById('sortKey');
+    if (sortKeySel){
+      sortKeySel.innerHTML = ['<option value="">None</option>']
+        .concat(COLUMNS.filter(c=>c.sortable).map(c=>`<option value="${esc(c.key)}">${esc(c.title)}</option>`))
+        .join('');
+      sortKeySel.addEventListener('change', e=>{ sort.key = e.target.value || null; sort.dir = 1; render(); });
+    }
+    initFilterCols();
+    wirePopovers();
+  }
+
+  async function initialLoad(){
+    items = []; cursor = null;
+    showLoader(true);
+    try { await fetchAndAppend({limit:100, cursorParam:null, progressive:false}); }
+    finally {
+      showLoader(false);
+      if (app) app.style.display = 'block';
+      syncTopScrollbar();
+      adjustTableHeight();
+    }
+    if (cursor) { fetchAndAppend({limit:100, cursorParam:cursor, progressive:true}); }
+  }
+
+  // start
+  initialHeadersAndUI();
+  initialLoad();
+})();
+</script>
+</body>
+</html>
