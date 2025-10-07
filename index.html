@@ -59,8 +59,32 @@ table{border-collapse:separate;border-spacing:0;width:max-content;min-width:1200
 thead th{position:sticky;top:0;background:var(--thead);z-index:5;font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.02em;color:#49506a;padding:8px 12px;min-height:44px;border-bottom:1px solid var(--line);user-select:none;cursor:pointer;box-shadow:0 1px 0 var(--line),0 1px 6px rgba(0,0,0,0.04);}
 thead th.sortable::after{content:" ⇅";font-size:10px;color:#999;margin-left:4px;}
 thead th.sort-asc::after{content:" ▲";} thead th.sort-desc::after{content:" ▼";}
-tbody td{padding:10px 12px;line-height:20px;min-height:44px;border-top:1px solid var(--line);vertical-align:middle;font-size:14px;max-width:280px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-tbody td.trunc{cursor:pointer}
+
+/* Default center alignment */
+tbody td{
+  padding:10px 12px;
+  line-height:20px;
+  min-height:44px;
+  border-top:1px solid var(--line);
+  vertical-align:middle;
+  font-size:14px;
+  max-width:280px;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  text-align:center; /* default center */
+}
+
+/* Special alignments */
+.right{text-align:right;}
+.left{text-align:left;} /* for long text/trunc columns */
+
+tbody td.trunc,
+tbody td.trunc-cell{
+  text-align:left !important;
+  cursor:pointer;
+}
+
 th.sticky, td.sticky{position:sticky;left:0;background:#fff;z-index:6;min-width:var(--stickyW);max-width:var(--stickyW);box-shadow:1px 0 0 var(--line);}
 thead th.sticky{z-index:7;left:0;}
 tbody tr:hover td{background:#f8fafc}
@@ -68,7 +92,6 @@ tbody tr:hover td{background:#f8fafc}
 .pill{display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:999px;background:var(--pill);color:var(--pillText);font-size:12px;line-height:18px;}
 .link{color:var(--link);text-decoration:none;font-weight:600}
 .mono{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12px}
-.right{text-align:right}
 
 /* Loader */
 #loader{position:fixed;inset:0;background:#fff;display:flex;align-items:center;justify-content:center;font-size:16px;color:#333;z-index:2000;}
@@ -88,6 +111,7 @@ tbody tr:hover td{background:#f8fafc}
 @media (min-height:800px){ .tableWrap{max-height:76vh;} }
 @media (min-width:1600px){ .wrap{width:min(2000px,96vw);} }
 </style>
+
 </head>
 
 <body>
