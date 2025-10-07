@@ -8,36 +8,15 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+
 <style>
 :root{
-  /* Airtable-like neutrals */
-  --bg:#f6f7fb;
-  --card:#ffffff;
-  --text:#1f2430;
-  --muted:#6b7280;
-  --line:#eaedf2;                 /* light gridline like Airtable */
-  --primary:#1f76ff;
-  --pill:#eef3ff;
-  --pillText:#1f4fbf;
-  --link:#1f76ff;
-  --thead:#f2f4f8;
-
-  --chip:#f4f6fa;
-  --chipText:#49506a;
-
-  /* Name (frozen) column width – a bit wider for readability */
-  --stickyW:300px;
+  --bg:#f6f7fb; --card:#ffffff; --text:#1f2430; --muted:#6b7280; --line:#eaedf2;
+  --primary:#1f76ff; --pill:#eef3ff; --pillText:#1f4fbf; --link:#1f76ff; --thead:#f2f4f8;
+  --chip:#f4f6fa; --chipText:#49506a; --stickyW:300px;
 }
-
-*{box-sizing:border-box}
-html,body{height:100%}
-body{
-  margin:0;
-  background:var(--bg);
-  color:var(--text);
-  font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,"Helvetica Neue",Arial;
-}
-
+*{box-sizing:border-box} html,body{height:100%}
+body{ margin:0; background:var(--bg); color:var(--text); font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,"Helvetica Neue",Arial; }
 .wrap{max-width:1200px;margin:24px auto;padding:0 20px;}
 .h1{font-size:28px;font-weight:700;margin:8px 0 4px;}
 .sub{color:var(--muted);font-size:13px;margin-bottom:18px;}
@@ -45,28 +24,9 @@ body{
 .row{display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end}
 .col{display:flex;flex-direction:column;gap:6px}
 .label{font-size:12px;color:var(--muted)}
-input,select{
-  height:36px;
-  padding:0 10px;
-  border:1px solid var(--line);
-  border-radius:8px;
-  background:#fff;
-  color:#1f2430;
-  min-width:120px;
-}
+input,select{height:36px;padding:0 10px;border:1px solid var(--line);border-radius:8px;background:#fff;color:#1f2430;min-width:120px;}
 .nums{width:110px;text-align:right}
-.btn{
-  height:36px;
-  padding:0 14px;
-  border-radius:8px;
-  border:1px solid var(--line);
-  background:#fff;
-  cursor:pointer;
-  font-weight:600;
-  display:inline-flex;
-  align-items:center;
-  gap:8px;
-}
+.btn{height:36px;padding:0 14px;border-radius:8px;border:1px solid var(--line);background:#fff;cursor:pointer;font-weight:600;display:inline-flex;align-items:center;gap:8px;}
 .btn.primary{background:var(--primary);border-color:var(--primary);color:#fff}
 .chips{display:flex;gap:8px;align-items:center;font-size:12px}
 .chip{background:var(--chip);color:var(--chipText);padding:4px 8px;border-radius:999px}
@@ -74,246 +34,62 @@ input,select{
 .spacer{flex:1}
 .toggle{display:inline-flex;align-items:center;gap:6px;font-size:12px;color:#444}
 
-/* Toolbar (compact like Airtable) */
-.toolbar{
-  position:sticky; top:0; z-index:20;
-  background:var(--card);
-  border:1px solid var(--line);
-  border-radius:10px;
-  padding:8px;
-  margin-bottom:10px;
-  display:flex; align-items:center; gap:6px;
-}
-.tb-btn{
-  height:30px;                      /* was 32–36 */
-  padding:0 10px;
-  border:1px solid var(--line);
-  background:#fff;
-  border-radius:8px;
-  font-weight:600;
-  display:inline-flex; align-items:center; gap:6px;
-  cursor:pointer;
-}
-.tb-btn .ico{font-size:14px; line-height:1}
-.sr-only{position:absolute; left:-10000px; top:auto; width:1px; height:1px; overflow:hidden}
+/* Toolbar */
+.toolbar{position:sticky;top:0;z-index:20;background:var(--card);border:1px solid var(--line);border-radius:10px;padding:8px;margin-bottom:10px;display:flex;align-items:center;gap:6px;}
+.tb-btn{height:30px;padding:0 10px;border:1px solid var(--line);background:#fff;border-radius:8px;font-weight:600;display:inline-flex;align-items:center;gap:6px;cursor:pointer;}
+.tb-btn .ico{font-size:14px;line-height:1}
+.sr-only{position:absolute;left:-10000px;top:auto;width:1px;height:1px;overflow:hidden}
 
 /* Popovers */
-.popover{
-  position:absolute; top:44px;
-  background:#fff;
-  border:1px solid var(--line);
-  border-radius:10px;
-  box-shadow:0 12px 30px rgba(0,0,0,.10);
-  padding:12px;
-  display:none;
-  min-width:340px;
-}
+.popover{position:absolute;top:44px;background:#fff;border:1px solid var(--line);border-radius:10px;box-shadow:0 12px 30px rgba(0,0,0,.10);padding:12px;display:none;min-width:340px;}
 .popover.open{display:block}
-#pvHide{min-width:260px}
-#pvSort{min-width:260px}
-.pv-row{display:flex; flex-direction:column; gap:6px; margin-bottom:10px}
-.pv-row-inline{display:flex; gap:10px; align-items:center}
-.pv-grid{display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:10px}
-.pv-actions{display:flex; align-items:center; gap:8px; margin-top:8px}
+#pvHide{min-width:260px} #pvSort{min-width:260px}
+.pv-row{display:flex;flex-direction:column;gap:6px;margin-bottom:10px}
+.pv-row-inline{display:flex;gap:10px;align-items:center}
+.pv-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.pv-actions{display:flex;align-items:center;gap:8px;margin-top:8px}
 
-/* Top horizontal scrollbar (thin & tucked under toolbar) */
-.hScrollTop{
-  position:sticky; top:0; z-index:18;
-  background:var(--card);
-  border:1px solid var(--line);
-  border-radius:10px;
-  margin-bottom:8px;                /* tighter */
-  height:12px;                      /* was 16 */
-  overflow-x:auto; overflow-y:hidden;
-}
+/* Top scrollbar */
+.hScrollTop{position:sticky;top:0;z-index:18;background:var(--card);border:1px solid var(--line);border-radius:10px;margin-bottom:8px;height:12px;overflow-x:auto;overflow-y:hidden;}
 .hScrollInner{height:1px;}
 
-/* Table shell */
-.tableWrap{
-  background:var(--card);
-  border:1px solid var(--line);
-  border-radius:10px;
-  overflow:auto;
-  position:relative;
-  max-height:70vh;                  /* keeps header visible on laptops */
-}
-
-/* Content-driven width but not excessively wide */
-table{
-  border-collapse:separate;
-  border-spacing:0;
-  width:max-content;
-  min-width:1200px;                 /* was 1800; closer to Airtable’s density */
-}
-
-/* Header cells – compact & with a faint rail shadow */
-thead th{
-  position:sticky; top:0; left:auto;
-  background:var(--thead);
-  z-index:5;
-  font-size:12px;
-  font-weight:600;
-  text-transform:uppercase;
-  letter-spacing:.02em;
-  color:#49506a;
-
-  padding:8px 12px;                 /* compact */
-  min-height:44px;                  /* lock height */
-  border-bottom:1px solid var(--line);
-  user-select:none; cursor:pointer;
-
-  /* subtle rail shadow like Airtable */
-  box-shadow:0 1px 0 var(--line), 0 1px 6px rgba(0,0,0,0.04);
-}
+/* Table */
+.tableWrap{background:var(--card);border:1px solid var(--line);border-radius:10px;overflow:auto;position:relative;max-height:70vh;}
+table{border-collapse:separate;border-spacing:0;width:max-content;min-width:1200px;}
+thead th{position:sticky;top:0;background:var(--thead);z-index:5;font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.02em;color:#49506a;padding:8px 12px;min-height:44px;border-bottom:1px solid var(--line);user-select:none;cursor:pointer;box-shadow:0 1px 0 var(--line),0 1px 6px rgba(0,0,0,0.04);}
 thead th.sortable::after{content:" ⇅";font-size:10px;color:#999;margin-left:4px;}
-thead th.sort-asc::after{content:" ▲";}
-thead th.sort-desc::after{content:" ▼";}
-
-/* Body cells – dense vertical rhythm */
-tbody td{
-  padding:10px 12px;                /* compact */
-  line-height:20px;
-  min-height:44px;                  /* lock height similar to Airtable row */
-  border-top:1px solid var(--line);
-  vertical-align:middle;            /* centers text like Airtable */
-  font-size:14px;
-  max-width:280px;
-  white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
-}
+thead th.sort-asc::after{content:" ▲";} thead th.sort-desc::after{content:" ▼";}
+tbody td{padding:10px 12px;line-height:20px;min-height:44px;border-top:1px solid var(--line);vertical-align:middle;font-size:14px;max-width:280px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 tbody td.trunc{cursor:pointer}
-
-/* Frozen first column (Name) */
-th.sticky, td.sticky{
-  position:sticky; left:0;
-  background:#fff;
-  z-index:6;
-  min-width:var(--stickyW); max-width:var(--stickyW);
-  box-shadow:1px 0 0 var(--line);
-}
-thead th.sticky{z-index:7; top:0; left:0;}
-
-/* Hover: very light, like Airtable */
+th.sticky, td.sticky{position:sticky;left:0;background:#fff;z-index:6;min-width:var(--stickyW);max-width:var(--stickyW);box-shadow:1px 0 0 var(--line);}
+thead th.sticky{z-index:7;left:0;}
 tbody tr:hover td{background:#f8fafc}
 
-/* Pills / chips (used for status & dropdown colors) */
-.pill{
-  display:inline-flex; align-items:center; gap:6px;
-  padding:4px 10px;
-  border-radius:999px;
-  background:var(--pill);
-  color:var(--pillText);
-  font-size:12px;
-  line-height:18px;
-}
-
-/* Links */
-.link{color:var(--link); text-decoration:none; font-weight:600}
-.mono{font-family:ui-monospace,Menlo,Consolas,monospace; font-size:12px}
+.pill{display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:999px;background:var(--pill);color:var(--pillText);font-size:12px;line-height:18px;}
+.link{color:var(--link);text-decoration:none;font-weight:600}
+.mono{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12px}
 .right{text-align:right}
 
 /* Loader */
-#loader{
-  position:fixed; inset:0; background:#fff;
-  display:flex; align-items:center; justify-content:center;
-  font-size:16px; color:#333; z-index:2000;
-}
-.spinner{
-  width:48px; height:48px;
-  border:4px solid #eee; border-top-color:var(--primary);
-  border-radius:50%;
-  animation:spin 1s linear infinite; margin-right:12px;
-}
+#loader{position:fixed;inset:0;background:#fff;display:flex;align-items:center;justify-content:center;font-size:16px;color:#333;z-index:2000;}
+.spinner{width:48px;height:48px;border:4px solid #eee;border-top-color:var(--primary);border-radius:50%;animation:spin 1s linear infinite;margin-right:12px;}
 @keyframes spin{to{transform:rotate(360deg)}}
 
 /* Popup */
-#popup{
-  display:none; position:fixed; top:50%; left:50%;
-  transform:translate(-50%,-50%);
-  background:#fff; padding:16px 18px;
-  border:1px solid var(--line); border-radius:10px;
-  box-shadow:0 12px 30px rgba(0,0,0,.15);
-  z-index:3000; max-width:700px; max-height:70vh; overflow:auto;
-}
-#popupClose{position:absolute; top:8px; right:12px; cursor:pointer; font-weight:700;}
-#popup h4{margin:0 24px 10px 0; font-size:14px; color:#555;}
-#popup pre{white-space:pre-wrap; word-break:break-word; font-family:inherit; font-size:14px; margin:0;}
-.little-spinner{width:14px; height:14px; border:2px solid #e2e8f0; border-top-color:#fff; border-radius:50%; animation:spin .8s linear infinite;}
+#popup{display:none;position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:#fff;padding:16px 18px;border:1px solid var(--line);border-radius:10px;box-shadow:0 12px 30px rgba(0,0,0,.15);z-index:3000;max-width:700px;max-height:70vh;overflow:auto;}
+#popupClose{position:absolute;top:8px;right:12px;cursor:pointer;font-weight:700;}
+#popup h4{margin:0 24px 10px 0;font-size:14px;color:#555;}
+#popup pre{white-space:pre-wrap;word-break:break-word;font-family:inherit;font-size:14px;margin:0;}
+.little-spinner{width:14px;height:14px;border:2px solid #e2e8f0;border-top-color:#fff;border-radius:50%;animation:spin .8s linear infinite;}
+
+/* Dimension hotfix (wider) */
+.wrap{max-width:none;width:min(1800px,98vw);padding:0 12px;}
+.hScrollTop,.tableWrap{width:100%;}
+@media (min-height:800px){ .tableWrap{max-height:76vh;} }
+@media (min-width:1600px){ .wrap{width:min(2000px,96vw);} }
 </style>
-
-<style id="airtable-density-hotfix">
-/* Force Airtable-like compact table density */
-table{
-  width:max-content !important;
-  min-width:1200px !important;
-}
-thead th{
-  padding:8px 12px !important;
-  min-height:44px !important;
-  font-size:12px !important;
-  letter-spacing:.02em !important;
-  background:#f2f4f8 !important;
-  color:#49506a !important;
-  border-bottom:1px solid #eaedf2 !important;
-  box-shadow:0 1px 0 #eaedf2, 0 1px 6px rgba(0,0,0,.04) !important; /* Airtable-like rail */
-}
-tbody td{
-  padding:10px 12px !important;
-  min-height:44px !important;
-  line-height:20px !important;
-  border-top:1px solid #eaedf2 !important;
-  vertical-align:middle !important;
-  font-size:14px !important;
-}
-th.sticky, td.sticky{
-  min-width:300px !important;  /* widen frozen Name column */
-  max-width:300px !important;
-  box-shadow:1px 0 0 #eaedf2 !important;
-}
-
-/* Chips a bit tighter so rows don’t expand */
-.pill{
-  padding:2px 8px !important;
-  line-height:16px !important;
-  font-size:12px !important;
-}
-
-/* Toolbar + top scrollbar compactness */
-.tb-btn{ height:30px !important; padding:0 10px !important; }
-.hScrollTop{ height:12px !important; margin-bottom:8px !important; }
-
-/* Subtle hover like Airtable */
-tbody tr:hover td{ background:#f8fafc !important; }
-</style>
-
-  <style id="dimension-hotfix">
-/* Expand the page content to nearly full browser width */
-.wrap{
-  max-width: none !important;
-  width: min(1800px, 98vw) !important;   /* wide but with a little gutter */
-  margin: 24px auto !important;
-  padding: 0 12px !important;            /* slimmer side padding */
-}
-
-/* Keep the top scrollbar and table shell aligned with the wider layout */
-.hScrollTop,
-.tableWrap{
-  width: 100% !important;
-}
-
-/* Optional: a little more vertical room for the grid on laptops */
-@media (min-height: 800px){
-  .tableWrap{ max-height: 76vh !important; }
-}
-
-/* On very large monitors, allow a bit more width while keeping margins */
-@media (min-width: 1600px){
-  .wrap{ width: min(2000px, 96vw) !important; }
-}
-</style>
-
-
-
 </head>
+
 <body>
 <!-- Loader -->
 <div id="loader"><div class="spinner"></div>Loading data…</div>
@@ -337,11 +113,9 @@ tbody tr:hover td{ background:#f8fafc !important; }
     <!-- POPUPS -->
     <div class="popover" id="pvHide"></div>
 
-    <!-- FILTER POPOVER (click to open) -->
+    <!-- FILTER POPOVER -->
     <div class="popover" id="pvFilter">
-      <div class="pv-row">
-        <label style="font-weight:600">Add a filter</label>
-      </div>
+      <div class="pv-row"><label style="font-weight:600">Add a filter</label></div>
       <div class="pv-row-inline">
         <select id="fltCol" style="min-width:240px"></select>
         <select id="fltOp" style="min-width:140px">
@@ -373,15 +147,7 @@ tbody tr:hover td{ background:#f8fafc !important; }
 
     <div class="popover" id="pvSort">
       <label>Sort by</label>
-      <select id="sortKey">
-        <option value="">None</option>
-        <option value="name">Name</option>
-        <option value="state">State</option>
-        <option value="major">Bachelor’s Study Areas (B)</option>
-        <option value="tuition">Tuition</option>
-        <option value="total">TOTAL</option>
-        <option value="enroll">Enrollment</option>
-      </select>
+      <select id="sortKey"></select>
       <div class="pv-row-inline">
         <label><input type="radio" name="sortDir" value="asc" checked /> Asc</label>
         <label><input type="radio" name="sortDir" value="desc" /> Desc</label>
@@ -408,79 +174,7 @@ tbody tr:hover td{ background:#f8fafc !important; }
   <!-- TABLE -->
   <div class="tableWrap" id="tableWrap">
     <table id="tbl">
-      <thead>
-        <tr>
-          <th class="sticky sortable" data-key="name">Name</th>
-          <th data-key="photos_desc">Photos &amp; Description (Link) ↗️</th>
-          <th class="sortable" data-key="state">State</th>
-          <th class="sortable" data-key="geo_area">Geographical Area</th>
-          <th data-key="video_state">Video I about the State</th>
-          <th data-key="city">City</th>
-          <th data-key="address">Full address</th>
-          <th data-key="virtual_tour">Virtual Campus Tour?</th>
-          <th data-key="fachabitur">Fachabitur?</th>
-          <th data-key="fach_det">Fachabitur Details</th>
-          <th data-key="usnews_rank" class="right">U.S. News Ranking</th>
-          <th data-key="usnews_link">U.S. News Link</th>
-          <th data-key="type">Type of Institution</th>
-          <th data-key="enroll" class="right">Total Enrollment</th>
-          <th data-key="live_pct" class="right">% Live on Campus</th>
-          <th data-key="live_num" class="right"># Live on Campus</th>
-          <th data-key="ratio" class="right">Student-Faculty Ratio</th>
-          <th data-key="insurance">University Insurance Required?</th>
-          <th data-key="insurance_info">More Health Insurance Details</th>
-          <th data-key="app_fee" class="right">Application Fee</th>
-          <th data-key="how_apply">How to Apply</th>
-          <th data-key="cred_eval">Credential Eval Required</th>
-          <th data-key="cred_info">+Info on Credential Evaluation</th>
-          <th data-key="spring_adm">Spring Admission?</th>
-          <th data-key="spring_sch">Spring Scholarships?</th>
-          <th data-key="clarify">Clarification on Additional Information</th>
-          <th data-key="campus_acts">On Campus Activities</th>
-          <th data-key="sports">Sports Homepage</th>
-          <th data-key="uni_home">University Homepage</th>
-          <th data-key="intl_adm">International Admission</th>
-          <th class="sortable" data-key="major">Bachelor’s Study Areas (B)</th>
-          <th data-key="degrees_link">Bachelor’s Degrees Link</th>
-          <th data-key="acad_year">Academic Year</th>
-          <th data-key="tuition" class="right">Tuition (Annual Cost in USD)</th>
-          <th data-key="room" class="right">Room (Annual Cost in USD)</th>
-          <th data-key="board" class="right">Board (Annual Cost in USD)</th>
-          <th data-key="fees" class="right">Required Fees (Annual Cost in USD)</th>
-          <th data-key="total" class="right">TOTAL (Approximate Annual Cost in USD)</th>
-          <th data-key="cost_info">Additional Info and Link/s Annual Cost of Attendance</th>
-          <th data-key="adm_req">Admission Requirements</th>
-          <th data-key="sch_low" class="right">Lowest (USD) Annual Scholarship Amount</th>
-          <th data-key="sch_low_type">Competitive vs Guaranteed? (Lowest)</th>
-          <th data-key="toefl_low" class="right">TOEFL iBT Minimum (Lowest Scholarship)</th>
-          <th data-key="gpa_low" class="right">GPA Minimum (Lowest Scholarship)</th>
-          <th data-key="sat_low" class="right">SAT Minimum (Lowest Scholarship)</th>
-          <th data-key="sch_low_info">Additional Info and Link/s on Lowest Scholarship Amount (Lowest)</th>
-          <th data-key="sch_mid" class="right">Mid-Range (USD) Annual Scholarship Amount (F) (Mid-Range Scholarship)</th>
-          <th data-key="sch_mid_type">Competitive vs Guaranteed? (F) (Mid-Range Scholarship)</th>
-          <th data-key="toefl_mid" class="right">TOEFL iBT Minimum (Most Probable Scholarship)</th>
-          <th data-key="gpa_mid" class="right">GPA Minimum (Most Probable Scholarship)</th>
-          <th data-key="sat_mid" class="right">SAT Minimum (Most Probable Scholarship)</th>
-          <th data-key="sch_mid_info">Additional Info and Link/s on Mid-Range Scholarship Amount (F) (Mid-Range Scholarship)</th>
-          <th data-key="sch_hi" class="right">Highest (USD) Annual Scholarship Amount</th>
-          <th data-key="sch_hi_type">High: Type</th>
-          <th data-key="toefl_hi" class="right">Competitive vs Guaranteed? (Highest)</th>
-          <th data-key="toefl_hi" class="right">TOEFL iBT Minimum (Highest Scholarship)</th>
-          <th data-key="gpa_hi" class="right">GPA Minimum (Highest Scholarship)</th>
-          <th data-key="sat_hi" class="right">SAT Minimum (Highest Scholarship)</th>
-          <th data-key="sch_hi_info">Additional Info and Link/s on Highest Scholarship Amount (Highest)</th>
-          <th data-key="net_low" class="right">(Lowest) Possible Net Cost of Attendance</th>
-          <th data-key="net_mid" class="right">(Mid-Range) Possible Net Cost of Attendance (F)</th>
-          <th data-key="net_hi" class="right">(Highest) Possible Net Cost of Attendance</th>
-          <th data-key="dead_fall">Fall Application Deadline</th>
-          <th data-key="dead_spring">Spring Application Deadline</th>
-          <th data-key="dead_link">Deadline Link</th>
-          <th data-key="campus_job">Campus Employment?</th>
-          <th data-key="min_wage" class="right">2025 Min Wage</th>
-          <th data-key="work_comp" class="right">Annual Work on Campus Compensation (Most Probable)</th>
-          <th data-key="work_details_b">Annual Work on Campus Compensation (Most Probable)</th>
-        </tr>
-      </thead>
+      <thead><tr id="thead-row"></tr></thead>
       <tbody id="tbody"></tbody>
     </table>
   </div>
@@ -495,707 +189,16 @@ tbody tr:hover td{ background:#f8fafc !important; }
 
 <script>
 (function(){
-  // --- global error surface
-  window.addEventListener('error', function (e) {
-    var b = document.getElementById('errorBanner');
-    if (b) { b.textContent = 'Script error: ' + (e && e.message ? e.message : 'Unknown'); b.style.display = 'block'; }
-    var l = document.getElementById('loader'); if (l) l.style.display = 'none';
-    var app = document.getElementById('app'); if (app) app.style.display = 'block';
-  });
-  window.addEventListener('unhandledrejection', function (e) {
-    var b = document.getElementById('errorBanner');
-    var msg = e && e.reason ? (e.reason.message || String(e.reason)) : 'Unknown promise rejection';
-    if (b) { b.textContent = 'Runtime error: ' + msg; b.style.display = 'block'; }
-    var l = document.getElementById('loader'); if (l) l.style.display = 'none';
-    var app = document.getElementById('app'); if (app) app.style.display = 'block';
-  });
-
-  // --------- UI refs
-  var app = document.getElementById('app');
-  var loader = document.getElementById('loader');
-  var tbody = document.getElementById('tbody');
-  var shown = document.getElementById('shown');
-  var loaded = document.getElementById('loaded');
-
-  // Top scrollbar & table wrap
-  var hScrollTop = document.getElementById('hScrollTop');
-  var hScrollInner = document.getElementById('hScrollInner');
-  var tableWrap = document.getElementById('tableWrap');
-  var tbl = document.getElementById('tbl');
-
-  // Buttons
-  var reloadBtn = document.getElementById('reloadBtn');
-  var reloadSpin = document.getElementById('reloadSpin');
-  var moreBtn = document.getElementById('moreBtn');
-  var moreSpin = document.getElementById('moreSpin');
-  var exportBtn = document.getElementById('exportBtn');
-
-  // Popup
-  var popup = document.getElementById('popup');
-  var popupTitle = document.getElementById('popupTitle');
-  var popupBody = document.getElementById('popupBody');
-  var popupClose = document.getElementById('popupClose');
-  popupClose.onclick = function(){ popup.style.display = 'none'; };
-  function openPopup(title, text){
-    popupTitle.textContent = title || 'Details';
-    popupBody.textContent = text || '';
-    popup.style.display = 'block';
-  }
-
-  // --------- Column mapping
-  var COL = {
-    name: "name",
-    photos_desc: "link4",
-    state: "state1",
-    geo_area: "dropdown30",
-    majors: "dropdown73",
-    city: "city",
-    address: "location",
-    video_state: "link_14",
-    virtual_tour: "link_1",
-    fachabitur: "status5",
-    fach_det: "long_text15",
-    usnews_rank: "long_text",
-    usnews_link: "link1",
-    type: "dropdown",
-    enroll: "numbers7",
-    live_pct: "numbers8",
-    live_num: "formula53",
-    ratio: "numbers81",
-    insurance: "dropdown8",
-    insurance_info: "long_text63",
-    app_fee: "temporary_university_s_application_fee_cost__usd_",
-    how_apply: "long_text842",
-    cred_eval: "status38",
-    cred_info: "long_text60",
-    spring_adm: "status45",
-    spring_sch: "status_13",
-    clarify: "long_text9",
-    campus_acts: "link2",
-    sports: "link_198",
-    uni_home: "link3",
-    intl_adm: "link0",
-    degrees_link: "link30",
-    acad_year: "dropdown4",
-    tuition: "annual_tuition_cost",
-    room: "_usd__annual_room_cost",
-    board: "_usd__annual_board_cost",
-    fees: "numbers5",
-    total: "formula",
-    cost_info: "link_s_annual_cost_of_attendance",
-    adm_req: "_link__requirements_admission_information",
-    sch_low: "dup__of_minimum__usd__annual_scholarship_amount6",
-    sch_low_type: "status1",
-    toefl_low: "numbers2",
-    gpa_low: "numbers34",
-    sat_low: "numbers0",
-    sch_low_info: "additional_info_and_link_s_on_minimum_scholarship_amount",
-    sch_mid: "numbers68",
-    sch_mid_type: "status_132",
-    toefl_mid: "numbers54",
-    gpa_mid: "numbers64",
-    sat_mid: "numbers414",
-    sch_mid_info: "long_text31",
-    sch_hi: "numbers11",
-    sch_hi_type: "dup__of_competitive_vs_guaranteed___gpa__3_5__highest_",
-    toefl_hi: "numbers70",
-    gpa_hi: "numbers4",
-    sat_hi: "numbers41",
-    sch_hi_info: "long_text78",
-    net_low: "formula3",
-    net_mid: "formula07",
-    net_hi: "formula9",
-    dead_fall: "deadline_fall_application",
-    dead_spring: "deadline_spring_application",
-    dead_link: "link_104",
-    campus_job: "status_113",
-    min_wage: "numbers985",
-    work_comp: "formula5",
-    work_details_b: "long_text56",
-    final_cost: "formula",
-    gpa: "numbers34"
-  };
-
-  // --------- Data & state
-  var items = [];
-  var cursor = null;
-  var isLoading = false;
-  var sort = {key:null, dir:1};
-
-  // ========= Filter popover (rule builder) =========
-  var pvFilter = document.getElementById('pvFilter');
-  var tbFilter = document.getElementById('tbFilter');
-  var fltCol = document.getElementById('fltCol');
-  var fltOp = document.getElementById('fltOp');
-  var fltVal = document.getElementById('fltVal');
-  var fltApplyBtn = document.getElementById('fltApplyBtn');
-  var fltResetBtn = document.getElementById('fltResetBtn');
-
-  var rule = { col:'', op:'contains', val:'' };
-
-  var FILTERABLE = [
-    ['Name','name'],
-    ['State','state'],
-    ['Geographical Area','geo_area'],
-    ['City','city'],
-    ['Full address','address'],
-    ['Type of Institution','type'],
-    ['International Admission (link/text)','intl_adm'],
-    ['Bachelor’s Study Areas (B)','major'],
-    ['U.S. News Ranking','usnews_rank'],
-    ['University Homepage (link/text)','uni_home'],
-    ['Photos & Description (link/text)','photos_desc'],
-    ['Tuition','tuition'],
-    ['TOTAL','total'],
-    ['Enrollment','enroll']
-  ];
-
-  (function initFilterCols(){
-    if (!fltCol) return;
-    var opts = '<option value="">Select a column…</option>';
-    for (var i=0;i<FILTERABLE.length;i++){
-      opts += '<option value="'+FILTERABLE[i][1]+'">'+FILTERABLE[i][0]+'</option>';
-    }
-    fltCol.innerHTML = opts;
-  })();
-
-  if (tbFilter && pvFilter){
-    tbFilter.addEventListener('click', function(e){
-      e.stopPropagation();
-      pvFilter.classList.toggle('open');
-      if (pvFilter.classList.contains('open')) {
-        var r = tbFilter.getBoundingClientRect();
-        pvFilter.style.left = (r.left) + 'px';
-        pvFilter.style.top  = (r.bottom + window.scrollY + 8) + 'px';
-        if (fltVal) setTimeout(function(){ fltVal.focus(); }, 0);
-      }
-    });
-    document.addEventListener('click', function(e){
-      if (!pvFilter.contains(e.target) && e.target !== tbFilter){
-        pvFilter.classList.remove('open');
-      }
-    });
-    document.addEventListener('keydown', function(e){
-      if (e.key === 'Escape') pvFilter.classList.remove('open');
-    });
-  }
-
-  if (fltApplyBtn){
-    fltApplyBtn.addEventListener('click', function(){
-      rule.col = fltCol ? fltCol.value : '';
-      rule.op  = fltOp ? fltOp.value : 'contains';
-      rule.val = fltVal ? fltVal.value : '';
-      if (pvFilter) pvFilter.classList.remove('open');
-      render();
-    });
-  }
-  if (fltResetBtn){
-    fltResetBtn.addEventListener('click', function(){
-      rule = { col:'', op:'contains', val:'' };
-      if (fltCol) fltCol.value = '';
-      if (fltOp)  fltOp.value  = 'contains';
-      if (fltVal) fltVal.value = '';
-      if (pvFilter) pvFilter.classList.remove('open');
-      render();
-    });
-  }
-  // ========= /Filter popover =========
-
-  // --------- Utils
-  function showLoader(on){ if (loader) loader.style.display = on ? 'flex' : 'none'; }
-  function setMoreLoading(on){
-    isLoading = on;
-    if (moreBtn) moreBtn.disabled = on;
-    if (reloadBtn) reloadBtn.disabled = on;
-    if (moreSpin) moreSpin.style.display = on ? 'inline-block' : 'none';
-    if (reloadSpin) reloadSpin.style.display = on ? 'inline-block' : 'none';
-    var span = moreBtn ? moreBtn.querySelector('span') : null;
-    if (span) span.textContent = on ? 'Load more…' : 'Load more';
-  }
-  function numberFrom(a){
-    if(a==null) return null;
-    var s = (""+a).replace(/[^\d.\-]/g,'');
-    if(!s) return null;
-    var n = parseFloat(s);
-    return isFinite(n)?n:null;
-  }
-  function formatMoney(n){
-    if(n==null || n==="") return "";
-    try{ return new Intl.NumberFormat('en-US',{style:'currency',currency:'USD',maximumFractionDigits:0}).format(n); }
-    catch(e){ return "$"+n; }
-  }
-  function formatInt(n){
-    if(n==null || n==="") return "";
-    try{ return new Intl.NumberFormat('en-US',{maximumFractionDigits:0}).format(n); }
-    catch(e){ return String(n); }
-  }
-  function esc(s){
-    return (s==null?"":String(s)).replace(/[&<>"']/g,function(m){return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]);});
-  }
-  function safeReplaceAll(str, search, repl){
-    return String(str).split(search).join(repl);
-  }
-  function readCell(item, colId){
-    var cvs = item && item.column_values ? item.column_values : null;
-    if (!cvs) return "";
-    var v = null;
-    for (var i=0;i<cvs.length;i++){ if (cvs[i].id === colId){ v = cvs[i]; break; } }
-    if (!v) return "";
-    var t = v.type;
-    if (t === "text" || t === "long-text") return v.text || "";
-    if (t === "dropdown") return safeReplaceAll(v.text || "", ";", ", ");
-    if (t === "status") return v.text || "";
-    if (t === "numbers") return v.text || v.value || "";
-    if (t === "link") return v.text || v.url || "";
-    if (t === "location") return v.text || "";
-    if (t === "formula") return v.text || "";
-    return v.text || "";
-  }
-  function truncCell(content, title){
-    var full = (content==null?"":String(content)).trim();
-    if(!full) return '';
-    var urlMatch = full.match(/https?:\/\/\S+/);
-    if(urlMatch) return '<a class="link" href="'+esc(urlMatch[0])+'" target="_blank" rel="noopener">Link</a>';
-    return '<span class="trunc" data-title="'+esc(title||'Details')+'" data-full="'+esc(full)+'">'+esc(full)+'</span>';
-  }
-
-  // ======= Chip helpers (colors) =======
-  function chipHTML(text, bg, border, fg){
-    if (!text) return '';
-    return '<span class="pill" style="background:'+bg+';border:1px solid '+border+';color:'+fg+';padding:4px 10px">'+esc(text)+'</span>';
-  }
-
-  // Curated geo palette (like screenshot)
-  var GEO_STYLES = {
-    'Pacific West Coast': ['#FFF4DB','#FFDFA6','#915930'],
-    'West':                ['#FFE8EE','#FFC6D4','#8A2E45'],
-    'Midwest':             ['#E7F7FF','#C8EFFF','#0B5586'],
-    'Southeast':           ['#EFFFF3','#CCF3D7','#1F6B3A'],
-    'Northeast':           ['#F1ECFF','#DDD6FE','#4A38A5'],
-    'Southwest':           ['#FFF0E6','#FFD6BD','#884A1F']
-  };
-
-  // Curated status palette
-  var STATUS_STYLES = {
-    'shareable':      ['#E6F6EA','#BFE7C8','#256D3C'],
-    'working on it':  ['#E6F0FF','#C9D7FF','#2746B3'],
-    'in progress':    ['#E6F0FF','#C9D7FF','#2746B3'],
-    'yes':            ['#E6F6EA','#BFE7C8','#256D3C'],
-    'true':           ['#E6F6EA','#BFE7C8','#256D3C'],
-    'no':             ['#FEEAEA','#F8C7C7','#9F1D1D'],
-    'not shareable':  ['#FEEAEA','#F8C7C7','#9F1D1D'],
-    'false':          ['#FEEAEA','#F8C7C7','#9F1D1D'],
-    'unknown':        ['#F2F4F7','#E4E7EC','#475467'],
-    'n/a':            ['#F2F4F7','#E4E7EC','#475467'],
-    '':               ['#F2F4F7','#E4E7EC','#475467']
-  };
-
-  // Curated type palette
-  var TYPE_STYLES = {
-    'Public':            ['#E7F7FF','#C8EFFF','#0B5586'],
-    'Private':           ['#FFE8EE','#FFC6D4','#8A2E45'],
-    'Community College': ['#FFF4DB','#FFDFA6','#915930']
-  };
-
-  // Deterministic palette for States (12 soft hues)
-  var STATE_HUES = [
-    ['#E6F6EA','#BFE7C8','#256D3C'], // green
-    ['#E6F0FF','#C9D7FF','#2746B3'], // blue
-    ['#FFF4DB','#FFDFA6','#915930'], // amber
-    ['#F1ECFF','#DDD6FE','#4A38A5'], // purple
-    ['#E7F7FF','#C8EFFF','#0B5586'], // cyan
-    ['#FFE8EE','#FFC6D4','#8A2E45'], // pink
-    ['#EFFFF3','#CCF3D7','#1F6B3A'], // mint
-    ['#FFF0E6','#FFD6BD','#884A1F'], // orange
-    ['#F2F4F7','#E4E7EC','#475467'], // gray
-    ['#EAF3FF','#CFE2FF','#23498C'], // indigo
-    ['#FDEBF6','#F8CDE8','#8F2D6A'], // magenta
-    ['#EAFBF7','#CFF3EA','#176D63']  // teal
-  ];
-  function hashIndex(str){
-    var h=0; str=String(str||'');
-    for(var i=0;i<str.length;i++){ h=(h*31 + str.charCodeAt(i))|0; }
-    if (h<0) h=-h;
-    return h % STATE_HUES.length;
-  }
-
-  // Render multi-value chips (comma-separated) with category palette
-  function chipsFor(val, category){
-    if (!val) return '';
-    var parts = String(val).split(',').map(function(s){return s.trim();}).filter(Boolean);
-    var out = '';
-    for (var i=0;i<parts.length;i++){
-      var p = parts[i];
-      var bg='#F4F6FA', bd='#E6E9F0', fg='#49506A';
-      if (category==='geo' && GEO_STYLES[p]) { var g=GEO_STYLES[p]; bg=g[0]; bd=g[1]; fg=g[2]; }
-      else if (category==='status') { var s=(p||'').toLowerCase(); var st=STATUS_STYLES[s] || STATUS_STYLES['unknown']; bg=st[0]; bd=st[1]; fg=st[2]; }
-      else if (category==='type' && TYPE_STYLES[p]) { var t=TYPE_STYLES[p]; bg=t[0]; bd=t[1]; fg=t[2]; }
-      else if (category==='state') { var idx=hashIndex(p); var h=STATE_HUES[idx]; bg=h[0]; bd=h[1]; fg=h[2]; }
-      out += chipHTML(p, bg, bd, fg) + ' ';
-    }
-    return out.trim();
-  }
-  // ======= /Chip helpers =======
-
-  // Sorting
-  function applySort(arr){
-    if(!sort.key) return;
-    var k = sort.key, d = sort.dir;
-    arr.sort(function(a,b){
-      var va = a[k], vb = b[k];
-      var na = (typeof va === 'number')?va:numberFrom(va);
-      var nb = (typeof vb === 'number')?vb:numberFrom(vb);
-      if(na!=null && nb!=null) return (na-nb)*d;
-      return String(va||'').localeCompare(String(vb||''))*d;
-    });
-  }
-
-  function toRow(item){
-    function pick(id){ return readCell(item,id); }
-    return {
-      name: item && item.name ? item.name : "",
-      photos_desc: pick(COL.photos_desc),
-      state: pick(COL.state),
-      geo_area: pick(COL.geo_area),
-      major: pick(COL.majors),
-      city: pick(COL.city),
-      address: pick(COL.address),
-      video_state: pick(COL.video_state),
-      virtual_tour: pick(COL.virtual_tour),
-      fachabitur: pick(COL.fachabitur),
-      fach_det: pick(COL.fach_det),
-      usnews_rank: pick(COL.usnews_rank),
-      usnews_link: pick(COL.usnews_link),
-      type: pick(COL.type),
-      enroll: numberFrom(pick(COL.enroll)),
-      live_pct: pick(COL.live_pct),
-      live_num: numberFrom(pick(COL.live_num)),
-      ratio: numberFrom(pick(COL.ratio)),
-      insurance: pick(COL.insurance),
-      insurance_info: pick(COL.insurance_info),
-      app_fee: pick(COL.app_fee),
-      how_apply: pick(COL.how_apply),
-      cred_eval: pick(COL.cred_eval),
-      cred_info: pick(COL.cred_info),
-      spring_adm: pick(COL.spring_adm),
-      spring_sch: pick(COL.spring_sch),
-      clarify: pick(COL.clarify),
-      campus_acts: pick(COL.campus_acts),
-      sports: pick(COL.sports),
-      uni_home: pick(COL.uni_home),
-      intl_adm: pick(COL.intl_adm),
-      degrees_link: pick(COL.degrees_link),
-      acad_year: pick(COL.acad_year),
-      tuition: numberFrom(pick(COL.tuition)),
-      room: numberFrom(pick(COL.room)),
-      board: numberFrom(pick(COL.board)),
-      fees: numberFrom(pick(COL.fees)),
-      total: numberFrom(pick(COL.total)),
-      cost_info: pick(COL.cost_info),
-      adm_req: pick(COL.adm_req),
-      sch_low: numberFrom(pick(COL.sch_low)),
-      sch_low_type: pick(COL.sch_low_type),
-      toefl_low: numberFrom(pick(COL.toefl_low)),
-      gpa_low: numberFrom(pick(COL.gpa_low)),
-      sat_low: numberFrom(pick(COL.sat_low)),
-      sch_low_info: pick(COL.sch_low_info),
-      sch_mid: numberFrom(pick(COL.sch_mid)),
-      sch_mid_type: pick(COL.sch_mid_type),
-      toefl_mid: numberFrom(pick(COL.toefl_mid)),
-      gpa_mid: numberFrom(pick(COL.gpa_mid)),
-      sat_mid: numberFrom(pick(COL.sat_mid)),
-      sch_mid_info: pick(COL.sch_mid_info),
-      sch_hi: numberFrom(pick(COL.sch_hi)),
-      sch_hi_type: pick(COL.sch_hi_type),
-      toefl_hi: numberFrom(pick(COL.toefl_hi)),
-      gpa_hi: numberFrom(pick(COL.gpa_hi)),
-      sat_hi: numberFrom(pick(COL.sat_hi)),
-      sch_hi_info: pick(COL.sch_hi_info),
-      net_low: pick(COL.net_low),
-      net_mid: pick(COL.net_mid),
-      net_hi: pick(COL.net_hi),
-      dead_fall: pick(COL.dead_fall),
-      dead_spring: pick(COL.dead_spring),
-      dead_link: pick(COL.dead_link),
-      campus_job: pick(COL.campus_job),
-      min_wage: numberFrom(pick(COL.min_wage)),
-      work_comp: numberFrom(pick(COL.work_comp)),
-      work_details_b: pick(COL.work_details_b),
-      final_cost: numberFrom(pick(COL.final_cost)),
-      gpa: numberFrom(pick(COL.gpa))
-    };
-  }
-
-  function render(){
-    var rows = [];
-    for (var i=0;i<items.length;i++) rows.push(toRow(items[i]));
-
-    // Apply single rule (popover)
-    var filtered = [];
-    for (var j=0;j<rows.length;j++){
-      var r = rows[j];
-      if (rule && rule.col){
-        var cell = r[rule.col];
-        var s = (cell==null ? '' : String(cell)).toLowerCase();
-        var v = String(rule.val || '').toLowerCase();
-
-        if (rule.op === 'contains' && v && s.indexOf(v) === -1) continue;
-        if (rule.op === 'equals' && s !== v) continue;
-        if (rule.op === 'starts' && v && s.lastIndexOf(v, 0) !== 0) continue;
-        if (rule.op === 'ends' && v && s.slice(-v.length) !== v) continue;
-        if (rule.op === 'empty' && s.trim() !== '') continue;
-        if (rule.op === 'notempty' && s.trim() === '') continue;
-      }
-      filtered.push(r);
-    }
-
-    applySort(filtered);
-    updateSortIndicators();
-
-    var html = '';
-    for (var k=0;k<filtered.length;k++){
-      var r2 = filtered[k];
-      html += '<tr>'
-        + '<td class="sticky"><strong>'+esc(r2.name)+'</strong></td>'
-        + '<td>'+truncCell(r2.photos_desc,'Photos & Description')+'</td>'
-        + '<td>'+chipsFor(r2.state,'state')+'</td>'
-        + '<td>'+chipsFor(r2.geo_area,'geo')+'</td>'
-        + '<td>'+truncCell(r2.video_state,'Video I about the State')+'</td>'
-        + '<td class="trunc" data-title="City" data-full="'+esc(r2.city)+'">'+esc(r2.city)+'</td>'
-        + '<td class="trunc mono" data-title="Full address" data-full="'+esc(r2.address)+'">'+esc(r2.address)+'</td>'
-        + '<td>'+truncCell(r2.virtual_tour,'Virtual Campus Tour')+'</td>'
-        + '<td>'+chipsFor(r2.fachabitur,'status')+'</td>'
-        + '<td class="trunc" data-title="Fachabitur Details" data-full="'+esc(r2.fach_det)+'">'+esc(r2.fach_det)+'</td>'
-        + '<td class="right mono">'+esc(r2.usnews_rank)+'</td>'
-        + '<td>'+truncCell(r2.usnews_link,'U.S. News Link')+'</td>'
-        + '<td>'+chipsFor(r2.type,'type')+'</td>'
-        + '<td class="right">'+formatInt(r2.enroll)+'</td>'
-        + '<td class="right">'+esc(r2.live_pct)+'</td>'
-        + '<td class="right">'+formatInt(r2.live_num)+'</td>'
-        + '<td class="right">'+(r2.ratio==null?"":r2.ratio)+'</td>'
-        + '<td class="trunc" data-title="Insurance Required?" data-full="'+esc(r2.insurance)+'">'+esc(r2.insurance)+'</td>'
-        + '<td class="trunc" data-title="Health Insurance details" data-full="'+esc(r2.insurance_info)+'">'+esc(r2.insurance_info)+'</td>'
-        + '<td class="right">'+esc(r2.app_fee)+'</td>'
-        + '<td class="trunc" data-title="How to Apply" data-full="'+esc(r2.how_apply)+'">'+esc(r2.how_apply)+'</td>'
-        + '<td>'+chipsFor(r2.cred_eval,'status')+'</td>'
-        + '<td class="trunc" data-title="Credential Eval Info" data-full="'+esc(r2.cred_info)+'">'+esc(r2.cred_info)+'</td>'
-        + '<td>'+chipsFor(r2.spring_adm,'status')+'</td>'
-        + '<td>'+chipsFor(r2.spring_sch,'status')+'</td>'
-        + '<td class="trunc" data-title="Clarification" data-full="'+esc(r2.clarify)+'">'+esc(r2.clarify)+'</td>'
-        + '<td>'+truncCell(r2.campus_acts,'On Campus Activities')+'</td>'
-        + '<td>'+truncCell(r2.sports,'Sports Homepage')+'</td>'
-        + '<td>'+truncCell(r2.uni_home,'University Homepage')+'</td>'
-        + '<td>'+truncCell(r2.intl_adm,'International Admission')+'</td>'
-        + '<td class="trunc" data-title="Bachelor’s Study Areas" data-full="'+esc(r2.major||'')+'">'+esc(r2.major||'')+'</td>'
-        + '<td>'+truncCell(r2.degrees_link,'Bachelor’s Degrees Link')+'</td>'
-        + '<td class="trunc" data-title="Academic Year" data-full="'+esc(r2.acad_year)+'">'+esc(r2.acad_year)+'</td>'
-        + '<td class="right">'+formatMoney(r2.tuition)+'</td>'
-        + '<td class="right">'+formatMoney(r2.room)+'</td>'
-        + '<td class="right">'+formatMoney(r2.board)+'</td>'
-        + '<td class="right">'+formatMoney(r2.fees)+'</td>'
-        + '<td class="right"><strong>'+formatMoney(r2.total)+'</strong></td>'
-        + '<td class="trunc" data-title="Annual Cost Info" data-full="'+esc(r2.cost_info)+'">'+esc(r2.cost_info)+'</td>'
-        + '<td class="trunc" data-title="Admission Requirements" data-full="'+esc(r2.adm_req)+'">'+esc(r2.adm_req)+'</td>'
-        + '<td class="right">'+formatMoney(r2.sch_low)+'</td>'
-        + '<td class="trunc" data-title="Lowest Type" data-full="'+esc(r2.sch_low_type)+'">'+esc(r2.sch_low_type)+'</td>'
-        + '<td class="right">'+(r2.toefl_low==null?"":r2.toefl_low)+'</td>'
-        + '<td class="right">'+(r2.gpa_low==null?"":r2.gpa_low)+'</td>'
-        + '<td class="right">'+(r2.sat_low==null?"":r2.sat_low)+'</td>'
-        + '<td class="trunc" data-title="Lowest Info" data-full="'+esc(r2.sch_low_info)+'">'+esc(r2.sch_low_info)+'</td>'
-        + '<td class="right">'+formatMoney(r2.sch_mid)+'</td>'
-        + '<td class="trunc" data-title="Mid Type" data-full="'+esc(r2.sch_mid_type)+'">'+esc(r2.sch_mid_type)+'</td>'
-        + '<td class="right">'+(r2.toefl_mid==null?"":r2.toefl_mid)+'</td>'
-        + '<td class="right">'+(r2.gpa_mid==null?"":r2.gpa_mid)+'</td>'
-        + '<td class="right">'+(r2.sat_mid==null?"":r2.sat_mid)+'</td>'
-        + '<td class="trunc" data-title="Mid Info" data-full="'+esc(r2.sch_mid_info)+'">'+esc(r2.sch_mid_info)+'</td>'
-        + '<td class="right">'+formatMoney(r2.sch_hi)+'</td>'
-        + '<td class="trunc" data-title="High Type" data-full="'+esc(r2.sch_hi_type)+'">'+esc(r2.sch_hi_type)+'</td>'
-        + '<td class="right">'+(r2.toefl_hi==null?"":r2.toefl_hi)+'</td>'
-        + '<td class="right">'+(r2.gpa_hi==null?"":r2.gpa_hi)+'</td>'
-        + '<td class="right">'+(r2.sat_hi==null?"":r2.sat_hi)+'</td>'
-        + '<td class="trunc" data-title="High Info" data-full="'+esc(r2.sch_hi_info)+'">'+esc(r2.sch_hi_info)+'</td>'
-        + '<td class="right">'+esc(r2.net_low)+'</td>'
-        + '<td class="right">'+esc(r2.net_mid)+'</td>'
-        + '<td class="right">'+esc(r2.net_hi)+'</td>'
-        + '<td class="trunc" data-title="Fall Deadline" data-full="'+esc(r2.dead_fall)+'">'+esc(r2.dead_fall)+'</td>'
-        + '<td class="trunc" data-title="Spring Deadline" data-full="'+esc(r2.dead_spring)+'">'+esc(r2.dead_spring)+'</td>'
-        + '<td>'+truncCell(r2.dead_link,'Deadline Link')+'</td>'
-        + '<td>'+chipsFor(r2.campus_job,'status')+'</td>'
-        + '<td class="right">'+(r2.min_wage==null||r2.min_wage==="" ? "" : formatMoney(r2.min_wage).replace(".00",""))+'</td>'
-        + '<td class="right">'+formatMoney(r2.work_comp)+'</td>'
-        + '<td class="trunc" data-title="Bachelor’s Work on Campus Details (B)" data-full="'+esc(r2.work_details_b)+'">'+esc(r2.work_details_b)+'</td>'
-        + '</tr>';
-    }
-    tbody.innerHTML = html;
-
-    if (shown) shown.textContent = filtered.length + ' shown';
-    if (loaded) loaded.textContent = items.length + ' loaded';
-    if (moreBtn) moreBtn.style.display = cursor ? 'inline-flex' : 'none';
-
-    adjustTableHeight();
-  }
-
-  function updateSortIndicators(){
-    var ths = document.querySelectorAll('thead th');
-    for (var i=0;i<ths.length;i++){
-      var th = ths[i];
-      th.classList.remove('sort-asc','sort-desc');
-      var key = th.getAttribute('data-key');
-      if(key && key === sort.key){
-        th.classList.add(sort.dir===1?'sort-asc':'sort-desc');
-      }
-    }
-  }
-  (function attachSortHandlers(){
-    var ths = document.querySelectorAll('thead th');
-    for (var i=0;i<ths.length;i++){
-      (function(th){
-        var key = th.getAttribute('data-key');
-        if (key) th.classList.add('sortable');
-        th.addEventListener('click', function(){
-          if(!key) return;
-          if (sort.key === key) sort.dir *= -1; else { sort.key = key; sort.dir = 1; }
-          render();
-        });
-      })(ths[i]);
-    }
-  })();
-
-  // Delegated click for popup
-  document.getElementById('tbody').addEventListener('click', function(e){
-    var target = e.target;
-    while (target && target !== tbody && !target.classList.contains('trunc')) target = target.parentNode;
-    if(!target || target === tbody) return;
-    var title = target.getAttribute('data-title') || 'Details';
-    var full = target.getAttribute('data-full') || target.textContent || '';
-    if (String(full).trim()) openPopup(title, full);
-  });
-
-  // Controls
-  if (reloadBtn) reloadBtn.onclick = function(){ if(isLoading) return; initialLoad(); };
-  if (moreBtn) moreBtn.onclick = function(){
-    if(isLoading || !cursor) return;
-    fetchAndAppend({limit: 100, cursorParam: cursor, progressive: true});
-  };
-
-  // Excel export
-  if (exportBtn) exportBtn.addEventListener('click', function(){
-    var headers = [];
-    var ths = document.querySelectorAll('thead th');
-    for (var i=0;i<ths.length;i++) headers.push(ths[i].textContent.trim());
-    var rows = [];
-    var trs = tbody.querySelectorAll('tr');
-    for (var r=0;r<trs.length;r++){
-      var tds = trs[r].children, row=[];
-      for (var c=0;c<tds.length;c++) row.push(tds[c].textContent.replace(/\s+/g,' ').trim());
-      rows.push(row);
-    }
-    var aoa = [headers].concat(rows);
-    var ws = XLSX.utils.aoa_to_sheet(aoa);
-    var wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, 'Programs');
-    XLSX.writeFile(wb, 'bachelors-programs.xlsx');
-  });
-
-  // Scroll sync
-  var syncingTop = false, syncingBottom = false;
-  function syncTopScrollbar(){
-    if (!tbl || !hScrollInner || !hScrollTop || !tableWrap) return;
-    var w = tbl.scrollWidth;
-    hScrollInner.style.width = w + 'px';
-    hScrollTop.scrollLeft = tableWrap.scrollLeft;
-  }
-  if (hScrollTop) hScrollTop.addEventListener('scroll', function(){
-    if(syncingTop) return;
-    syncingBottom = true;
-    if (tableWrap) tableWrap.scrollLeft = hScrollTop.scrollLeft;
-    syncingBottom = false;
-  });
-  if (tableWrap) tableWrap.addEventListener('scroll', function(){
-    if(syncingBottom) return;
-    syncingTop = true;
-    if (hScrollTop) hScrollTop.scrollLeft = tableWrap.scrollLeft;
-    syncingTop = false;
-  });
-
-  function adjustTableHeight(){
-    if (!tableWrap) return;
-    var vwTop = tableWrap.getBoundingClientRect().top;
-    var maxH = Math.max(360, window.innerHeight - vwTop - 16);
-    tableWrap.style.maxHeight = maxH + 'px';
-  }
-  window.addEventListener('resize', function(){ syncTopScrollbar(); adjustTableHeight(); });
-
-  // Data fetching
-  async function fetchBatch(params){
-    var errorBanner = document.getElementById('errorBanner');
-    var base = location.origin || window.location.href;
-    var url = new URL('/.netlify/functions/items', base);
-    url.searchParams.set('limit', String(params && params.limit ? params.limit : '100'));
-    if (params && params.cursorParam) url.searchParams.set('cursor', params.cursorParam);
-    try {
-      var resp = await fetch(url.toString(), { cache: 'no-store' });
-      if (!resp.ok) {
-        var txt = ''; try { txt = await resp.text(); } catch (_) {}
-        throw new Error('HTTP '+resp.status+': '+String(txt).slice(0,300));
-      }
-      var json = await resp.json();
-      if (!json || !Array.isArray(json.items)) {
-        throw new Error('Unexpected payload: '+JSON.stringify(json).slice(0,300));
-      }
-      if (errorBanner) errorBanner.style.display = 'none';
-      return json;
-    } catch (e) {
-      console.error('Fetch failed', e);
-      if (errorBanner) { errorBanner.textContent = 'Could not load data. ' + (e && e.message ? e.message : String(e)); errorBanner.style.display = 'block'; }
-      return { items: [], cursor: null };
-    }
-  }
-
-  async function fetchAndAppend(opts){
-    setMoreLoading(true);
-    var res = await fetchBatch(opts || {});
-    var batch = res.items || [];
-    var cur = res.cursor || null;
-    if (batch.length){
-      for (var i=0;i<batch.length;i++) items.push(batch[i]);
-      render();
-      syncTopScrollbar();
-      adjustTableHeight();
-    }
-    cursor = cur;
-
-    while (opts && opts.progressive && cursor){
-      var resN = await fetchBatch({limit:100, cursorParam: cursor});
-      var nextBatch = resN.items || [];
-      var nextCur = resN.cursor || null;
-      if (nextBatch.length){
-        for (var j=0;j<nextBatch.length;j++) items.push(nextBatch[j]);
-        render();
-        syncTopScrollbar();
-        adjustTableHeight();
-      }
-      cursor = nextCur;
-    }
-    setMoreLoading(false);
-  }
-
-  async function initialLoad(){
-    items = []; cursor = null;
-    showLoader(true);
-    try { await fetchAndAppend({limit:100, cursorParam:null, progressive:false}); }
-    finally {
-      showLoader(false);
-      if (app) app.style.display = 'block';
-      syncTopScrollbar();
-      adjustTableHeight();
-    }
-    if (cursor) { fetchAndAppend({limit:100, cursorParam:cursor, progressive:true}); }
-  }
-
-  // Start
-  initialLoad();
-})();
-</script>
-</body>
-</html>
+  // ===== 1) EDIT COLUMNS HERE (single source of truth) =======================
+  // Each object = one column. Set: key, title, colId (Monday), and behavior.
+  // type: 'text' | 'number' | 'money' | 'chip' | 'link' | 'mono' (monospace)
+  // chipCategory (for 'chip'): 'state' | 'geo' | 'status' | 'type'
+  // align: 'left' | 'right'
+  // sticky: true to freeze the first column (use only on Name)
+  // sortable: true to allow header sort click
+  // trunc: true to enable click-to-expand popup for long text
+  const COLUMNS = [
+    { key:'name',           title:'Name', sticky:true,  sortable:true, type:'text',  colId:'name' },
+    { key:'photos_desc',    title:'Photos & Description (Link) ↗️', type:'link',   colId:'link4' },
+    { key:'state',          title:'State',              sortable:true, type:'chip',  colId:'state1', chipCategory:'state' },
+    { key:'geo_area',       title:'Geo_
