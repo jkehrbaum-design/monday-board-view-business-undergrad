@@ -60,7 +60,7 @@ thead th{position:sticky;top:0;background:var(--thead);z-index:5;font-size:12px;
 thead th.sortable::after{content:" ⇅";font-size:10px;color:#999;margin-left:4px;}
 thead th.sort-asc::after{content:" ▲";} thead th.sort-desc::after{content:" ▼";}
 
-/* Default center alignment */
+/* Default center alignment for cells */
 tbody td{
   padding:10px 12px;
   line-height:20px;
@@ -75,15 +75,17 @@ tbody td{
   text-align:center; /* default center */
 }
 
-/* Special alignments */
-.right{text-align:right;}
-.left{text-align:left;} /* for long text/trunc columns */
-
+/* Keep long text/truncated cells left-aligned */
 tbody td.trunc,
 tbody td.trunc-cell{
   text-align:left !important;
   cursor:pointer;
 }
+
+/* Any .right-marked cells/headers should still be centered */
+.right{ text-align:center !important; }
+thead th.right{ text-align:center !important; }
+tbody td.right{ text-align:center !important; }
 
 th.sticky, td.sticky{position:sticky;left:0;background:#fff;z-index:6;min-width:var(--stickyW);max-width:var(--stickyW);box-shadow:1px 0 0 var(--line);}
 thead th.sticky{z-index:7;left:0;}
@@ -113,7 +115,7 @@ tbody tr:hover td{background:#f8fafc}
 </style>
 
 <style id="align-hotfix">
-/* Center any cells/headers that were marked as right-aligned */
+/* Enforce centering for any residual right-aligned classes */
 thead th.right,
 tbody td.right{
   text-align: center !important;
