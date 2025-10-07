@@ -190,13 +190,6 @@ tbody tr:hover td{background:#f8fafc}
 <script>
 (function(){
   // ===== 1) EDIT COLUMNS HERE (single source of truth) =======================
-  // Each object = one column. Set: key, title, colId (Monday), and behavior.
-  // type: 'text' | 'number' | 'money' | 'chip' | 'link' | 'mono' (monospace)
-  // chipCategory (for 'chip'): 'state' | 'geo' | 'status' | 'type'
-  // align: 'left' | 'right'
-  // sticky: true to freeze the first column (use only on Name)
-  // sortable: true to allow header sort click
-  // trunc: true to enable click-to-expand popup for long text
   const COLUMNS = [
     { key:'name',           title:'Name', sticky:true,  sortable:true, type:'text',  colId:'name' },
     { key:'photos_desc',    title:'Photos & Description', type:'link',   colId:'link4' },
@@ -231,11 +224,14 @@ tbody tr:hover td{background:#f8fafc}
     { key:'major',          title:'Bachelor’s Study Areas', sortable:true, trunc:true, type:'text', colId:'dropdown73' },
     { key:'degrees_link',   title:'Bachelor’s Degrees Link',           type:'link',  colId:'link30' },
     { key:'acad_year',      title:'Academic Year',      trunc:true,    type:'text',  colId:'dropdown4' },
+
+    /* Money + formulas (use backend-calculated fields) */
     { key:'tuition',        title:'Tuition (Annual Cost in USD)', align:'right', type:'money', colId:'annual_tuition_cost' },
     { key:'room',           title:'Room (Annual Cost in USD)',    align:'right', type:'money', colId:'_usd__annual_room_cost' },
     { key:'board',          title:'Board (Annual Cost in USD)',    align:'right', type:'money', colId:'_usd__annual_board_cost' },
     { key:'fees',           title:'Required Fees (Annual Cost in USD)', align:'right', type:'money', colId:'numbers5' },
-    { key:'total',          title:'TOTAL (Approximate Annual Cost in USD)', align:'right', type:'money', colId:'formula' },
+    { key:'total',          title:'TOTAL (Approximate Annual Cost in USD)', align:'right', type:'money', colId:'total_calc' },
+
     { key:'cost_info',      title:'Additional Info and Link/s Annual Cost of Attendance', trunc:true, type:'text', colId:'link_s_annual_cost_of_attendance' },
     { key:'adm_req',        title:'Admission Requirements', trunc:true, type:'text', colId:'_link__requirements_admission_information' },
     { key:'sch_low',        title:'Lowest (USD) Annual Scholarship Amount', align:'right', type:'money', colId:'dup__of_minimum__usd__annual_scholarship_amount6' },
@@ -256,15 +252,20 @@ tbody tr:hover td{background:#f8fafc}
     { key:'gpa_hi',         title:'GPA Minimum (Highest Scholarship)', align:'right', type:'number', colId:'numbers4' },
     { key:'sat_hi',         title:'SAT Minimum (Highest Scholarship)', align:'right', type:'number', colId:'numbers41' },
     { key:'sch_hi_info',    title:'Additional Info and Link/s on Highest Scholarship Amount (Highest)', trunc:true, type:'text', colId:'long_text78' },
-    { key:'net_low',        title:'(Lowest) Possible Net Cost of Attendance', align:'right', type:'text', colId:'formula3' },
-    { key:'net_mid',        title:'(Mid-Range) Possible Net Cost of Attendance (F)', align:'right', type:'text', colId:'formula07' },
-    { key:'net_hi',         title:'(Highest) Possible Net Cost of Attendance', align:'right', type:'text', colId:'formula9' },
+
+    /* Net costs — now money + backend ids */
+    { key:'net_low',        title:'(Lowest) Possible Net Cost of Attendance', align:'right', type:'money', colId:'net_low_calc' },
+    { key:'net_mid',        title:'(Mid-Range) Possible Net Cost of Attendance (F)', align:'right', type:'money', colId:'net_mid_calc' },
+    { key:'net_hi',         title:'(Highest) Possible Net Cost of Attendance', align:'right', type:'money', colId:'net_hi_calc' },
+
     { key:'dead_fall',      title:'Fall Application Deadline', trunc:true, type:'text', colId:'deadline_fall_application' },
     { key:'dead_spring',    title:'Spring Application Deadline', trunc:true, type:'text', colId:'deadline_spring_application' },
     { key:'dead_link',      title:'Deadline Link', type:'link', colId:'link_104' },
     { key:'campus_job',     title:'Campus Employment?', type:'chip', colId:'status_113', chipCategory:'status' },
     { key:'min_wage',       title:'2025 Min Wage', align:'right', type:'money', colId:'numbers985' },
-    { key:'work_comp',      title:'Annual Work on Campus Compensation (Most Probable)', align:'right', type:'money', colId:'formula5' },
+
+    /* Work comp — use backend calc */
+    { key:'work_comp',      title:'Annual Work on Campus Compensation (Most Probable)', align:'right', type:'money', colId:'work_comp_calc' },
     { key:'work_details_b', title:'Work on Campus Details', trunc:true, type:'text', colId:'long_text56' },
   ];
 
@@ -457,12 +458,18 @@ tbody tr:hover td{background:#f8fafc}
   function itemToRow(item){
     const row = {};
     for (const col of COLUMNS){
-      let raw = (col.key==='name') ? (item && item.name ? item.name : '') : readCell(item, col.colId);
-      // Normalize for numbers/money
+      let raw;
+      if (col.key==='name') {
+        raw = (item && item.name ? item.name : '');
+      } else if (Object.prototype.hasOwnProperty.call(item, col.colId)) {
+        // Use backend-calculated fields when present (e.g., total_calc, net_*_calc, work_comp_calc)
+        raw = item[col.colId];
+      } else {
+        raw = readCell(item, col.colId);
+      }
       if (col.type==='number' || col.type==='money') raw = numberFrom(raw);
       row[col.key] = raw;
     }
-    // extra derived fields if needed later...
     return row;
   }
 
