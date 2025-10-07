@@ -112,6 +112,20 @@ tbody tr:hover td{background:#f8fafc}
 @media (min-width:1600px){ .wrap{width:min(2000px,96vw);} }
 </style>
 
+<style id="align-hotfix">
+/* Center any cells/headers that were marked as right-aligned */
+thead th.right,
+tbody td.right{
+  text-align: center !important;
+}
+
+/* Keep long-text cells left-aligned */
+tbody td.trunc,
+tbody td.trunc-cell{
+  text-align: left !important;
+}
+</style>
+  
 </head>
 
 <body>
