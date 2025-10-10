@@ -96,15 +96,29 @@ tbody tr:hover td{background:#f8fafc}
 .mono{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12px}
 
 /* Loader */
-<!-- Loader -->
-<div id="loader">
-  <div class="loader-inner">
-    <img src="./Link-zuruck-nach-oben.webp" alt="Epro 360 Logo" class="loader-logo" />
-    <div class="spinner"></div>
-    <div class="loader-text">Loading data…</div>
-  </div>
-</div>
-
+/* Loader container already has your fixed/fullscreen styles.
+   These just arrange the contents nicely and fade in the logo */
+#loader .loader-inner{
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  gap:12px;
+}
+#loader .loader-logo{
+  width:140px;
+  height:auto;
+  display:block;
+  opacity:0;
+  animation:fadeIn 0.6s ease-in forwards;
+}
+#loader .loader-text{
+  font-size:14px;
+  color:#333;
+}
+@keyframes fadeIn{
+  to{ opacity:1; }
+}
 
 
 /* Popup */
@@ -119,36 +133,6 @@ tbody tr:hover td{background:#f8fafc}
 .hScrollTop,.tableWrap{width:100%;}
 @media (min-height:800px){ .tableWrap{max-height:76vh;} }
 @media (min-width:1600px){ .wrap{width:min(2000px,96vw);} }
-
-
-/* Loader with logo */
-#loader .loader-inner{
-  display:flex;
-  flex-direction:column;
-  align-items:center;
-  gap:12px;
-}
-#loader .loader-logo{
-  width: 140px;       /* tweak if you want it bigger/smaller */
-  height: auto;
-  display:block;
-}
-#loader .loader-text{
-  font-size:14px;
-  color:#333;
-}
-
-  #loader .loader-logo {
-  width: 140px;
-  height: auto;
-  display: block;
-  opacity: 0;
-  animation: fadeIn 0.6s ease-in forwards;
-}
-@keyframes fadeIn {
-  to { opacity: 1; }
-}
-
 
   
 </style>
@@ -171,7 +155,13 @@ tbody td.trunc-cell{
 
 <body>
 <!-- Loader -->
-<div id="loader"><div class="spinner"></div>Loading data…</div>
+<div id="loader">
+  <div class="loader-inner">
+    <img src="./Link-zuruck-nach-oben.webp" alt="Epro 360 Logo" class="loader-logo" />
+    <div class="spinner"></div>
+    <div class="loader-text">Loading data…</div>
+  </div>
+</div>
 <!-- Error banner -->
 <div id="errorBanner" style="display:none;margin:10px 0;padding:10px 12px;border:1px solid #f59e0b;background:#fff8e1;border-radius:8px;color:#7c2d12;font-size:13px"></div>
 
