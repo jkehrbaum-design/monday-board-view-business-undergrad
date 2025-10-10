@@ -157,6 +157,13 @@ tbody tr:hover td{background:#f8fafc}
 @media (min-height:800px){ .tableWrap{max-height:76vh;} }
 @media (min-width:1600px){ .wrap{width:min(2000px,96vw);} }
 
+  /* Multiple-conditions filter UI */
+#condList .cond-row{ display:flex; gap:8px; align-items:center; margin-bottom:8px; }
+#condList .cond-col{ min-width:220px; }     /* column selector */
+#condList .cond-op{  min-width:170px; }     /* operator selector */
+#condList .cond-val{ min-width:220px; }     /* value input */
+#condList .cond-del{ height:30px; }
+
   
 </style>
 
@@ -206,58 +213,22 @@ tbody td.trunc-cell{
     <div class="popover" id="pvHide"></div>
 
     <!-- FILTER POPOVER -->
-    <div class="popover" id="pvFilter">
-      <div class="pv-row"><label style="font-weight:600">Add a filter</label></div>
-      <div class="pv-row-inline">
-        <select id="fltCol" style="min-width:240px"></select>
-        <select id="fltOp" style="min-width:140px">
-          <option value="contains" selected>contains</option>
-          <option value="equals">equals</option>
-          <option value="starts">starts with</option>
-          <option value="ends">ends with</option>
-          <option value="empty">is empty</option>
-          <option value="notempty">is not empty</option>
-        </select>
-        <input id="fltVal" placeholder="value…" style="min-width:220px" />
-      </div>
-      <div class="pv-actions">
-        <div class="spacer"></div>
-        <button class="btn" id="fltResetBtn">Reset</button>
-        <button class="btn primary" id="fltApplyBtn">Apply</button>
-      </div>
-    </div>
-
-    <div class="popover" id="pvGroup">
-      <label>Group by</label>
-      <select id="groupBy">
-        <option value="">None</option>
-        <option value="state">State</option>
-        <option value="type">Type of Institution</option>
-        <option value="geo_area">Geographical Area</option>
-      </select>
-    </div>
-
-    <div class="popover" id="pvSort">
-      <label>Sort by</label>
-      <select id="sortKey"></select>
-      <div class="pv-row-inline">
-        <label><input type="radio" name="sortDir" value="asc" checked /> Asc</label>
-        <label><input type="radio" name="sortDir" value="desc" /> Desc</label>
-      </div>
-    </div>
-
-    <div class="popover" id="pvMore">
-      <div class="pv-row-inline">
-        <button class="btn" id="reloadBtn"><div class="little-spinner" id="reloadSpin" style="display:none"></div>Reload</button>
-        <button class="btn" id="exportBtn">Export Excel</button>
-        <button class="btn" id="moreBtn"><div class="little-spinner" id="moreSpin" style="display:none"></div>Load more</button>
-      </div>
-      <div class="muted" style="margin-top:8px">
-        <span id="shown" class="chip">0 shown</span>
-        <span id="loaded" class="chip">0 loaded</span>
-      </div>
-    </div>
+<div class="popover" id="pvFilter">
+  <div class="pv-row">
+    <label style="font-weight:600">Add conditions</label>
   </div>
+
+  <!-- Dynamic list of conditions -->
+  <div id="condList"></div>
+
+  <div class="pv-actions">
+    <button class="btn" id="addCondBtn">+ Add condition</button>
+    <div class="spacer"></div>
+    <button class="btn" id="fltResetBtn">Reset</button>
+    <button class="btn primary" id="fltApplyBtn">Apply</button>
+  </div>
+</div>
+
   <!-- ======= /TOOLBAR ======= -->
 
   <!-- TOP HORIZONTAL SCROLLBAR -->
