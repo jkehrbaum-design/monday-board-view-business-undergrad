@@ -339,9 +339,9 @@ tbody td.trunc-cell{
   ];
 
   // ===== 2) (Optional) default filterable fields come from columns ===========
-  const DEFAULT_FILTERABLE_KEYS = [
-    'name','state','geo_area','city','address','type','intl_adm','major','usnews_rank','uni_home','photos_desc','tuition','total','enroll'
-  ];
+ // show ALL columns in the filter dropdown
+const DEFAULT_FILTERABLE_KEYS = COLUMNS.map(c => c.key);
+
   // =========================================================================
 
   // --- global error surface
