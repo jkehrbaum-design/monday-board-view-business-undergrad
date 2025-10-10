@@ -49,6 +49,29 @@ input,select{height:36px;padding:0 10px;border:1px solid var(--line);border-radi
 .pv-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
 .pv-actions{display:flex;align-items:center;gap:8px;margin-top:8px}
 
+  /* Compact filter dropdown */
+#pvFilter select {
+  max-width: 180px; /* makes it compact like Airtable */
+  font-size: 13px;
+  height: 32px;
+  padding: 4px 8px;
+  border-radius: 6px;
+}
+
+#pvFilter input[type="text"] {
+  height: 32px;
+  font-size: 13px;
+  padding: 4px 8px;
+}
+
+#pvFilter select:focus, 
+#pvFilter input:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 2px rgba(31,118,255,0.2);
+}
+
+
 /* Top scrollbar */
 .hScrollTop{position:sticky;top:0;z-index:18;background:var(--card);border:1px solid var(--line);border-radius:10px;margin-bottom:8px;height:12px;overflow-x:auto;overflow-y:hidden;}
 .hScrollInner{height:1px;}
