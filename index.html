@@ -96,9 +96,15 @@ tbody tr:hover td{background:#f8fafc}
 .mono{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12px}
 
 /* Loader */
-#loader{position:fixed;inset:0;background:#fff;display:flex;align-items:center;justify-content:center;font-size:16px;color:#333;z-index:2000;}
-.spinner{width:48px;height:48px;border:4px solid #eee;border-top-color:var(--primary);border-radius:50%;animation:spin 1s linear infinite;margin-right:12px;}
-@keyframes spin{to{transform:rotate(360deg)}}
+<!-- Loader -->
+<div id="loader">
+  <div class="loader-inner">
+    <img src="Link-zuruck-nach-oben.webp" alt="Epro 360 Logo" class="loader-logo" />
+    <div class="spinner"></div>
+    <div class="loader-text">Loading data…</div>
+  </div>
+</div>
+
 
 /* Popup */
 #popup{display:none;position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:#fff;padding:16px 18px;border:1px solid var(--line);border-radius:10px;box-shadow:0 12px 30px rgba(0,0,0,.15);z-index:3000;max-width:700px;max-height:70vh;overflow:auto;}
@@ -112,6 +118,26 @@ tbody tr:hover td{background:#f8fafc}
 .hScrollTop,.tableWrap{width:100%;}
 @media (min-height:800px){ .tableWrap{max-height:76vh;} }
 @media (min-width:1600px){ .wrap{width:min(2000px,96vw);} }
+
+
+/* Loader with logo */
+#loader .loader-inner{
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  gap:12px;
+}
+#loader .loader-logo{
+  width: 140px;       /* tweak if you want it bigger/smaller */
+  height: auto;
+  display:block;
+}
+#loader .loader-text{
+  font-size:14px;
+  color:#333;
+}
+
+  
 </style>
 
 <style id="align-hotfix">
