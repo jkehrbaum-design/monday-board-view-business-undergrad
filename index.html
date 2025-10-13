@@ -49,28 +49,10 @@ input,select{height:36px;padding:0 10px;border:1px solid var(--line);border-radi
 .pv-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
 .pv-actions{display:flex;align-items:center;gap:8px;margin-top:8px}
 
-  /* Compact filter dropdown */
-#pvFilter select {
-  max-width: 180px; /* makes it compact like Airtable */
-  font-size: 13px;
-  height: 32px;
-  padding: 4px 8px;
-  border-radius: 6px;
-}
-
-#pvFilter input[type="text"] {
-  height: 32px;
-  font-size: 13px;
-  padding: 4px 8px;
-}
-
-#pvFilter select:focus, 
-#pvFilter input:focus {
-  outline: none;
-  border-color: var(--primary);
-  box-shadow: 0 0 0 2px rgba(31,118,255,0.2);
-}
-
+/* Compact filter controls */
+#pvFilter select{ max-width:180px; font-size:13px; height:32px; padding:4px 8px; border-radius:6px; }
+#pvFilter input[type="text"]{ height:32px; font-size:13px; padding:4px 8px; }
+#pvFilter select:focus,#pvFilter input:focus{ outline:none; border-color:var(--primary); box-shadow:0 0 0 2px rgba(31,118,255,0.2); }
 
 /* Top scrollbar */
 .hScrollTop{position:sticky;top:0;z-index:18;background:var(--card);border:1px solid var(--line);border-radius:10px;margin-bottom:8px;height:12px;overflow-x:auto;overflow-y:hidden;}
@@ -83,32 +65,16 @@ thead th{position:sticky;top:0;background:var(--thead);z-index:5;font-size:12px;
 thead th.sortable::after{content:" ⇅";font-size:10px;color:#999;margin-left:4px;}
 thead th.sort-asc::after{content:" ▲";} thead th.sort-desc::after{content:" ▼";}
 
-/* Default center alignment for cells */
+/* Default center alignment */
 tbody td{
-  padding:10px 12px;
-  line-height:20px;
-  min-height:44px;
-  border-top:1px solid var(--line);
-  vertical-align:middle;
-  font-size:14px;
-  max-width:280px;
-  white-space:nowrap;
-  overflow:hidden;
-  text-overflow:ellipsis;
+  padding:10px 12px; line-height:20px; min-height:44px; border-top:1px solid var(--line);
+  vertical-align:middle; font-size:14px; max-width:280px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
   text-align:center; /* default center */
 }
-
-/* Keep long text/truncated cells left-aligned */
-tbody td.trunc,
-tbody td.trunc-cell{
-  text-align:left !important;
-  cursor:pointer;
-}
-
-/* Any .right-marked cells/headers should still be centered */
-.right{ text-align:center !important; }
-thead th.right{ text-align:center !important; }
-tbody td.right{ text-align:center !important; }
+/* Keep long text left-aligned */
+tbody td.trunc,tbody td.trunc-cell{ text-align:left !important; cursor:pointer; }
+/* Force anything marked .right to still be centered (per your request) */
+.right, thead th.right, tbody td.right{ text-align:center !important; }
 
 th.sticky, td.sticky{position:sticky;left:0;background:#fff;z-index:6;min-width:var(--stickyW);max-width:var(--stickyW);box-shadow:1px 0 0 var(--line);}
 thead th.sticky{z-index:7;left:0;}
@@ -118,38 +84,14 @@ tbody tr:hover td{background:#f8fafc}
 .link{color:var(--link);text-decoration:none;font-weight:600}
 .mono{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12px}
 
-/* Loader */
-/* Loader container already has your fixed/fullscreen styles.
-   These just arrange the contents nicely and fade in the logo */
-#loader .loader-inner{
-  display:flex;
-  flex-direction:column;
-  align-items:center;
-  justify-content:center;
-  gap:12px;
-}
-#loader .loader-logo{
-  width:140px;
-  height:auto;
-  display:block;
-  opacity:0;
-  animation:fadeIn 0.6s ease-in forwards;
-}
-#loader .loader-text{
-  font-size:14px;
-  color:#333;
-}
-@keyframes fadeIn{
-  to{ opacity:1; }
-}
-
-
-/* Popup */
-#popup{display:none;position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:#fff;padding:16px 18px;border:1px solid var(--line);border-radius:10px;box-shadow:0 12px 30px rgba(0,0,0,.15);z-index:3000;max-width:700px;max-height:70vh;overflow:auto;}
-#popupClose{position:absolute;top:8px;right:12px;cursor:pointer;font-weight:700;}
-#popup h4{margin:0 24px 10px 0;font-size:14px;color:#555;}
-#popup pre{white-space:pre-wrap;word-break:break-word;font-family:inherit;font-size:14px;margin:0;}
-.little-spinner{width:14px;height:14px;border:2px solid #e2e8f0;border-top-color:#fff;border-radius:50%;animation:spin .8s linear infinite;}
+/* Loader (with logo) */
+#loader{position:fixed;inset:0;background:#fff;display:flex;align-items:center;justify-content:center;font-size:16px;color:#333;z-index:2000;}
+.spinner{width:48px;height:48px;border:4px solid #eee;border-top-color:var(--primary);border-radius:50%;animation:spin 1s linear infinite;margin-top:6px;}
+@keyframes spin{to{transform:rotate(360deg)}}
+#loader .loader-inner{ display:flex; flex-direction:column; align-items:center; justify-content:center; gap:12px; }
+#loader .loader-logo{ width:140px; height:auto; display:block; opacity:0; animation:fadeIn .6s ease-in forwards; }
+#loader .loader-text{ font-size:14px; color:#333; }
+@keyframes fadeIn{ to{ opacity:1; } }
 
 /* Dimension hotfix (wider) */
 .wrap{max-width:none;width:min(1800px,98vw);padding:0 12px;}
@@ -157,30 +99,18 @@ tbody tr:hover td{background:#f8fafc}
 @media (min-height:800px){ .tableWrap{max-height:76vh;} }
 @media (min-width:1600px){ .wrap{width:min(2000px,96vw);} }
 
-  /* Multiple-conditions filter UI */
+/* Multiple-conditions filter UI */
 #condList .cond-row{ display:flex; gap:8px; align-items:center; margin-bottom:8px; }
-#condList .cond-col{ min-width:220px; }     /* column selector */
-#condList .cond-op{  min-width:170px; }     /* operator selector */
-#condList .cond-val{ min-width:220px; }     /* value input */
+#condList .cond-col{ min-width:220px; }
+#condList .cond-op{  min-width:170px; }
+#condList .cond-val{ min-width:220px; }
 #condList .cond-del{ height:30px; }
-
-  
 </style>
 
 <style id="align-hotfix">
-/* Enforce centering for any residual right-aligned classes */
-thead th.right,
-tbody td.right{
-  text-align: center !important;
-}
-
-/* Keep long-text cells left-aligned */
-tbody td.trunc,
-tbody td.trunc-cell{
-  text-align: left !important;
-}
+thead th.right, tbody td.right{ text-align:center !important; }
+tbody td.trunc, tbody td.trunc-cell{ text-align:left !important; }
 </style>
-  
 </head>
 
 <body>
@@ -192,6 +122,7 @@ tbody td.trunc-cell{
     <div class="loader-text">Loading data…</div>
   </div>
 </div>
+
 <!-- Error banner -->
 <div id="errorBanner" style="display:none;margin:10px 0;padding:10px 12px;border:1px solid #f59e0b;background:#fff8e1;border-radius:8px;color:#7c2d12;font-size:13px"></div>
 
@@ -212,23 +143,39 @@ tbody td.trunc-cell{
     <!-- POPUPS -->
     <div class="popover" id="pvHide"></div>
 
-    <!-- FILTER POPOVER -->
-<div class="popover" id="pvFilter">
-  <div class="pv-row">
-    <label style="font-weight:600">Add conditions</label>
+    <!-- FILTER POPOVER (multi-condition) -->
+    <div class="popover" id="pvFilter">
+      <div class="pv-row"><label style="font-weight:600">Add conditions</label></div>
+      <div id="condList"></div>
+      <div class="pv-actions">
+        <button class="btn" id="addCondBtn">+ Add condition</button>
+        <div class="spacer"></div>
+        <button class="btn" id="fltResetBtn">Reset</button>
+        <button class="btn primary" id="fltApplyBtn">Apply</button>
+      </div>
+    </div>
+
+    <div class="popover" id="pvSort">
+      <label>Sort by</label>
+      <select id="sortKey"></select>
+      <div class="pv-row-inline">
+        <label><input type="radio" name="sortDir" value="asc" checked /> Asc</label>
+        <label><input type="radio" name="sortDir" value="desc" /> Desc</label>
+      </div>
+    </div>
+
+    <div class="popover" id="pvMore">
+      <div class="pv-row-inline">
+        <button class="btn" id="reloadBtn"><div class="little-spinner" id="reloadSpin" style="display:none"></div>Reload</button>
+        <button class="btn" id="exportBtn">Export Excel</button>
+        <button class="btn" id="moreBtn"><div class="little-spinner" id="moreSpin" style="display:none"></div>Load more</button>
+      </div>
+      <div class="muted" style="margin-top:8px">
+        <span id="shown" class="chip">0 shown</span>
+        <span id="loaded" class="chip">0 loaded</span>
+      </div>
+    </div>
   </div>
-
-  <!-- Dynamic list of conditions -->
-  <div id="condList"></div>
-
-  <div class="pv-actions">
-    <button class="btn" id="addCondBtn">+ Add condition</button>
-    <div class="spacer"></div>
-    <button class="btn" id="fltResetBtn">Reset</button>
-    <button class="btn primary" id="fltApplyBtn">Apply</button>
-  </div>
-</div>
-
   <!-- ======= /TOOLBAR ======= -->
 
   <!-- TOP HORIZONTAL SCROLLBAR -->
@@ -252,7 +199,7 @@ tbody td.trunc-cell{
 
 <script>
 (function(){
-  // ===== 1) EDIT COLUMNS HERE (single source of truth) =======================
+  // ===== 1) Columns (single source of truth) =====
   const COLUMNS = [
     { key:'name',           title:'Name', sticky:true,  sortable:true, type:'text',  colId:'name' },
     { key:'photos_desc',    title:'Photos & Description', type:'link',   colId:'link4' },
@@ -288,10 +235,10 @@ tbody td.trunc-cell{
     { key:'degrees_link',   title:'Bachelor’s Degrees Link',           type:'link',  colId:'link30' },
     { key:'acad_year',      title:'Academic Year',      trunc:true,    type:'text',  colId:'dropdown4' },
 
-    /* Money + formulas (use backend-calculated fields) */
+    /* Money + formulas (prefer backend-calculated fields if present) */
     { key:'tuition',        title:'Tuition (Annual Cost in USD)', align:'right', type:'money', colId:'annual_tuition_cost' },
     { key:'room',           title:'Room (Annual Cost in USD)',    align:'right', type:'money', colId:'_usd__annual_room_cost' },
-    { key:'board',          title:'Board (Annual Cost in USD)',    align:'right', type:'money', colId:'_usd__annual_board_cost' },
+    { key:'board',          title:'Board (Annual Cost in USD)',   align:'right', type:'money', colId:'_usd__annual_board_cost' },
     { key:'fees',           title:'Required Fees (Annual Cost in USD)', align:'right', type:'money', colId:'numbers5' },
     { key:'total',          title:'TOTAL (Approximate Annual Cost in USD)', align:'right', type:'money', colId:'total_calc' },
 
@@ -316,7 +263,7 @@ tbody td.trunc-cell{
     { key:'sat_hi',         title:'SAT Minimum (Highest Scholarship)', align:'right', type:'number', colId:'numbers41' },
     { key:'sch_hi_info',    title:'Additional Info and Link/s on Highest Scholarship Amount (Highest)', trunc:true, type:'text', colId:'long_text78' },
 
-    /* Net costs — now money + backend ids */
+    /* Net costs (backend calc ids) */
     { key:'net_low',        title:'(Lowest) Possible Net Cost of Attendance', align:'right', type:'money', colId:'net_low_calc' },
     { key:'net_mid',        title:'(Mid-Range) Possible Net Cost of Attendance (F)', align:'right', type:'money', colId:'net_mid_calc' },
     { key:'net_hi',         title:'(Highest) Possible Net Cost of Attendance', align:'right', type:'money', colId:'net_hi_calc' },
@@ -327,16 +274,13 @@ tbody td.trunc-cell{
     { key:'campus_job',     title:'Campus Employment?', type:'chip', colId:'status_113', chipCategory:'status' },
     { key:'min_wage',       title:'2025 Min Wage', align:'right', type:'money', colId:'numbers985' },
 
-    /* Work comp — use backend calc */
+    /* Work comp (backend calc) */
     { key:'work_comp',      title:'Annual Work on Campus Compensation (Most Probable)', align:'right', type:'money', colId:'work_comp_calc' },
     { key:'work_details_b', title:'Work on Campus Details', trunc:true, type:'text', colId:'long_text56' },
   ];
 
-  // ===== 2) (Optional) default filterable fields come from columns ===========
- // show ALL columns in the filter dropdown
-const DEFAULT_FILTERABLE_KEYS = COLUMNS.map(c => c.key);
-
-  // =========================================================================
+  // All columns are filterable in the popover
+  const DEFAULT_FILTERABLE_KEYS = COLUMNS.map(c => c.key);
 
   // --- global error surface
   window.addEventListener('error', function (e) {
@@ -382,31 +326,12 @@ const DEFAULT_FILTERABLE_KEYS = COLUMNS.map(c => c.key);
   popupClose.onclick = () => popup.style.display = 'none';
   function openPopup(title, text){ popupTitle.textContent = title || 'Details'; popupBody.textContent = text || ''; popup.style.display = 'block'; }
 
-  // --------- Color chip helpers (same palettes you had)
+  // --------- Color chip helpers
   function chipHTML(text, bg, border, fg){ if (!text) return ''; return '<span class="pill" style="background:'+bg+';border:1px solid '+border+';color:'+fg+';padding:4px 10px">'+esc(text)+'</span>'; }
-
-  const GEO_STYLES = {
-    'Pacific West Coast':['#FFF4DB','#FFDFA6','#915930'],'West':['#FFE8EE','#FFC6D4','#8A2E45'],
-    'Midwest':['#E7F7FF','#C8EFFF','#0B5586'],'Southeast':['#EFFFF3','#CCF3D7','#1F6B3A'],
-    'Northeast':['#F1ECFF','#DDD6FE','#4A38A5'],'Southwest':['#FFF0E6','#FFD6BD','#884A1F']
-  };
-  const STATUS_STYLES = {
-    'shareable':['#E6F6EA','#BFE7C8','#256D3C'], 'working on it':['#E6F0FF','#C9D7FF','#2746B3'],
-    'in progress':['#E6F0FF','#C9D7FF','#2746B3'], 'yes':['#E6F6EA','#BFE7C8','#256D3C'],
-    'true':['#E6F6EA','#BFE7C8','#256D3C'], 'no':['#FEEAEA','#F8C7C7','#9F1D1D'],
-    'not shareable':['#FEEAEA','#F8C7C7','#9F1D1D'], 'false':['#FEEAEA','#F8C7C7','#9F1D1D'],
-    'unknown':['#F2F4F7','#E4E7EC','#475467'], 'n/a':['#F2F4F7','#E4E7EC','#475467'], '':['#F2F4F7','#E4E7EC','#475467']
-  };
-  const TYPE_STYLES = {
-    'Public':['#E7F7FF','#C8EFFF','#0B5586'], 'Private':['#FFE8EE','#FFC6D4','#8A2E45'],
-    'Community College':['#FFF4DB','#FFDFA6','#915930']
-  };
-  const STATE_HUES = [
-    ['#E6F6EA','#BFE7C8','#256D3C'],['#E6F0FF','#C9D7FF','#2746B3'],['#FFF4DB','#FFDFA6','#915930'],
-    ['#F1ECFF','#DDD6FE','#4A38A5'],['#E7F7FF','#C8EFFF','#0B5586'],['#FFE8EE','#FFC6D4','#8A2E45'],
-    ['#EFFFF3','#CCF3D7','#1F6B3A'],['#FFF0E6','#FFD6BD','#884A1F'],['#F2F4F7','#E4E7EC','#475467'],
-    ['#EAF3FF','#CFE2FF','#23498C'],['#FDEBF6','#F8CDE8','#8F2D6A'],['#EAFBF7','#CFF3EA','#176D63']
-  ];
+  const GEO_STYLES = {'Pacific West Coast':['#FFF4DB','#FFDFA6','#915930'],'West':['#FFE8EE','#FFC6D4','#8A2E45'],'Midwest':['#E7F7FF','#C8EFFF','#0B5586'],'Southeast':['#EFFFF3','#CCF3D7','#1F6B3A'],'Northeast':['#F1ECFF','#DDD6FE','#4A38A5'],'Southwest':['#FFF0E6','#FFD6BD','#884A1F']};
+  const STATUS_STYLES = {'shareable':['#E6F6EA','#BFE7C8','#256D3C'],'working on it':['#E6F0FF','#C9D7FF','#2746B3'],'in progress':['#E6F0FF','#C9D7FF','#2746B3'],'yes':['#E6F6EA','#BFE7C8','#256D3C'],'true':['#E6F6EA','#BFE7C8','#256D3C'],'no':['#FEEAEA','#F8C7C7','#9F1D1D'],'not shareable':['#FEEAEA','#F8C7C7','#9F1D1D'],'false':['#FEEAEA','#F8C7C7','#9F1D1D'],'unknown':['#F2F4F7','#E4E7EC','#475467'],'n/a':['#F2F4F7','#E4E7EC','#475467'],'':['#F2F4F7','#E4E7EC','#475467']};
+  const TYPE_STYLES = {'Public':['#E7F7FF','#C8EFFF','#0B5586'],'Private':['#FFE8EE','#FFC6D4','#8A2E45'],'Community College':['#FFF4DB','#FFDFA6','#915930']};
+  const STATE_HUES = [['#E6F6EA','#BFE7C8','#256D3C'],['#E6F0FF','#C9D7FF','#2746B3'],['#FFF4DB','#FFDFA6','#915930'],['#F1ECFF','#DDD6FE','#4A38A5'],['#E7F7FF','#C8EFFF','#0B5586'],['#FFE8EE','#FFC6D4','#8A2E45'],['#EFFFF3','#CCF3D7','#1F6B3A'],['#FFF0E6','#FFD6BD','#884A1F'],['#F2F4F7','#E4E7EC','#475467'],['#EAF3FF','#CFE2FF','#23498C'],['#FDEBF6','#F8CDE8','#8F2D6A'],['#EAFBF7','#CFF3EA','#176D63']];
   function hashIndex(str){ let h=0; str=String(str||''); for(let i=0;i<str.length;i++){ h=(h*31 + str.charCodeAt(i))|0; } if(h<0) h=-h; return h % STATE_HUES.length; }
   function chipsFor(val, category){
     if (!val) return '';
@@ -462,26 +387,7 @@ const DEFAULT_FILTERABLE_KEYS = COLUMNS.map(c => c.key);
     }).join('');
   }
 
-  // --------- Filter popover config (auto from columns)
-  const pvFilter = document.getElementById('pvFilter');
-  const tbFilter = document.getElementById('tbFilter');
-  const fltCol = document.getElementById('fltCol');
-  const fltOp = document.getElementById('fltOp');
-  const fltVal = document.getElementById('fltVal');
-  const fltApplyBtn = document.getElementById('fltApplyBtn');
-  const fltResetBtn = document.getElementById('fltResetBtn');
-  let rule = { col:'', op:'contains', val:'' };
-
-  function initFilterCols(){
-    const allowed = new Set(DEFAULT_FILTERABLE_KEYS);
-    const opts = ['<option value="">Select a column…</option>']
-      .concat(COLUMNS
-        .filter(c=>allowed.has(c.key))
-        .map(c=>`<option value="${esc(c.key)}">${esc(c.title)}</option>`));
-    fltCol.innerHTML = opts.join('');
-  }
-
-  // --------- Sort state
+  // --------- Sorting
   let sort = {key:null, dir:1};
   function applySort(arr){
     if(!sort.key) return;
@@ -517,7 +423,119 @@ const DEFAULT_FILTERABLE_KEYS = COLUMNS.map(c => c.key);
     });
   }
 
-  // --------- Map item -> row object matching COLUMNS keys
+  // --------- Multi-condition filter (AND)
+  const pvFilter = document.getElementById('pvFilter');
+  const tbFilter = document.getElementById('tbFilter');
+  const fltApplyBtn = document.getElementById('fltApplyBtn');
+  const fltResetBtn = document.getElementById('fltResetBtn');
+  const addCondBtn  = document.getElementById('addCondBtn');
+  const condList    = document.getElementById('condList');
+
+  let rules = []; // each { col:'', op:'contains', val:'' }
+
+  function columnOptionsHTML(selectedKey){
+    return ['<option value="">Select a column…</option>']
+      .concat(COLUMNS.map(c=>{
+        const sel = c.key===selectedKey ? ' selected':'';
+        return `<option value="${esc(c.key)}"${sel}>${esc(c.title)}</option>`;
+      })).join('');
+  }
+  function operatorOptionsHTML(selectedOp){
+    const ops = [
+      ['contains','contains…'],
+      ['notcontains','does not contain…'],
+      ['is','is…'],
+      ['isnot','is not…'],
+      ['starts','starts with…'],
+      ['ends','ends with…'],
+      ['empty','is empty'],
+      ['notempty','is not empty']
+    ];
+    return ops.map(([v,label])=>{
+      const sel = (v===selectedOp)?' selected':'';
+      return `<option value="${v}"${sel}>${label}</option>`;
+    }).join('');
+  }
+  function rowHTML(rule, idx){
+    const needsVal = !(rule.op==='empty' || rule.op==='notempty');
+    const valInput = needsVal
+      ? `<input class="cond-val" type="text" value="${esc(rule.val||'')}" placeholder="value…"/>`
+      : `<input class="cond-val" type="text" value="" disabled />`;
+    return `
+      <div class="cond-row" data-idx="${idx}">
+        <select class="cond-col">${columnOptionsHTML(rule.col)}</select>
+        <select class="cond-op">${operatorOptionsHTML(rule.op||'contains')}</select>
+        ${valInput}
+        <button type="button" class="btn cond-del" title="Remove">🗑️</button>
+      </div>`;
+  }
+  function rebuildConditionsUI(){
+    condList.innerHTML = rules.map(rowHTML).join('');
+    condList.querySelectorAll('.cond-row').forEach(rowEl=>{
+      const idx = +rowEl.getAttribute('data-idx');
+      const colSel = rowEl.querySelector('.cond-col');
+      const opSel  = rowEl.querySelector('.cond-op');
+      const valInp = rowEl.querySelector('.cond-val');
+      const delBtn = rowEl.querySelector('.cond-del');
+
+      colSel.addEventListener('change', e=>{ rules[idx].col = e.target.value || ''; });
+      opSel.addEventListener('change', e=>{
+        rules[idx].op = e.target.value || 'contains';
+        const needsVal = !(rules[idx].op==='empty' || rules[idx].op==='notempty');
+        if (valInp){ valInp.disabled = !needsVal; if (!needsVal) valInp.value=''; rules[idx].val = needsVal ? (valInp.value||'') : ''; }
+      });
+      if (valInp) valInp.addEventListener('input', e=>{ rules[idx].val = e.target.value || ''; });
+      delBtn.addEventListener('click', ()=>{ rules.splice(idx,1); rebuildConditionsUI(); });
+    });
+  }
+  function addRule(){ rules.push({ col:'', op:'contains', val:'' }); rebuildConditionsUI(); }
+  function str(v){ return (v==null ? '' : String(v)); }
+  function passesAll(row){
+    for (const ru of rules){
+      if (!ru || !ru.col) continue;
+      const s = str(row[ru.col]).toLowerCase();
+      const v = str(ru.val).toLowerCase();
+      switch (ru.op){
+        case 'contains':     if (v && !s.includes(v)) return false; break;
+        case 'notcontains':  if (v &&  s.includes(v)) return false; break;
+        case 'is':
+        case 'equals':       if (s !== v) return false; break;
+        case 'isnot':        if (s === v) return false; break;
+        case 'starts':       if (v && !s.startsWith(v)) return false; break;
+        case 'ends':         if (v && !s.endsWith(v)) return false; break;
+        case 'empty':        if (s.trim() !== '') return false; break;
+        case 'notempty':     if (s.trim() === '') return false; break;
+      }
+    }
+    return true;
+  }
+
+  // Open/close filter popover
+  if (tbFilter && pvFilter){
+    tbFilter.addEventListener('click', (e)=>{
+      e.stopPropagation();
+      pvFilter.classList.toggle('open');
+      if (pvFilter.classList.contains('open')){
+        if (rules.length===0) addRule();
+        const r = tbFilter.getBoundingClientRect();
+        pvFilter.style.left = (r.left) + 'px';
+        pvFilter.style.top  = (r.bottom + window.scrollY + 8) + 'px';
+        const firstSel = condList.querySelector('.cond-row .cond-col');
+        if (firstSel) setTimeout(()=>firstSel.focus(), 0);
+      }
+    });
+    document.addEventListener('click', (e)=>{
+      if (!pvFilter.contains(e.target) && e.target !== tbFilter) pvFilter.classList.remove('open');
+    });
+    document.addEventListener('keydown', (e)=>{
+      if (e.key === 'Escape') pvFilter.classList.remove('open');
+    });
+  }
+  if (addCondBtn) addCondBtn.addEventListener('click', addRule);
+  if (fltApplyBtn) fltApplyBtn.addEventListener('click', ()=>{ pvFilter.classList.remove('open'); render(); });
+  if (fltResetBtn) fltResetBtn.addEventListener('click', ()=>{ rules=[]; rebuildConditionsUI(); pvFilter.classList.remove('open'); render(); });
+
+  // --------- Map item -> row
   function itemToRow(item){
     const row = {};
     for (const col of COLUMNS){
@@ -525,7 +543,7 @@ const DEFAULT_FILTERABLE_KEYS = COLUMNS.map(c => c.key);
       if (col.key==='name') {
         raw = (item && item.name ? item.name : '');
       } else if (Object.prototype.hasOwnProperty.call(item, col.colId)) {
-        // Use backend-calculated fields when present (e.g., total_calc, net_*_calc, work_comp_calc)
+        // Use backend-calculated fields if Netlify function added them to top-level item
         raw = item[col.colId];
       } else {
         raw = readCell(item, col.colId);
@@ -536,7 +554,7 @@ const DEFAULT_FILTERABLE_KEYS = COLUMNS.map(c => c.key);
     return row;
   }
 
-  // --------- Cell renderer using column meta
+  // --------- Cell renderer
   function renderCell(col, val){
     const title = col.title;
     if (col.type==='link')       return truncCell(val, title);
@@ -556,24 +574,7 @@ const DEFAULT_FILTERABLE_KEYS = COLUMNS.map(c => c.key);
   // --------- Render table
   function render(){
     const rows = items.map(itemToRow);
-
-    // Apply filter rule
-    const filtered = [];
-    for (const r of rows){
-      if (rule && rule.col){
-        const cell = r[rule.col];
-        const s = (cell==null ? '' : String(cell)).toLowerCase();
-        const v = String(rule.val || '').toLowerCase();
-        if (rule.op === 'contains' && v && s.indexOf(v) === -1) continue;
-        if (rule.op === 'equals' && s !== v) continue;
-        if (rule.op === 'starts' && v && s.lastIndexOf(v, 0) !== 0) continue;
-        if (rule.op === 'ends' && v && s.slice(-v.length) !== v) continue;
-        if (rule.op === 'empty' && s.trim() !== '') continue;
-        if (rule.op === 'notempty' && s.trim() === '') continue;
-      }
-      filtered.push(r);
-    }
-
+    const filtered = rows.filter(passesAll);   // <- multi-condition filter
     applySort(filtered);
     updateSortIndicators();
 
@@ -602,49 +603,6 @@ const DEFAULT_FILTERABLE_KEYS = COLUMNS.map(c => c.key);
     syncTopScrollbar();
   }
 
-  // --------- Head actions & popover wiring
-  function wirePopovers(){
-    const pvFilter = document.getElementById('pvFilter');
-    const tbFilter = document.getElementById('tbFilter');
-    if (tbFilter && pvFilter){
-      tbFilter.addEventListener('click', (e)=>{
-        e.stopPropagation();
-        pvFilter.classList.toggle('open');
-        if (pvFilter.classList.contains('open')) {
-          const r = tbFilter.getBoundingClientRect();
-          pvFilter.style.left = (r.left) + 'px';
-          pvFilter.style.top  = (r.bottom + window.scrollY + 8) + 'px';
-          if (fltVal) setTimeout(()=>fltVal.focus(), 0);
-        }
-      });
-      document.addEventListener('click', (e)=>{
-        if (!pvFilter.contains(e.target) && e.target !== tbFilter) pvFilter.classList.remove('open');
-      });
-      document.addEventListener('keydown', (e)=>{
-        if (e.key === 'Escape') pvFilter.classList.remove('open');
-      });
-    }
-    if (fltApplyBtn){
-      fltApplyBtn.addEventListener('click', ()=>{
-        rule.col = fltCol ? fltCol.value : '';
-        rule.op  = fltOp ? fltOp.value : 'contains';
-        rule.val = fltVal ? fltVal.value : '';
-        pvFilter.classList.remove('open');
-        render();
-      });
-    }
-    if (fltResetBtn){
-      fltResetBtn.addEventListener('click', ()=>{
-        rule = { col:'', op:'contains', val:'' };
-        if (fltCol) fltCol.value = '';
-        if (fltOp)  fltOp.value  = 'contains';
-        if (fltVal) fltVal.value = '';
-        pvFilter.classList.remove('open');
-        render();
-      });
-    }
-  }
-
   // Delegated click for popup (for .trunc spans)
   document.getElementById('tbody').addEventListener('click', (e)=>{
     let target = e.target;
@@ -655,14 +613,7 @@ const DEFAULT_FILTERABLE_KEYS = COLUMNS.map(c => c.key);
     if (String(full).trim()) openPopup(title, full);
   });
 
-  // Controls
-  if (reloadBtn) reloadBtn.onclick = ()=>{ if(isLoading) return; initialLoad(); };
-  if (moreBtn) moreBtn.onclick = ()=>{
-    if(isLoading || !cursor) return;
-    fetchAndAppend({limit: 100, cursorParam: cursor, progressive: true});
-  };
-
-  // Excel export (uses dynamic headers)
+  // Excel export
   if (exportBtn) exportBtn.addEventListener('click', function(){
     const headers = COLUMNS.map(c=>c.title);
     const rows = Array.from(tbody.querySelectorAll('tr')).map(tr =>
@@ -701,7 +652,7 @@ const DEFAULT_FILTERABLE_KEYS = COLUMNS.map(c => c.key);
   }
   window.addEventListener('resize', function(){ syncTopScrollbar(); adjustTableHeight(); });
 
-  // Data fetching (unchanged)
+  // Data fetching
   async function fetchBatch(params){
     const errorBanner = document.getElementById('errorBanner');
     const base = location.origin || window.location.href;
@@ -762,7 +713,6 @@ const DEFAULT_FILTERABLE_KEYS = COLUMNS.map(c => c.key);
   function initialHeadersAndUI(){
     buildThead();
     attachSortHandlers();
-    // populate Sort select with sortable columns
     const sortKeySel = document.getElementById('sortKey');
     if (sortKeySel){
       sortKeySel.innerHTML = ['<option value="">None</option>']
@@ -770,8 +720,6 @@ const DEFAULT_FILTERABLE_KEYS = COLUMNS.map(c => c.key);
         .join('');
       sortKeySel.addEventListener('change', e=>{ sort.key = e.target.value || null; sort.dir = 1; render(); });
     }
-    initFilterCols();
-    wirePopovers();
   }
 
   async function initialLoad(){
@@ -789,6 +737,7 @@ const DEFAULT_FILTERABLE_KEYS = COLUMNS.map(c => c.key);
 
   // start
   initialHeadersAndUI();
+  addRule(); // show one blank condition by default inside popover (optional)
   initialLoad();
 })();
 </script>
