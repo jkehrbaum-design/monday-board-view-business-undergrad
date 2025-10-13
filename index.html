@@ -49,6 +49,17 @@ input,select{height:36px;padding:0 10px;border:1px solid var(--line);border-radi
 .pv-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
 .pv-actions{display:flex;align-items:center;gap:8px;margin-top:8px}
 
+  /* Hide columns popover styling */
+.hide-list{ max-height:400px; overflow:auto; border-top:1px solid var(--line); border-bottom:1px solid var(--line); }
+.hide-row{ display:flex; align-items:center; gap:10px; padding:8px 4px; border-bottom:1px solid #f2f4f8; cursor:pointer; }
+.hide-row:last-child{ border-bottom:none; }
+.hide-drag{ opacity:.5; }
+.hide-dot{ width:10px; height:10px; border-radius:999px; background:#10b981; /* green = shown */ }
+.hide-row.hidden .hide-dot{ background:#d1d5db; } /* gray = hidden */
+.hide-title{ flex:1; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.hide-badge{ font-size:11px; color:#6b7280; }
+#hideSearch{ height:32px; font-size:13px; padding:4px 8px; border:1px solid var(--line); border-radius:6px; }
+
 /* Compact filter controls */
 #pvFilter select{ max-width:180px; font-size:13px; height:32px; padding:4px 8px; border-radius:6px; }
 #pvFilter input[type="text"]{ height:32px; font-size:13px; padding:4px 8px; }
@@ -110,6 +121,8 @@ tbody tr:hover td{background:#f8fafc}
 <style id="align-hotfix">
 thead th.right, tbody td.right{ text-align:center !important; }
 tbody td.trunc, tbody td.trunc-cell{ text-align:left !important; }
+
+  
 </style>
 </head>
 
@@ -133,7 +146,7 @@ tbody td.trunc, tbody td.trunc-cell{ text-align:left !important; }
   <!-- ======= TOOLBAR ======= -->
   <div class="toolbar" id="toolbar">
     <div class="toolbar-title sr-only">Table actions</div>
-    <button class="tb-btn" id="tbHide"><span class="ico">🙈</span> Hide fields</button>
+    <button class="tb-btn" id="tbHide"><span class="ico">🙈</span> Hide columns</button>
     <button class="tb-btn" id="tbFilter"><span class="ico">⎚</span> Filter</button>
     <button class="tb-btn" id="tbGroup"><span class="ico">▦</span> Group</button>
     <button class="tb-btn" id="tbSort"><span class="ico">↕</span> Sort</button>
@@ -141,7 +154,21 @@ tbody td.trunc, tbody td.trunc-cell{ text-align:left !important; }
     <button class="tb-btn" id="tbMore">…</button>
 
     <!-- POPUPS -->
-    <div class="popover" id="pvHide"></div>
+    <div class="popover" id="pvHide">
+  <div class="pv-row">
+    <label style="font-weight:600">Hide columns</label>
+    <input id="hideSearch" type="text" placeholder="Find a field" />
+  </div>
+
+  <div id="hideList" class="hide-list"></div>
+
+  <div class="pv-actions">
+    <button class="btn" id="hideAllBtn">Hide all</button>
+    <div class="spacer"></div>
+    <button class="btn" id="showAllBtn">Show all</button>
+  </div>
+</div>
+
 
     <!-- FILTER POPOVER (multi-condition) -->
     <div class="popover" id="pvFilter">
