@@ -32,39 +32,37 @@ input,select{height:36px;padding:0 10px;border:1px solid var(--line);border-radi
 .chip{background:var(--chip);color:var(--chipText);padding:4px 8px;border-radius:999px}
 .muted{color:var(--muted)}
 .spacer{flex:1}
-.toggle{display:inline-flex;align-items:center;gap:6px;font-size:12px;color:#444}
+.tb-ico{width:18px;height:18px;display:inline-block;vertical-align:-3px}
 
 /* Toolbar */
-.toolbar{position:sticky;top:0;z-index:20;background:var(--card);border:1px solid var(--line);border-radius:10px;padding:8px;margin-bottom:10px;display:flex;align-items:center;gap:6px;}
-.tb-btn{height:30px;padding:0 10px;border:1px solid var(--line);background:#fff;border-radius:8px;font-weight:600;display:inline-flex;align-items:center;gap:6px;cursor:pointer;}
-.tb-btn .ico{font-size:14px;line-height:1}
-.sr-only{position:absolute;left:-10000px;top:auto;width:1px;height:1px;overflow:hidden}
+.toolbar{position:sticky;top:0;z-index:20;background:var(--card);border:1px solid var(--line);border-radius:10px;padding:8px;margin-bottom:10px;display:flex;align-items:center;gap:8px;}
+.tb-btn{height:30px;padding:0 10px;border:1px solid var(--line);background:#fff;border-radius:8px;font-weight:600;display:inline-flex;align-items:center;gap:8px;cursor:pointer;}
+.tb-btn .ico{line-height:1}
 
 /* Popovers */
 .popover{position:absolute;top:44px;background:#fff;border:1px solid var(--line);border-radius:10px;box-shadow:0 12px 30px rgba(0,0,0,.10);padding:12px;display:none;min-width:340px;}
 .popover.open{display:block}
-#pvHide{min-width:260px} #pvSort{min-width:260px}
+#pvHide{min-width:420px}
+#pvFilter{min-width:520px}
+#pvSort{min-width:420px}
 .pv-row{display:flex;flex-direction:column;gap:6px;margin-bottom:10px}
 .pv-row-inline{display:flex;gap:10px;align-items:center}
-.pv-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
 .pv-actions{display:flex;align-items:center;gap:8px;margin-top:8px}
 
-/* Hide columns popover styling */
-.hide-list{ max-height:400px; overflow:auto; border-top:1px solid var(--line); border-bottom:1px solid var(--line); }
-.hide-row{ display:flex; align-items:center; gap:10px; padding:8px 4px; border-bottom:1px solid #f2f4f8; cursor:pointer; }
-.hide-row:last-child{ border-bottom:none; }
-.hide-drag{ opacity:.5; }
-.hide-dot{ width:10px; height:10px; border-radius:999px; background:#10b981; /* green = shown */ }
-.hide-row.hidden .hide-dot{ background:#d1d5db; } /* gray = hidden */
-.hide-title{ flex:1; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-.hide-badge{ font-size:11px; color:#6b7280; }
-#hideSearch{ height:32px; font-size:13px; padding:4px 8px; border:1px solid var(--line); border-radius:6px; }
+/* Hide columns popover */
+#hideSearch{height:32px;padding:4px 8px;border:1px solid var(--line);border-radius:8px}
+.hide-list{max-height:50vh;overflow:auto;margin-top:8px;border-top:1px dashed var(--line);padding-top:6px}
+.hide-row{display:flex;align-items:center;gap:10px;padding:6px 2px}
+.hide-name{flex:1}
+.switch{position:relative;width:34px;height:20px;background:#e5e7eb;border-radius:999px;cursor:pointer;border:1px solid #d1d5db}
+.switch::after{content:"";position:absolute;top:2px;left:2px;width:16px;height:16px;background:#fff;border-radius:50%;transition:left .18s ease}
+.switch.on{background:#22c55e;border-color:#16a34a}
+.switch.on::after{left:16px}
 
-
-/* Compact filter controls */
+/* Compact filter dropdown */
 #pvFilter select{ max-width:180px; font-size:13px; height:32px; padding:4px 8px; border-radius:6px; }
 #pvFilter input[type="text"]{ height:32px; font-size:13px; padding:4px 8px; }
-#pvFilter select:focus,#pvFilter input:focus{ outline:none; border-color:var(--primary); box-shadow:0 0 0 2px rgba(31,118,255,0.2); }
+#pvFilter select:focus,#pvFilter input:focus{ outline:none;border-color:var(--primary);box-shadow:0 0 0 2px rgba(31,118,255,0.2); }
 
 /* Top scrollbar */
 .hScrollTop{position:sticky;top:0;z-index:18;background:var(--card);border:1px solid var(--line);border-radius:10px;margin-bottom:8px;height:12px;overflow-x:auto;overflow-y:hidden;}
@@ -73,20 +71,18 @@ input,select{height:36px;padding:0 10px;border:1px solid var(--line);border-radi
 /* Table */
 .tableWrap{background:var(--card);border:1px solid var(--line);border-radius:10px;overflow:auto;position:relative;max-height:70vh;}
 table{border-collapse:separate;border-spacing:0;width:max-content;min-width:1200px;}
-thead th{position:sticky;top:0;background:var(--thead);z-index:5;font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.02em;color:#49506a;padding:8px 12px;min-height:44px;border-bottom:1px solid var(--line);user-select:none;cursor:pointer;box-shadow:0 1px 0 var(--line),0 1px 6px rgba(0,0,0,0.04);}
+thead th{position:sticky;top:0;background:var(--thead);z-index:5;font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.02em;color:#49506a;padding:8px 12px;min-height:44px;border-bottom:1px solid var(--line);user-select:none;cursor:pointer;box-shadow:0 1px 0 var(--line),0 1px 6px rgba(0,0,0,0.04);text-align:center;}
 thead th.sortable::after{content:" ⇅";font-size:10px;color:#999;margin-left:4px;}
 thead th.sort-asc::after{content:" ▲";} thead th.sort-desc::after{content:" ▼";}
 
-/* Default center alignment */
+/* Default center alignment for cells */
 tbody td{
   padding:10px 12px; line-height:20px; min-height:44px; border-top:1px solid var(--line);
-  vertical-align:middle; font-size:14px; max-width:280px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
-  text-align:center; /* default center */
+  vertical-align:middle; font-size:14px; max-width:280px; white-space:nowrap; overflow:hidden;
+  text-overflow:ellipsis; text-align:center;
 }
-/* Keep long text left-aligned */
-tbody td.trunc,tbody td.trunc-cell{ text-align:left !important; cursor:pointer; }
-/* Force anything marked .right to still be centered (per your request) */
-.right, thead th.right, tbody td.right{ text-align:center !important; }
+/* Long text cells left-aligned */
+tbody td.trunc, tbody td.trunc-cell{ text-align:left !important; cursor:pointer; }
 
 th.sticky, td.sticky{position:sticky;left:0;background:#fff;z-index:6;min-width:var(--stickyW);max-width:var(--stickyW);box-shadow:1px 0 0 var(--line);}
 thead th.sticky{z-index:7;left:0;}
@@ -96,14 +92,23 @@ tbody tr:hover td{background:#f8fafc}
 .link{color:var(--link);text-decoration:none;font-weight:600}
 .mono{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12px}
 
-/* Loader (with logo) */
+/* Loader container */
 #loader{position:fixed;inset:0;background:#fff;display:flex;align-items:center;justify-content:center;font-size:16px;color:#333;z-index:2000;}
-.spinner{width:48px;height:48px;border:4px solid #eee;border-top-color:var(--primary);border-radius:50%;animation:spin 1s linear infinite;margin-top:6px;}
+.spinner{width:48px;height:48px;border:4px solid #eee;border-top-color:var(--primary);border-radius:50%;animation:spin 1s linear infinite;margin-right:12px;}
 @keyframes spin{to{transform:rotate(360deg)}}
+
+/* Loader with logo */
 #loader .loader-inner{ display:flex; flex-direction:column; align-items:center; justify-content:center; gap:12px; }
 #loader .loader-logo{ width:140px; height:auto; display:block; opacity:0; animation:fadeIn .6s ease-in forwards; }
 #loader .loader-text{ font-size:14px; color:#333; }
-@keyframes fadeIn{ to{ opacity:1; } }
+@keyframes fadeIn{ to{opacity:1;} }
+
+/* Popup */
+#popup{display:none;position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:#fff;padding:16px 18px;border:1px solid var(--line);border-radius:10px;box-shadow:0 12px 30px rgba(0,0,0,.15);z-index:3000;max-width:700px;max-height:70vh;overflow:auto;}
+#popupClose{position:absolute;top:8px;right:12px;cursor:pointer;font-weight:700;}
+#popup h4{margin:0 24px 10px 0;font-size:14px;color:#555;}
+#popup pre{white-space:pre-wrap;word-break:break-word;font-family:inherit;font-size:14px;margin:0;}
+.little-spinner{width:14px;height:14px;border:2px solid #e2e8f0;border-top-color:#fff;border-radius:50%;animation:spin .8s linear infinite;}
 
 /* Dimension hotfix (wider) */
 .wrap{max-width:none;width:min(1800px,98vw);padding:0 12px;}
@@ -117,13 +122,13 @@ tbody tr:hover td{background:#f8fafc}
 #condList .cond-op{  min-width:170px; }
 #condList .cond-val{ min-width:220px; }
 #condList .cond-del{ height:30px; }
-</style>
 
-<style id="align-hotfix">
-thead th.right, tbody td.right{ text-align:center !important; }
-tbody td.trunc, tbody td.trunc-cell{ text-align:left !important; }
-
-  
+/* Records badge */
+#recordBadge{ display:flex; flex-direction:column; gap:6px; padding:6px 10px;
+  background:#fff; border:1px solid var(--line); border-radius:12px; min-width:140px; }
+#recordText{ font-size:14px; font-weight:600; color:#1f2937; }
+#recordBar{ position:relative; height:8px; background:#d1d5db; border-radius:999px; overflow:hidden; }
+#recordBarFill{ height:100%; width:100%; background:#9ca3af; border-radius:999px; transition:width .25s ease; }
 </style>
 </head>
 
@@ -136,7 +141,6 @@ tbody td.trunc, tbody td.trunc-cell{ text-align:left !important; }
     <div class="loader-text">Loading data…</div>
   </div>
 </div>
-
 <!-- Error banner -->
 <div id="errorBanner" style="display:none;margin:10px 0;padding:10px 12px;border:1px solid #f59e0b;background:#fff8e1;border-radius:8px;color:#7c2d12;font-size:13px"></div>
 
@@ -147,32 +151,50 @@ tbody td.trunc, tbody td.trunc-cell{ text-align:left !important; }
   <!-- ======= TOOLBAR ======= -->
   <div class="toolbar" id="toolbar">
     <div class="toolbar-title sr-only">Table actions</div>
-    <button class="tb-btn" id="tbHide"><span class="ico">🙈</span> Hide columns</button>
-    <button class="tb-btn" id="tbFilter"><span class="ico">⎚</span> Filter</button>
-    <button class="tb-btn" id="tbGroup"><span class="ico">▦</span> Group</button>
-    <button class="tb-btn" id="tbSort"><span class="ico">↕</span> Sort</button>
+
+    <button class="tb-btn" id="tbHide">
+      <svg class="tb-ico" viewBox="0 0 24 24" fill="none" stroke="#111" stroke-width="2"><path d="M3 3l18 18"/><path d="M10.6 10.6a2 2 0 102.8 2.8"/><path d="M9.9 4.2A9.9 9.9 0 0121 12c-.7 1.2-2.5 3.6-5.4 4.9M6.5 6.5C4 8 2.7 9.9 2 12c.7 1.8 2.7 4.5 6 6"/></svg>
+      Hide columns
+    </button>
+
+    <button class="tb-btn" id="tbFilter">
+      <svg class="tb-ico" viewBox="0 0 24 24" fill="none" stroke="#111" stroke-width="2"><path d="M3 5h18l-7 8v6l-4-2v-4z"/></svg>
+      Filter
+    </button>
+
+    <button class="tb-btn" id="tbGroup">
+      <svg class="tb-ico" viewBox="0 0 24 24" fill="none" stroke="#111" stroke-width="2"><rect x="3" y="4" width="8" height="6"/><rect x="13" y="4" width="8" height="6"/><rect x="3" y="14" width="8" height="6"/><rect x="13" y="14" width="8" height="6"/></svg>
+      Group
+    </button>
+
+    <button class="tb-btn" id="tbSort">
+      <svg class="tb-ico" viewBox="0 0 24 24" fill="none" stroke="#111" stroke-width="2"><path d="M7 4v16M7 4l-3 3M7 4l3 3M17 20V4m0 16l-3-3m3 3l3-3"/></svg>
+      Sort
+    </button>
+
     <div class="spacer"></div>
+
+    <!-- Records badge -->
+    <div id="recordBadge" aria-live="polite">
+      <div id="recordText">0 records</div>
+      <div id="recordBar"><div id="recordBarFill"></div></div>
+    </div>
+
     <button class="tb-btn" id="tbMore">…</button>
 
-    <!-- POPUPS -->
+    <!-- HIDE COLUMNS POPOVER -->
     <div class="popover" id="pvHide">
-  <div class="pv-row">
-    <label style="font-weight:600">Hide columns</label>
-    <input id="hideSearch" type="text" placeholder="Find a field" />
-  </div>
+      <div class="pv-row"><label style="font-weight:600">Hide columns</label></div>
+      <input id="hideSearch" type="text" placeholder="Find a field" />
+      <div class="hide-list" id="hideList"></div>
+      <div class="pv-actions">
+        <button class="btn" id="hideAllBtn">Hide all</button>
+        <div class="spacer"></div>
+        <button class="btn" id="showAllBtn">Show all</button>
+      </div>
+    </div>
 
-  <div id="hideList" class="hide-list"></div>
-
-  <div class="pv-actions">
-    <button class="btn" id="hideAllBtn">Hide all</button>
-    <div class="spacer"></div>
-    <button class="btn" id="showAllBtn">Show all</button>
-  </div>
-</div>
-
-
-
-    <!-- FILTER POPOVER (multi-condition) -->
+    <!-- FILTER POPOVER -->
     <div class="popover" id="pvFilter">
       <div class="pv-row"><label style="font-weight:600">Add conditions</label></div>
       <div id="condList"></div>
@@ -184,15 +206,19 @@ tbody td.trunc, tbody td.trunc-cell{ text-align:left !important; }
       </div>
     </div>
 
+    <!-- SORT POPOVER -->
     <div class="popover" id="pvSort">
-      <label>Sort by</label>
-      <select id="sortKey"></select>
-      <div class="pv-row-inline">
-        <label><input type="radio" name="sortDir" value="asc" checked /> Asc</label>
-        <label><input type="radio" name="sortDir" value="desc" /> Desc</label>
+      <div class="pv-row"><label style="font-weight:600">Sort by</label></div>
+      <div class="pv-row-inline" id="sortRow">
+        <select id="sortKey" style="min-width:240px"></select>
+        <select id="sortDir" style="min-width:120px">
+          <option value="asc">A → Z</option>
+          <option value="desc">Z → A</option>
+        </select>
       </div>
     </div>
 
+    <!-- MORE POPOVER -->
     <div class="popover" id="pvMore">
       <div class="pv-row-inline">
         <button class="btn" id="reloadBtn"><div class="little-spinner" id="reloadSpin" style="display:none"></div>Reload</button>
@@ -228,7 +254,7 @@ tbody td.trunc, tbody td.trunc-cell{ text-align:left !important; }
 
 <script>
 (function(){
-  // ===== 1) Columns (single source of truth) =====
+  // ===== COLUMNS ============================================================
   const COLUMNS = [
     { key:'name',           title:'Name', sticky:true,  sortable:true, type:'text',  colId:'name' },
     { key:'photos_desc',    title:'Photos & Description', type:'link',   colId:'link4' },
@@ -264,7 +290,7 @@ tbody td.trunc, tbody td.trunc-cell{ text-align:left !important; }
     { key:'degrees_link',   title:'Bachelor’s Degrees Link',           type:'link',  colId:'link30' },
     { key:'acad_year',      title:'Academic Year',      trunc:true,    type:'text',  colId:'dropdown4' },
 
-    /* Money + formulas (prefer backend-calculated fields if present) */
+    /* Money + formulas (prefer backend-calculated fields) */
     { key:'tuition',        title:'Tuition (Annual Cost in USD)', align:'right', type:'money', colId:'annual_tuition_cost' },
     { key:'room',           title:'Room (Annual Cost in USD)',    align:'right', type:'money', colId:'_usd__annual_room_cost' },
     { key:'board',          title:'Board (Annual Cost in USD)',   align:'right', type:'money', colId:'_usd__annual_board_cost' },
@@ -292,7 +318,7 @@ tbody td.trunc, tbody td.trunc-cell{ text-align:left !important; }
     { key:'sat_hi',         title:'SAT Minimum (Highest Scholarship)', align:'right', type:'number', colId:'numbers41' },
     { key:'sch_hi_info',    title:'Additional Info and Link/s on Highest Scholarship Amount (Highest)', trunc:true, type:'text', colId:'long_text78' },
 
-    /* Net costs (backend calc ids) */
+    /* Net costs — backend ids */
     { key:'net_low',        title:'(Lowest) Possible Net Cost of Attendance', align:'right', type:'money', colId:'net_low_calc' },
     { key:'net_mid',        title:'(Mid-Range) Possible Net Cost of Attendance (F)', align:'right', type:'money', colId:'net_mid_calc' },
     { key:'net_hi',         title:'(Highest) Possible Net Cost of Attendance', align:'right', type:'money', colId:'net_hi_calc' },
@@ -303,13 +329,13 @@ tbody td.trunc, tbody td.trunc-cell{ text-align:left !important; }
     { key:'campus_job',     title:'Campus Employment?', type:'chip', colId:'status_113', chipCategory:'status' },
     { key:'min_wage',       title:'2025 Min Wage', align:'right', type:'money', colId:'numbers985' },
 
-    /* Work comp (backend calc) */
+    /* Work comp — backend calc */
     { key:'work_comp',      title:'Annual Work on Campus Compensation (Most Probable)', align:'right', type:'money', colId:'work_comp_calc' },
     { key:'work_details_b', title:'Work on Campus Details', trunc:true, type:'text', colId:'long_text56' },
   ];
 
-  // All columns are filterable in the popover
-  const DEFAULT_FILTERABLE_KEYS = COLUMNS.map(c => c.key);
+  // show ALL columns in filter pickers
+  const DEFAULT_FILTERABLE_KEYS = COLUMNS.map(c=>c.key);
 
   // --- global error surface
   window.addEventListener('error', function (e) {
@@ -333,6 +359,8 @@ tbody td.trunc, tbody td.trunc-cell{ text-align:left !important; }
   const theadRow = document.getElementById('thead-row');
   const shown = document.getElementById('shown');
   const loaded = document.getElementById('loaded');
+  const recordText = document.getElementById('recordText');
+  const recordBarFill = document.getElementById('recordBarFill');
 
   // Top scrollbar & table wrap
   const hScrollTop = document.getElementById('hScrollTop');
@@ -346,6 +374,36 @@ tbody td.trunc, tbody td.trunc-cell{ text-align:left !important; }
   const moreBtn = document.getElementById('moreBtn');
   const moreSpin = document.getElementById('moreSpin');
   const exportBtn = document.getElementById('exportBtn');
+
+  // Popovers + toolbar buttons
+  const tbHide = document.getElementById('tbHide');
+  const tbFilter = document.getElementById('tbFilter');
+  const tbSort = document.getElementById('tbSort');
+
+  const pvHide = document.getElementById('pvHide');
+  const pvFilter = document.getElementById('pvFilter');
+  const pvSort = document.getElementById('pvSort');
+
+  // Hide columns refs
+  const hideSearch = document.getElementById('hideSearch');
+  const hideList = document.getElementById('hideList');
+  const hideAllBtn = document.getElementById('hideAllBtn');
+  const showAllBtn = document.getElementById('showAllBtn');
+
+  // Filter (multi-rule)
+  const fltApplyBtn = document.getElementById('fltApplyBtn');
+  const fltResetBtn = document.getElementById('fltResetBtn');
+  const addCondBtn  = document.getElementById('addCondBtn');
+  const condList    = document.getElementById('condList');
+  let rules = []; // { col, op, val }
+
+  // Sort
+  const sortKeySel = document.getElementById('sortKey');
+  const sortDirSel = document.getElementById('sortDir');
+  let sort = { key:null, dir:1 };
+
+  // Hidden columns set
+  const hidden = new Set();
 
   // Popup
   const popup = document.getElementById('popup');
@@ -377,7 +435,7 @@ tbody td.trunc, tbody td.trunc-cell{ text-align:left !important; }
     return out.trim();
   }
 
-  // --------- Monday read helpers
+  // --------- Helpers
   function safeReplaceAll(str, search, repl){ return String(str).split(search).join(repl); }
   function readCell(item, colId){
     const cvs = item && item.column_values ? item.column_values : null; if (!cvs) return "";
@@ -392,21 +450,16 @@ tbody td.trunc, tbody td.trunc-cell{ text-align:left !important; }
     if (t === "formula") return v.text || "";
     return v.text || "";
   }
-
-  // --------- Format helpers
   function numberFrom(a){ if(a==null) return null; const s = (""+a).replace(/[^\d.\-]/g,''); if(!s) return null; const n = parseFloat(s); return Number.isFinite(n)?n:null; }
   function formatMoney(n){ if(n==null || n==="") return ""; try{ return new Intl.NumberFormat('en-US',{style:'currency',currency:'USD',maximumFractionDigits:0}).format(n); } catch{ return "$"+n; } }
   function formatInt(n){ if(n==null || n==="") return ""; try{ return new Intl.NumberFormat('en-US',{maximumFractionDigits:0}).format(n); } catch{ return String(n); } }
   function esc(s){ return (s==null?"":String(s)).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
-  function truncCell(content, title){
-    const full = (content==null?"":String(content)).trim(); if(!full) return '';
-    const urlMatch = full.match(/https?:\/\/\S+/); if(urlMatch) return '<a class="link" href="'+esc(urlMatch[0])+'" target="_blank" rel="noopener">Link</a>';
-    return '<span class="trunc" data-title="'+esc(title||'Details')+'" data-full="'+esc(full)+'">'+esc(full)+'</span>';
-  }
 
-  // --------- Build THEAD from COLUMNS
+  // --------- Dynamic columns (respect hidden set)
+  function visibleCols(){ return COLUMNS.filter(c => !hidden.has(c.key)); }
   function buildThead(){
-    theadRow.innerHTML = COLUMNS.map(col=>{
+    const cols = visibleCols();
+    theadRow.innerHTML = cols.map(col=>{
       const cls = [
         col.sticky ? 'sticky':'',
         col.sortable ? 'sortable':'',
@@ -416,11 +469,149 @@ tbody td.trunc, tbody td.trunc-cell{ text-align:left !important; }
     }).join('');
   }
 
-  // --------- Sorting
-  let sort = {key:null, dir:1};
+  // --------- Filter (multi-rule) UI
+  function columnOptionsHTML(selectedKey){
+    return ['<option value="">Select a column…</option>']
+      .concat(COLUMNS.map(c => `<option value="${esc(c.key)}"${c.key===selectedKey?' selected':''}>${esc(c.title)}</option>`))
+      .join('');
+  }
+  function operatorOptionsHTML(selectedOp){
+    const ops = [['contains','contains…'],['notcontains','does not contain…'],['is','is…'],['isnot','is not…'],['starts','starts with…'],['ends','ends with…'],['empty','is empty'],['notempty','is not empty']];
+    return ops.map(([v,l])=>`<option value="${v}"${v===selectedOp?' selected':''}>${l}</option>`).join('');
+  }
+  function rowHTML(rule, idx){
+    const valInput = (rule.op==='empty' || rule.op==='notempty')
+      ? `<input class="cond-val" type="text" value="" disabled />`
+      : `<input class="cond-val" type="text" value="${esc(rule.val||'')}" placeholder="value…" />`;
+    return `
+      <div class="cond-row" data-idx="${idx}">
+        <select class="cond-col">${columnOptionsHTML(rule.col)}</select>
+        <select class="cond-op">${operatorOptionsHTML(rule.op||'contains')}</select>
+        ${valInput}
+        <button type="button" class="btn cond-del" title="Remove">🗑️</button>
+      </div>
+    `;
+  }
+  function rebuildConditionsUI(){
+    condList.innerHTML = rules.map(rowHTML).join('');
+    condList.querySelectorAll('.cond-row').forEach(rowEl=>{
+      const idx = +rowEl.getAttribute('data-idx');
+      const colSel = rowEl.querySelector('.cond-col');
+      const opSel  = rowEl.querySelector('.cond-op');
+      const valInp = rowEl.querySelector('.cond-val');
+      const delBtn = rowEl.querySelector('.cond-del');
+
+      colSel.addEventListener('change', e=>{ rules[idx].col = e.target.value || ''; });
+      opSel.addEventListener('change', e=>{
+        rules[idx].op = e.target.value || 'contains';
+        const needsVal = !(rules[idx].op==='empty' || rules[idx].op==='notempty');
+        if (valInp){ valInp.disabled = !needsVal; if (!needsVal) valInp.value = ''; rules[idx].val = needsVal ? (valInp.value||'') : ''; }
+      });
+      if (valInp){ valInp.addEventListener('input', e=>{ rules[idx].val = e.target.value || ''; }); }
+      delBtn.addEventListener('click', ()=>{ rules.splice(idx,1); rebuildConditionsUI(); });
+    });
+  }
+  function addRule(){ rules.push({ col:'', op:'contains', val:'' }); rebuildConditionsUI(); }
+  if (addCondBtn) addCondBtn.addEventListener('click', addRule);
+
+  // Filter popover toggle
+  if (tbFilter && pvFilter){
+    tbFilter.addEventListener('click', (e)=>{
+      e.stopPropagation();
+      pvFilter.classList.toggle('open');
+      if (pvFilter.classList.contains('open')){
+        if (rules.length===0) addRule();
+        const r = tbFilter.getBoundingClientRect();
+        pvFilter.style.left = (r.left) + 'px';
+        pvFilter.style.top  = (r.bottom + window.scrollY + 8) + 'px';
+        const firstSel = condList.querySelector('.cond-row .cond-col');
+        if (firstSel) setTimeout(()=>firstSel.focus(), 0);
+      }
+    });
+  }
+  document.addEventListener('click', (e)=>{
+    if (!pvFilter.contains(e.target) && e.target !== tbFilter) pvFilter.classList.remove('open');
+    if (!pvHide.contains(e.target) && e.target !== tbHide) pvHide.classList.remove('open');
+    if (!pvSort.contains(e.target) && e.target !== tbSort) pvSort.classList.remove('open');
+  });
+  document.addEventListener('keydown', (e)=>{
+    if (e.key === 'Escape'){ pvFilter.classList.remove('open'); pvHide.classList.remove('open'); pvSort.classList.remove('open'); }
+  });
+
+  if (fltApplyBtn){ fltApplyBtn.addEventListener('click', ()=>{ pvFilter.classList.remove('open'); render(); }); }
+  if (fltResetBtn){ fltResetBtn.addEventListener('click', ()=>{ rules = []; rebuildConditionsUI(); pvFilter.classList.remove('open'); render(); }); }
+
+  // --------- Hide columns UI
+  function drawHideList(){
+    const q = (hideSearch.value||'').toLowerCase();
+    const rows = COLUMNS
+      .filter(c => c.key!=='name') // keep Name always visible
+      .filter(c => c.title.toLowerCase().includes(q) || c.key.toLowerCase().includes(q))
+      .map(c=>{
+        const on = !hidden.has(c.key);
+        return `
+          <div class="hide-row" data-key="${esc(c.key)}">
+            <div class="switch ${on?'on':''}" aria-label="toggle ${esc(c.title)}" role="switch" aria-checked="${on?'true':'false'}"></div>
+            <div class="hide-name">${esc(c.title)}</div>
+          </div>
+        `;
+      }).join('');
+    hideList.innerHTML = rows || '<div class="muted" style="padding:6px 2px">No matches</div>';
+
+    hideList.querySelectorAll('.hide-row .switch').forEach(sw=>{
+      sw.addEventListener('click', ()=>{
+        const key = sw.parentElement.getAttribute('data-key');
+        if (hidden.has(key)) hidden.delete(key); else hidden.add(key);
+        sw.classList.toggle('on');
+        sw.setAttribute('aria-checked', sw.classList.contains('on')?'true':'false');
+        buildThead(); attachSortHandlers(); render();
+      });
+    });
+  }
+  if (tbHide){
+    tbHide.addEventListener('click', (e)=>{
+      e.stopPropagation();
+      pvHide.classList.toggle('open');
+      if (pvHide.classList.contains('open')){
+        const r = tbHide.getBoundingClientRect();
+        pvHide.style.left = (r.left) + 'px';
+        pvHide.style.top  = (r.bottom + window.scrollY + 8) + 'px';
+        drawHideList();
+        hideSearch.focus();
+      }
+    });
+  }
+  hideSearch.addEventListener('input', drawHideList);
+  hideAllBtn.addEventListener('click', ()=>{ COLUMNS.forEach(c=>{ if(c.key!=='name') hidden.add(c.key); }); drawHideList(); buildThead(); attachSortHandlers(); render(); });
+  showAllBtn.addEventListener('click', ()=>{ hidden.clear(); drawHideList(); buildThead(); attachSortHandlers(); render(); });
+
+  // --------- Sort (A→Z / Z→A) UI
+  function initSortUI(){
+    sortKeySel.innerHTML = ['<option value="">Name</option>']
+      .concat(COLUMNS.filter(c=>c.sortable || c.type==='text' || c.type==='money' || c.type==='number')
+        .map(c=>`<option value="${esc(c.key)}">${esc(c.title)}</option>`)).join('');
+    sortKeySel.addEventListener('change', e=>{ const k=e.target.value||'name'; sort.key=k; render(); });
+    sortDirSel.addEventListener('change', e=>{ sort.dir = (e.target.value==='asc')?1:-1; render(); });
+  }
+  if (tbSort){
+    tbSort.addEventListener('click', (e)=>{
+      e.stopPropagation();
+      pvSort.classList.toggle('open');
+      if (pvSort.classList.contains('open')){
+        const r = tbSort.getBoundingClientRect();
+        pvSort.style.left = (r.left) + 'px';
+        pvSort.style.top  = (r.bottom + window.scrollY + 8) + 'px';
+        if (!sort.key) sort.key = 'name';
+        initSortUI();
+        sortKeySel.value = sort.key || '';
+        sortDirSel.value = sort.dir===1 ? 'asc' : 'desc';
+      }
+    });
+  }
+
   function applySort(arr){
     if(!sort.key) return;
-    const meta = COLUMNS.find(c=>c.key===sort.key);
+    const meta = COLUMNS.find(c=>c.key===sort.key) || COLUMNS.find(c=>c.key==='name');
     const d = sort.dir;
     const type = meta && (meta.type==='money' || meta.type==='number') ? 'number':'text';
     arr.sort((a,b)=>{
@@ -442,138 +633,27 @@ tbody td.trunc, tbody td.trunc-cell{ text-align:left !important; }
   function attachSortHandlers(){
     document.querySelectorAll('thead th').forEach(th=>{
       const key = th.getAttribute('data-key');
-      if (COLUMNS.find(c=>c.key===key && c.sortable)){
-        th.classList.add('sortable');
+      if (COLUMNS.find(c=>c.key===key)){
         th.addEventListener('click', ()=>{
           if (sort.key===key) sort.dir*=-1; else { sort.key=key; sort.dir=1; }
+          sortKeySel && (sortKeySel.value = sort.key);
+          sortDirSel && (sortDirSel.value = sort.dir===1?'asc':'desc');
           render();
         });
       }
     });
   }
 
-  // --------- Multi-condition filter (AND)
-  const pvFilter = document.getElementById('pvFilter');
-  const tbFilter = document.getElementById('tbFilter');
-  const fltApplyBtn = document.getElementById('fltApplyBtn');
-  const fltResetBtn = document.getElementById('fltResetBtn');
-  const addCondBtn  = document.getElementById('addCondBtn');
-  const condList    = document.getElementById('condList');
-
-  let rules = []; // each { col:'', op:'contains', val:'' }
-
-  function columnOptionsHTML(selectedKey){
-    return ['<option value="">Select a column…</option>']
-      .concat(COLUMNS.map(c=>{
-        const sel = c.key===selectedKey ? ' selected':'';
-        return `<option value="${esc(c.key)}"${sel}>${esc(c.title)}</option>`;
-      })).join('');
-  }
-  function operatorOptionsHTML(selectedOp){
-    const ops = [
-      ['contains','contains…'],
-      ['notcontains','does not contain…'],
-      ['is','is…'],
-      ['isnot','is not…'],
-      ['starts','starts with…'],
-      ['ends','ends with…'],
-      ['empty','is empty'],
-      ['notempty','is not empty']
-    ];
-    return ops.map(([v,label])=>{
-      const sel = (v===selectedOp)?' selected':'';
-      return `<option value="${v}"${sel}>${label}</option>`;
-    }).join('');
-  }
-  function rowHTML(rule, idx){
-    const needsVal = !(rule.op==='empty' || rule.op==='notempty');
-    const valInput = needsVal
-      ? `<input class="cond-val" type="text" value="${esc(rule.val||'')}" placeholder="value…"/>`
-      : `<input class="cond-val" type="text" value="" disabled />`;
-    return `
-      <div class="cond-row" data-idx="${idx}">
-        <select class="cond-col">${columnOptionsHTML(rule.col)}</select>
-        <select class="cond-op">${operatorOptionsHTML(rule.op||'contains')}</select>
-        ${valInput}
-        <button type="button" class="btn cond-del" title="Remove">🗑️</button>
-      </div>`;
-  }
-  function rebuildConditionsUI(){
-    condList.innerHTML = rules.map(rowHTML).join('');
-    condList.querySelectorAll('.cond-row').forEach(rowEl=>{
-      const idx = +rowEl.getAttribute('data-idx');
-      const colSel = rowEl.querySelector('.cond-col');
-      const opSel  = rowEl.querySelector('.cond-op');
-      const valInp = rowEl.querySelector('.cond-val');
-      const delBtn = rowEl.querySelector('.cond-del');
-
-      colSel.addEventListener('change', e=>{ rules[idx].col = e.target.value || ''; });
-      opSel.addEventListener('change', e=>{
-        rules[idx].op = e.target.value || 'contains';
-        const needsVal = !(rules[idx].op==='empty' || rules[idx].op==='notempty');
-        if (valInp){ valInp.disabled = !needsVal; if (!needsVal) valInp.value=''; rules[idx].val = needsVal ? (valInp.value||'') : ''; }
-      });
-      if (valInp) valInp.addEventListener('input', e=>{ rules[idx].val = e.target.value || ''; });
-      delBtn.addEventListener('click', ()=>{ rules.splice(idx,1); rebuildConditionsUI(); });
-    });
-  }
-  function addRule(){ rules.push({ col:'', op:'contains', val:'' }); rebuildConditionsUI(); }
-  function str(v){ return (v==null ? '' : String(v)); }
-  function passesAll(row){
-    for (const ru of rules){
-      if (!ru || !ru.col) continue;
-      const s = str(row[ru.col]).toLowerCase();
-      const v = str(ru.val).toLowerCase();
-      switch (ru.op){
-        case 'contains':     if (v && !s.includes(v)) return false; break;
-        case 'notcontains':  if (v &&  s.includes(v)) return false; break;
-        case 'is':
-        case 'equals':       if (s !== v) return false; break;
-        case 'isnot':        if (s === v) return false; break;
-        case 'starts':       if (v && !s.startsWith(v)) return false; break;
-        case 'ends':         if (v && !s.endsWith(v)) return false; break;
-        case 'empty':        if (s.trim() !== '') return false; break;
-        case 'notempty':     if (s.trim() === '') return false; break;
-      }
-    }
-    return true;
-  }
-
-  // Open/close filter popover
-  if (tbFilter && pvFilter){
-    tbFilter.addEventListener('click', (e)=>{
-      e.stopPropagation();
-      pvFilter.classList.toggle('open');
-      if (pvFilter.classList.contains('open')){
-        if (rules.length===0) addRule();
-        const r = tbFilter.getBoundingClientRect();
-        pvFilter.style.left = (r.left) + 'px';
-        pvFilter.style.top  = (r.bottom + window.scrollY + 8) + 'px';
-        const firstSel = condList.querySelector('.cond-row .cond-col');
-        if (firstSel) setTimeout(()=>firstSel.focus(), 0);
-      }
-    });
-    document.addEventListener('click', (e)=>{
-      if (!pvFilter.contains(e.target) && e.target !== tbFilter) pvFilter.classList.remove('open');
-    });
-    document.addEventListener('keydown', (e)=>{
-      if (e.key === 'Escape') pvFilter.classList.remove('open');
-    });
-  }
-  if (addCondBtn) addCondBtn.addEventListener('click', addRule);
-  if (fltApplyBtn) fltApplyBtn.addEventListener('click', ()=>{ pvFilter.classList.remove('open'); render(); });
-  if (fltResetBtn) fltResetBtn.addEventListener('click', ()=>{ rules=[]; rebuildConditionsUI(); pvFilter.classList.remove('open'); render(); });
-
-  // --------- Map item -> row
+  // --------- Map item -> row object
   function itemToRow(item){
     const row = {};
     for (const col of COLUMNS){
+      if (hidden.has(col.key)) continue; // we'll still compute but render filters use only visible; optional choice
       let raw;
       if (col.key==='name') {
         raw = (item && item.name ? item.name : '');
       } else if (Object.prototype.hasOwnProperty.call(item, col.colId)) {
-        // Use backend-calculated fields if Netlify function added them to top-level item
-        raw = item[col.colId];
+        raw = item[col.colId]; // backend-calculated field support
       } else {
         raw = readCell(item, col.colId);
       }
@@ -594,42 +674,94 @@ tbody td.trunc, tbody td.trunc-cell{ text-align:left !important; }
     if (col.trunc===true)        return `<span class="trunc" data-title="${esc(title)}" data-full="${esc(val||'')}">${esc(val||'')}</span>`;
     return esc(val||'');
   }
+  function truncCell(content, title){
+    const full = (content==null?"":String(content)).trim(); if(!full) return '';
+    const urlMatch = full.match(/https?:\/\/\S+/); if(urlMatch) return '<a class="link" href="'+esc(urlMatch[0])+'" target="_blank" rel="noopener">Link</a>';
+    return '<span class="trunc" data-title="'+esc(title||'Details')+'" data-full="'+esc(full)+'">'+esc(full)+'</span>';
+  }
 
   // --------- Data & state
   let items = [];
   let cursor = null;
   let isLoading = false;
 
+  // --------- Filtering logic (multi-rule, AND)
+  function passesAll(row){
+    if (!rules || !rules.length) return true;
+    for (const r of rules){
+      const key = (r.col||'').trim(); if (!key) return true;
+      const cell = row[key];
+      const s = (cell==null ? '' : String(cell)).toLowerCase();
+      const v = String(r.val || '').toLowerCase();
+      switch (r.op){
+        case 'contains':     if (!v || s.indexOf(v) !== -1) break; else return false;
+        case 'notcontains':  if (!v || s.indexOf(v) === -1) break; else return false;
+        case 'is':           if (s === v) break; else return false;
+        case 'isnot':        if (s !== v) break; else return false;
+        case 'starts':       if (!v || s.lastIndexOf(v, 0) === 0) break; else return false;
+        case 'ends':         if (!v || s.slice(-v.length) === v) break; else return false;
+        case 'empty':        if (s.trim() === '') break; else return false;
+        case 'notempty':     if (s.trim() !== '') break; else return false;
+        default:             break;
+      }
+    }
+    return true;
+  }
+
   // --------- Render table
   function render(){
     const rows = items.map(itemToRow);
-    const filtered = rows.filter(passesAll);   // <- multi-condition filter
+
+    // Apply filters
+    const filtered = rows.filter(passesAll);
+
+    // Update counters
+    if (recordText) recordText.textContent = `${filtered.length} records`;
+    if (shown) shown.textContent = filtered.length + ' shown';
+    if (loaded) loaded.textContent = items.length + ' loaded';
+
+    // Sort + draw
     applySort(filtered);
     updateSortIndicators();
 
-    // Build rows
+    const cols = visibleCols();
     let html = '';
     for (const r of filtered){
       html += '<tr>';
-      for (const col of COLUMNS){
+      for (const col of cols){
+        const val = r[col.key];
         const cls = [
           col.sticky ? 'sticky':'',
           col.align==='right' ? 'right':'',
           col.trunc ? 'trunc-cell':''
         ].filter(Boolean).join(' ');
         const tdClass = cls ? ` class="${cls}"` : '';
-        html += `<td${tdClass}>${renderCell(col, r[col.key])}</td>`;
+        html += `<td${tdClass}>${renderCell(col, val)}</td>`;
       }
       html += '</tr>';
     }
     tbody.innerHTML = html;
 
-    if (shown) shown.textContent = filtered.length + ' shown';
-    if (loaded) loaded.textContent = items.length + ' loaded';
-    if (moreBtn) moreBtn.style.display = cursor ? 'inline-flex' : 'none';
+    const hasCursor = !!cursor;
+    if (moreBtn) moreBtn.style.display = hasCursor ? 'inline-flex' : 'none';
 
     adjustTableHeight();
     syncTopScrollbar();
+  }
+
+  // --------- Head actions & popover wiring for More
+  const tbMore = document.getElementById('tbMore');
+  const pvMore = document.getElementById('pvMore');
+  if (tbMore && pvMore){
+    tbMore.addEventListener('click', (e)=>{
+      e.stopPropagation();
+      pvMore.classList.toggle('open');
+      if (pvMore.classList.contains('open')){
+        const r = tbMore.getBoundingClientRect();
+        pvMore.style.left = (r.left) + 'px';
+        pvMore.style.top  = (r.bottom + window.scrollY + 8) + 'px';
+      }
+    });
   }
 
   // Delegated click for popup (for .trunc spans)
@@ -642,9 +774,16 @@ tbody td.trunc, tbody td.trunc-cell{ text-align:left !important; }
     if (String(full).trim()) openPopup(title, full);
   });
 
-  // Excel export
+  // Controls
+  if (reloadBtn) reloadBtn.onclick = ()=>{ if(isLoading) return; initialLoad(); };
+  if (moreBtn) moreBtn.onclick = ()=>{
+    if(isLoading || !cursor) return;
+    fetchAndAppend({limit: 100, cursorParam: cursor, progressive: true});
+  };
+
+  // Excel export (uses dynamic headers)
   if (exportBtn) exportBtn.addEventListener('click', function(){
-    const headers = COLUMNS.map(c=>c.title);
+    const headers = visibleCols().map(c=>c.title);
     const rows = Array.from(tbody.querySelectorAll('tr')).map(tr =>
       Array.from(tr.children).map(td => td.textContent.replace(/\s+/g,' ').trim())
     );
@@ -696,7 +835,7 @@ tbody td.trunc, tbody td.trunc-cell{ text-align:left !important; }
       }
       const json = await resp.json();
       if (!json || !Array.isArray(json.items)) throw new Error('Unexpected payload: '+JSON.stringify(json).slice(0,300));
-      if (errorBanner) errorBanner.style.display = 'none';
+      errorBanner && (errorBanner.style.display = 'none');
       return json;
     } catch (e) {
       console.error('Fetch failed', e);
@@ -736,152 +875,20 @@ tbody td.trunc, tbody td.trunc-cell{ text-align:left !important; }
     if (reloadSpin) reloadSpin.style.display = on ? 'inline-block' : 'none';
     const span = moreBtn ? moreBtn.querySelector('span') : null;
     if (span) span.textContent = on ? 'Load more…' : 'Load more';
+    if (recordBarFill) recordBarFill.style.width = on ? '40%' : '100%';
   }
-
-  /* ===== Visible/Hidden columns ===== */
-let hiddenKeys = new Set();                           // stores column keys that are hidden
-function getVisibleColumns(){ return COLUMNS.filter(c => !hiddenKeys.has(c.key)); }
-
-/* Rebuild THEAD using only visible columns */
-const origBuildThead = buildThead;
-buildThead = function(){
-  const cols = getVisibleColumns();
-  theadRow.innerHTML = cols.map(col=>{
-    const cls = [
-      col.sticky ? 'sticky':'',
-      col.sortable ? 'sortable':'',
-      col.align==='right' ? 'right':''
-    ].filter(Boolean).join(' ');
-    return `<th class="${cls}" data-key="${esc(col.key)}">${esc(col.title)}</th>`;
-  }).join('');
-};
-
-/* Render rows using only visible columns */
-const _renderCell = renderCell;
-function visibleColumnsRowHTML(rowObj){
-  let html = '<tr>';
-  for (const col of getVisibleColumns()){
-    const cls = [
-      col.sticky ? 'sticky':'',
-      col.align==='right' ? 'right':'',
-      col.trunc ? 'trunc-cell':''
-    ].filter(Boolean).join(' ');
-    const tdClass = cls ? ` class="${cls}"` : '';
-    html += `<td${tdClass}>${_renderCell(col, rowObj[col.key])}</td>`;
-  }
-  html += '</tr>';
-  return html;
-}
-
-/* Replace the body build part inside render() */
-const _render = render;
-render = function(){
-  const rows = items.map(itemToRow);
-
-  // apply your existing multi-rule filter if present
-  const filtered = (typeof passesAll === 'function') ? rows.filter(passesAll) : rows;
-
-  applySort(filtered);
-  updateSortIndicators();
-
-  let html = '';
-  for (const r of filtered) html += visibleColumnsRowHTML(r);
-  tbody.innerHTML = html;
-
-  if (shown) shown.textContent = filtered.length + ' shown';
-  if (loaded) loaded.textContent = items.length + ' loaded';
-  if (moreBtn) moreBtn.style.display = cursor ? 'inline-flex' : 'none';
-
-  adjustTableHeight();
-  syncTopScrollbar();
-};
-
-/* Excel export should use visible headers */
-const _exportBtn = document.getElementById('exportBtn');
-if (_exportBtn){
-  _exportBtn.addEventListener('click', function(){
-    const headers = getVisibleColumns().map(c=>c.title);
-    const rows = Array.from(tbody.querySelectorAll('tr')).map(tr =>
-      Array.from(tr.children).map(td => td.textContent.replace(/\s+/g,' ').trim())
-    );
-    const aoa = [headers, ...rows];
-    const ws = XLSX.utils.aoa_to_sheet(aoa);
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, 'Programs');
-    XLSX.writeFile(wb, 'bachelors-programs.xlsx');
-  });
-}
-
-/* ===== Hide columns popover logic ===== */
-const pvHide     = document.getElementById('pvHide');
-const tbHide     = document.getElementById('tbHide');
-const hideList   = document.getElementById('hideList');
-const hideSearch = document.getElementById('hideSearch');
-const hideAllBtn = document.getElementById('hideAllBtn');
-const showAllBtn = document.getElementById('showAllBtn');
-
-function rowHTMLHide(col){
-  const isHidden = hiddenKeys.has(col.key);
-  return `
-    <div class="hide-row ${isHidden?'hidden':''}" data-key="${esc(col.key)}" title="${esc(col.title)}">
-      <span class="hide-drag">≡</span>
-      <span class="hide-dot"></span>
-      <span class="hide-title">${esc(col.title)}</span>
-      <span class="hide-badge">${isHidden ? 'Hidden' : 'Shown'}</span>
-    </div>
-  `;
-}
-function rebuildHideList(){
-  const q = (hideSearch?.value || '').toLowerCase();
-  const cols = COLUMNS.filter(c => !q || c.title.toLowerCase().includes(q));
-  hideList.innerHTML = cols.map(rowHTMLHide).join('');
-  // wire toggles
-  hideList.querySelectorAll('.hide-row').forEach(el=>{
-    el.addEventListener('click', ()=>{
-      const key = el.getAttribute('data-key');
-      if (hiddenKeys.has(key)) hiddenKeys.delete(key); else hiddenKeys.add(key);
-      rebuildHideList();
-      buildThead();
-      attachSortHandlers();
-      render();
-    });
-  });
-}
-if (tbHide && pvHide){
-  tbHide.addEventListener('click', (e)=>{
-    e.stopPropagation();
-    pvHide.classList.toggle('open');
-    if (pvHide.classList.contains('open')){
-      const r = tbHide.getBoundingClientRect();
-      pvHide.style.left = (r.left) + 'px';
-      pvHide.style.top  = (r.bottom + window.scrollY + 8) + 'px';
-      rebuildHideList();
-      setTimeout(()=>hideSearch?.focus(), 0);
-    }
-  });
-  document.addEventListener('click', (e)=>{
-    if (!pvHide.contains(e.target) && e.target !== tbHide) pvHide.classList.remove('open');
-  });
-  document.addEventListener('keydown', (e)=>{
-    if (e.key === 'Escape') pvHide.classList.remove('open');
-  });
-}
-if (hideSearch) hideSearch.addEventListener('input', rebuildHideList);
-if (hideAllBtn) hideAllBtn.addEventListener('click', ()=>{ hiddenKeys = new Set(COLUMNS.map(c=>c.key)); rebuildHideList(); buildThead(); attachSortHandlers(); render(); });
-if (showAllBtn) showAllBtn.addEventListener('click', ()=>{ hiddenKeys.clear(); rebuildHideList(); buildThead(); attachSortHandlers(); render(); });
-
 
   // --------- Init
   function initialHeadersAndUI(){
     buildThead();
     attachSortHandlers();
-    const sortKeySel = document.getElementById('sortKey');
-    if (sortKeySel){
-      sortKeySel.innerHTML = ['<option value="">None</option>']
-        .concat(COLUMNS.filter(c=>c.sortable).map(c=>`<option value="${esc(c.key)}">${esc(c.title)}</option>`))
-        .join('');
-      sortKeySel.addEventListener('change', e=>{ sort.key = e.target.value || null; sort.dir = 1; render(); });
-    }
+    initSortUI();
+    // Default sort by Name asc
+    sort = { key:'name', dir:1 };
+    sortKeySel && (sortKeySel.value = 'name');
+    sortDirSel && (sortDirSel.value = 'asc');
+
+    // Wire popovers already done
   }
 
   async function initialLoad(){
@@ -899,7 +906,6 @@ if (showAllBtn) showAllBtn.addEventListener('click', ()=>{ hiddenKeys.clear(); r
 
   // start
   initialHeadersAndUI();
-  addRule(); // show one blank condition by default inside popover (optional)
   initialLoad();
 })();
 </script>
