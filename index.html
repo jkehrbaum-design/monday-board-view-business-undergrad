@@ -309,6 +309,139 @@ tbody td.trunc, tbody td.trunc-cell{ text-align:left !important; }
   // All columns are filterable in the popover
   const DEFAULT_FILTERABLE_KEYS = COLUMNS.map(c => c.key);
 
+  /* ===== Visible/Hidden columns ===== */
+let hiddenKeys = new Set();                           // stores column keys that are hidden
+function getVisibleColumns(){ return COLUMNS.filter(c => !hiddenKeys.has(c.key)); }
+
+/* Rebuild THEAD using only visible columns */
+const origBuildThead = buildThead;
+buildThead = function(){
+  const cols = getVisibleColumns();
+  theadRow.innerHTML = cols.map(col=>{
+    const cls = [
+      col.sticky ? 'sticky':'',
+      col.sortable ? 'sortable':'',
+      col.align==='right' ? 'right':''
+    ].filter(Boolean).join(' ');
+    return `<th class="${cls}" data-key="${esc(col.key)}">${esc(col.title)}</th>`;
+  }).join('');
+};
+
+/* Render rows using only visible columns */
+const _renderCell = renderCell;
+function visibleColumnsRowHTML(rowObj){
+  let html = '<tr>';
+  for (const col of getVisibleColumns()){
+    const cls = [
+      col.sticky ? 'sticky':'',
+      col.align==='right' ? 'right':'',
+      col.trunc ? 'trunc-cell':''
+    ].filter(Boolean).join(' ');
+    const tdClass = cls ? ` class="${cls}"` : '';
+    html += `<td${tdClass}>${_renderCell(col, rowObj[col.key])}</td>`;
+  }
+  html += '</tr>';
+  return html;
+}
+
+/* Replace the body build part inside render() */
+const _render = render;
+render = function(){
+  const rows = items.map(itemToRow);
+
+  // apply your existing multi-rule filter if present
+  const filtered = (typeof passesAll === 'function') ? rows.filter(passesAll) : rows;
+
+  applySort(filtered);
+  updateSortIndicators();
+
+  let html = '';
+  for (const r of filtered) html += visibleColumnsRowHTML(r);
+  tbody.innerHTML = html;
+
+  if (shown) shown.textContent = filtered.length + ' shown';
+  if (loaded) loaded.textContent = items.length + ' loaded';
+  if (moreBtn) moreBtn.style.display = cursor ? 'inline-flex' : 'none';
+
+  adjustTableHeight();
+  syncTopScrollbar();
+};
+
+/* Excel export should use visible headers */
+const _exportBtn = document.getElementById('exportBtn');
+if (_exportBtn){
+  _exportBtn.addEventListener('click', function(){
+    const headers = getVisibleColumns().map(c=>c.title);
+    const rows = Array.from(tbody.querySelectorAll('tr')).map(tr =>
+      Array.from(tr.children).map(td => td.textContent.replace(/\s+/g,' ').trim())
+    );
+    const aoa = [headers, ...rows];
+    const ws = XLSX.utils.aoa_to_sheet(aoa);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Programs');
+    XLSX.writeFile(wb, 'bachelors-programs.xlsx');
+  });
+}
+
+/* ===== Hide columns popover logic ===== */
+const pvHide     = document.getElementById('pvHide');
+const tbHide     = document.getElementById('tbHide');
+const hideList   = document.getElementById('hideList');
+const hideSearch = document.getElementById('hideSearch');
+const hideAllBtn = document.getElementById('hideAllBtn');
+const showAllBtn = document.getElementById('showAllBtn');
+
+function rowHTMLHide(col){
+  const isHidden = hiddenKeys.has(col.key);
+  return `
+    <div class="hide-row ${isHidden?'hidden':''}" data-key="${esc(col.key)}" title="${esc(col.title)}">
+      <span class="hide-drag">≡</span>
+      <span class="hide-dot"></span>
+      <span class="hide-title">${esc(col.title)}</span>
+      <span class="hide-badge">${isHidden ? 'Hidden' : 'Shown'}</span>
+    </div>
+  `;
+}
+function rebuildHideList(){
+  const q = (hideSearch?.value || '').toLowerCase();
+  const cols = COLUMNS.filter(c => !q || c.title.toLowerCase().includes(q));
+  hideList.innerHTML = cols.map(rowHTMLHide).join('');
+  // wire toggles
+  hideList.querySelectorAll('.hide-row').forEach(el=>{
+    el.addEventListener('click', ()=>{
+      const key = el.getAttribute('data-key');
+      if (hiddenKeys.has(key)) hiddenKeys.delete(key); else hiddenKeys.add(key);
+      rebuildHideList();
+      buildThead();
+      attachSortHandlers();
+      render();
+    });
+  });
+}
+if (tbHide && pvHide){
+  tbHide.addEventListener('click', (e)=>{
+    e.stopPropagation();
+    pvHide.classList.toggle('open');
+    if (pvHide.classList.contains('open')){
+      const r = tbHide.getBoundingClientRect();
+      pvHide.style.left = (r.left) + 'px';
+      pvHide.style.top  = (r.bottom + window.scrollY + 8) + 'px';
+      rebuildHideList();
+      setTimeout(()=>hideSearch?.focus(), 0);
+    }
+  });
+  document.addEventListener('click', (e)=>{
+    if (!pvHide.contains(e.target) && e.target !== tbHide) pvHide.classList.remove('open');
+  });
+  document.addEventListener('keydown', (e)=>{
+    if (e.key === 'Escape') pvHide.classList.remove('open');
+  });
+}
+if (hideSearch) hideSearch.addEventListener('input', rebuildHideList);
+if (hideAllBtn) hideAllBtn.addEventListener('click', ()=>{ hiddenKeys = new Set(COLUMNS.map(c=>c.key)); rebuildHideList(); buildThead(); attachSortHandlers(); render(); });
+if (showAllBtn) showAllBtn.addEventListener('click', ()=>{ hiddenKeys.clear(); rebuildHideList(); buildThead(); attachSortHandlers(); render(); });
+
+
   // --- global error surface
   window.addEventListener('error', function (e) {
     const b = document.getElementById('errorBanner');
