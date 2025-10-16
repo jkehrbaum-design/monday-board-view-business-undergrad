@@ -1,22 +1,44 @@
 // netlify/functions/items.js
-// Reads Monday items_page and now accumulates multiple pages until we have
+// Reads Monday items_page and accumulates multiple pages until we have
 // at least N "Shareable" items (default N=20). Returns items plus a cursor.
 
+// ---- Safe env access for Node (process.env) AND Edge (Deno.env) ----
+function getEnv(name, fallback = '') {
+  try {
+    if (typeof process !== 'undefined' && process.env && name in process.env) {
+      return process.env[name] || fallback;
+    }
+  } catch (_) {}
+  try {
+    if (globalThis && globalThis.Deno && globalThis.Deno.env && typeof globalThis.Deno.env.get === 'function') {
+      const v = globalThis.Deno.env.get(name);
+      if (v != null) return v;
+    }
+  } catch (_) {}
+  return fallback;
+}
+
 export const handler = async (event) => {
-  const TOKEN    = process.env.MONDAY_API_TOKEN;
-  const BOARD_ID = process.env.MONDAY_BOARD_ID || '2738090584';
+  const TOKEN    = getEnv('MONDAY_API_TOKEN', '');
+  const BOARD_ID = getEnv('MONDAY_BOARD_ID', '2738090584');
 
   // Health check
   if (event.queryStringParameters?.debug === 'env') {
-    return json({ hasToken: !!TOKEN, boardId: BOARD_ID });
+    return json({ hasToken: !!TOKEN, boardId: BOARD_ID, runtime: runtimeInfo() });
   }
-  if (!TOKEN) return json({ error: 'No MONDAY_API_TOKEN set' }, 500);
+  if (!TOKEN) {
+    return json({
+      error: 'Missing environment variables',
+      detail: 'MONDAY_API_TOKEN is not set. In Netlify, go to Site settings → Build & deploy → Environment → Environment variables and add MONDAY_API_TOKEN (and optionally MONDAY_BOARD_ID).',
+      runtime: runtimeInfo()
+    }, 500);
+  }
 
   const p = event.queryStringParameters || {};
-  const limit     = clampInt(p.limit, 100, 1, 200);     // default 100
-  let   cursor    = p.cursor || null;
-  const minFirst  = clampInt(p.min, 20, 0, 500);        // default 20 rows minimum
-  const maxPages  = clampInt(p.maxPages, 5, 1, 10);     // safety cap
+  const limit       = clampInt(p.limit, 100, 1, 200);  // Monday page size per request
+  let   cursor      = p.cursor || null;
+  const minFirst    = clampInt(p.min, 20, 0, 500);     // minimum rows to return in first response
+  const maxPages    = clampInt(p.maxPages, 5, 1, 10);  // safety cap on pages per call
   const progressive = String(p.progressive || '').toLowerCase() === 'true';
 
   // Optional backend filters (mirrors your UI)
@@ -27,7 +49,7 @@ export const handler = async (event) => {
   const gMin   = toNum(p.gpaMin, -Infinity);
   const gMax   = toNum(p.gpaMax, +Infinity);
 
-  // Monday query: one page, with column_values (id/type/text/value) for the board
+  // Monday query
   const query = `
     query($boardId: [ID!], $limit: Int, $cursor: String){
       boards(ids: $boardId){
@@ -47,11 +69,11 @@ export const handler = async (event) => {
       }
     }`;
 
-  // Helper readers
+  // Helpers to read Monday columns
   const gv    = (cols, id) => (cols.find(c => c.id === id)?.text || '').trim();
   const gvNum = (cols, id) => numFromText(gv(cols, id));
 
-  // Shareable column logic
+  // Shareable logic
   const SHAREABLE_COL_ID = 'dup__of_sharable___bachelor_s___freshman___average_';
   const isShareable = (cols) => {
     const c = cols.find(x => x.id === SHAREABLE_COL_ID);
@@ -60,11 +82,11 @@ export const handler = async (event) => {
     try {
       const v = c.value && JSON.parse(c.value);
       if (v && (v.index === 1 || v.index === "1")) return true;
-    } catch { /* ignore parse errors */ }
+    } catch { /* ignore */ }
     return false;
   };
 
-  // If called in debug mode, return a quick summary for a single page
+  // Debug (single page peek)
   if ((p.debug || '').toLowerCase() === 'shareable') {
     try {
       const variables = { boardId: BOARD_ID, limit, cursor };
@@ -73,7 +95,7 @@ export const handler = async (event) => {
       const items = Array.isArray(page.items) ? page.items : [];
       const shareable = items.filter(it => isShareable(it.column_values || []));
       return json({
-        region: process.env.AWS_REGION || process.env.NETLIFY_REGION || 'unknown',
+        region: getEnv('AWS_REGION') || getEnv('NETLIFY_REGION') || 'unknown',
         boardId: BOARD_ID,
         requestedLimit: limit,
         receivedThisPage: items.length,
@@ -83,35 +105,32 @@ export const handler = async (event) => {
         note: "This inspects only the current items_page."
       });
     } catch (e) {
-      return json({ error: 'Debug fetch failed', detail: String(e && e.message || e) }, 502);
+      return json({ error: 'Debug fetch failed', detail: errorMessage(e) }, 502);
     }
   }
 
   // Accumulator
   const acc = [];
 
-  // Process a raw page of items into our small shape and apply backend filters
+  // Convert raw items to small shape + apply backend filters
   function process(items){
     const prepped = (items || [])
       .filter(it => isShareable(it.column_values || []))
       .map(it => {
         const cols = it.column_values || [];
-        // NOTE: we keep raw column_values so the front-end can map 70+ columns
         return {
           id: it.id,
           name: it.name,
-          state: gv(cols, 'state1'),          // "State" dropdown
-          totalCost: gvNum(cols, 'formula'),  // (legacy) TOTAL (B) if present
-          minGpa: gvNum(cols, 'numbers34'),   // GPA Minimum (Lowest Scholarship)
+          state: gv(cols, 'state1'),
+          totalCost: gvNum(cols, 'formula'),
+          minGpa: gvNum(cols, 'numbers34'),
           column_values: cols
         };
       });
 
-    // Optional backend filters to reduce payload early
     for (const row of prepped){
-      // q search over name + majors (if present in raw)
       if (q) {
-        const majors = gv(row.column_values || [], 'dropdown73'); // Bachelor's Study Areas (B)
+        const majors = gv(row.column_values || [], 'dropdown73');
         const hay = (row.name + ' ' + (majors || '')).toLowerCase();
         if (!hay.includes(q)) continue;
       }
@@ -120,12 +139,11 @@ export const handler = async (event) => {
       }
       if (!between(row.totalCost, cMin, cMax)) continue;
       if (!between(row.minGpa,   gMin, gMax)) continue;
-
       acc.push(row);
     }
   }
 
-  // Fetch loop: keep pulling pages until we have at least `minFirst`
+  // Fetch loop
   let pagesFetched = 0;
   let nextCursor = cursor;
   try {
@@ -137,21 +155,20 @@ export const handler = async (event) => {
       process(items);
       nextCursor = page.cursor || null;
       pagesFetched++;
-      // Stop early if frontend asked for progressive “small first”
-      if (progressive) break;
+      if (progressive) break; // allow client to progressively load
     } while (acc.length < minFirst && nextCursor && pagesFetched < maxPages);
   } catch (e) {
-    // If Monday cursor expired mid-loop, return whatever we have, with no cursor
-    const msg = String(e && e.message || e || '');
+    const msg = errorMessage(e);
     const looksExpired = msg.includes('CursorExpiredError') || msg.includes('cursor has expired');
     if (!looksExpired) {
       return json({ error: 'Upstream Monday error', detail: msg }, 502);
     }
-    nextCursor = null; // force frontend to refresh without cursor
+    // Return what we have and force client to refresh without cursor
+    nextCursor = null;
   }
 
   return json({
-    cursor: nextCursor,           // if present, UI can fetch the next page client-side
+    cursor: nextCursor,
     totalLoaded: acc.length,
     items: acc
   });
@@ -193,4 +210,17 @@ function numFromText(t){
 function between(n, min, max){
   if (n === null || n === undefined || isNaN(n)) return true;
   return n >= min && n <= max;
+}
+function errorMessage(e){
+  if (!e) return 'Unknown error';
+  if (typeof e === 'string') return e;
+  if (e.message) return e.message;
+  try { return JSON.stringify(e); } catch { return String(e); }
+}
+function runtimeInfo(){
+  const isEdge = !!(globalThis && globalThis.Deno);
+  return {
+    runtime: isEdge ? 'edge (Deno)' : 'lambda (Node)',
+    nodeVersion: typeof process !== 'undefined' && process.version ? process.version : null,
+  };
 }
