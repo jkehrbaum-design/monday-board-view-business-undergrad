@@ -1,8 +1,7 @@
 // netlify/functions/items.js
-// Reads Monday items_page and accumulates multiple pages until we have
-// at least N "Shareable" items (default N=20). Returns items plus a cursor.
+// Fetches ONE Monday items_page per call by default (fast).
+// Frontend can keep calling with the returned cursor (progressive loading).
 
-// ---- Safe env access for Node (process.env) AND Edge (Deno.env) ----
 function getEnv(name, fallback = '') {
   try {
     if (typeof process !== 'undefined' && process.env && name in process.env) {
@@ -22,26 +21,27 @@ export const handler = async (event) => {
   const TOKEN    = getEnv('MONDAY_API_TOKEN', '');
   const BOARD_ID = getEnv('MONDAY_BOARD_ID', '2738090584');
 
-  // Health check
   if (event.queryStringParameters?.debug === 'env') {
     return json({ hasToken: !!TOKEN, boardId: BOARD_ID, runtime: runtimeInfo() });
   }
   if (!TOKEN) {
     return json({
       error: 'Missing environment variables',
-      detail: 'MONDAY_API_TOKEN is not set. In Netlify, go to Site settings → Build & deploy → Environment → Environment variables and add MONDAY_API_TOKEN (and optionally MONDAY_BOARD_ID).',
+      detail: 'Set MONDAY_API_TOKEN (and optionally MONDAY_BOARD_ID) in Netlify → Site settings → Build & deploy → Environment.',
       runtime: runtimeInfo()
     }, 500);
   }
 
   const p = event.queryStringParameters || {};
-  const limit       = clampInt(p.limit, 100, 1, 200);  // Monday page size per request
-  let   cursor      = p.cursor || null;
-  const minFirst    = clampInt(p.min, 20, 0, 500);     // minimum rows to return in first response
-  const maxPages    = clampInt(p.maxPages, 5, 1, 10);  // safety cap on pages per call
+  const limit  = clampInt(p.limit, 100, 1, 200);
+  let   cursor = p.cursor || null;
+
+  // IMPORTANT: default to 0 so we DON'T do multi-page loops on the server.
+  const minFirst = clampInt(p.min, 0, 0, 500);
+  const maxPages = clampInt(p.maxPages, 2, 1, 10); // even if minFirst>0, cap the loop
   const progressive = String(p.progressive || '').toLowerCase() === 'true';
 
-  // Optional backend filters (mirrors your UI)
+  // Optional backend filters
   const q      = (p.q || '').trim().toLowerCase();
   const stateF = (p.state || '').trim();
   const cMin   = toNum(p.costMin, -Infinity);
@@ -49,7 +49,6 @@ export const handler = async (event) => {
   const gMin   = toNum(p.gpaMin, -Infinity);
   const gMax   = toNum(p.gpaMax, +Infinity);
 
-  // Monday query
   const query = `
     query($boardId: [ID!], $limit: Int, $cursor: String){
       boards(ids: $boardId){
@@ -69,11 +68,9 @@ export const handler = async (event) => {
       }
     }`;
 
-  // Helpers to read Monday columns
   const gv    = (cols, id) => (cols.find(c => c.id === id)?.text || '').trim();
   const gvNum = (cols, id) => numFromText(gv(cols, id));
 
-  // Shareable logic
   const SHAREABLE_COL_ID = 'dup__of_sharable___bachelor_s___freshman___average_';
   const isShareable = (cols) => {
     const c = cols.find(x => x.id === SHAREABLE_COL_ID);
@@ -82,15 +79,13 @@ export const handler = async (event) => {
     try {
       const v = c.value && JSON.parse(c.value);
       if (v && (v.index === 1 || v.index === "1")) return true;
-    } catch { /* ignore */ }
+    } catch {}
     return false;
   };
 
-  // Debug (single page peek)
   if ((p.debug || '').toLowerCase() === 'shareable') {
     try {
-      const variables = { boardId: BOARD_ID, limit, cursor };
-      const data  = await gql(query, variables, TOKEN);
+      const data  = await gql(query, { boardId: BOARD_ID, limit, cursor }, TOKEN);
       const page  = data?.boards?.[0]?.items_page || {};
       const items = Array.isArray(page.items) ? page.items : [];
       const shareable = items.filter(it => isShareable(it.column_values || []));
@@ -100,19 +95,14 @@ export const handler = async (event) => {
         requestedLimit: limit,
         receivedThisPage: items.length,
         shareableOnThisPage: shareable.length,
-        cursorPresent: !!page.cursor,
-        sampleIds: shareable.slice(0, 10).map(x => x.id),
-        note: "This inspects only the current items_page."
+        cursorPresent: !!page.cursor
       });
     } catch (e) {
       return json({ error: 'Debug fetch failed', detail: errorMessage(e) }, 502);
     }
   }
 
-  // Accumulator
   const acc = [];
-
-  // Convert raw items to small shape + apply backend filters
   function process(items){
     const prepped = (items || [])
       .filter(it => isShareable(it.column_values || []))
@@ -143,54 +133,53 @@ export const handler = async (event) => {
     }
   }
 
-  // Fetch loop
-  let pagesFetched = 0;
   let nextCursor = cursor;
+  let pagesFetched = 0;
+
   try {
     do {
-      const variables = { boardId: BOARD_ID, limit, cursor: nextCursor || null };
-      const data  = await gql(query, variables, TOKEN);
+      const data  = await gql(query, { boardId: BOARD_ID, limit, cursor: nextCursor || null }, TOKEN);
       const page  = data?.boards?.[0]?.items_page || {};
       const items = Array.isArray(page.items) ? page.items : [];
       process(items);
       nextCursor = page.cursor || null;
       pagesFetched++;
-      if (progressive) break; // allow client to progressively load
-    } while (acc.length < minFirst && nextCursor && pagesFetched < maxPages);
+
+      // If client asked for progressive, only return ONE page now.
+      if (progressive) break;
+
+      // Only loop further if minFirst > 0 (explicit request).
+    } while (minFirst > 0 && acc.length < minFirst && nextCursor && pagesFetched < maxPages);
   } catch (e) {
     const msg = errorMessage(e);
     const looksExpired = msg.includes('CursorExpiredError') || msg.includes('cursor has expired');
-    if (!looksExpired) {
-      return json({ error: 'Upstream Monday error', detail: msg }, 502);
-    }
-    // Return what we have and force client to refresh without cursor
+    if (!looksExpired) return json({ error: 'Upstream Monday error', detail: msg }, 502);
     nextCursor = null;
   }
 
-  return json({
-    cursor: nextCursor,
-    totalLoaded: acc.length,
-    items: acc
-  });
+  return json({ cursor: nextCursor, totalLoaded: acc.length, items: acc });
 };
 
 // ---------- Helpers ----------
 function json(obj, status = 200){
-  return {
-    statusCode: status,
-    headers: { 'content-type': 'application/json; charset=utf-8' },
-    body: JSON.stringify(obj)
-  };
+  return { statusCode: status, headers: { 'content-type': 'application/json; charset=utf-8' }, body: JSON.stringify(obj) };
 }
 async function gql(query, variables, token){
-  const r = await fetch('https://api.monday.com/v2', {
-    method: 'POST',
-    headers: { 'Content-Type':'application/json', 'Authorization': token },
-    body: JSON.stringify({ query, variables })
-  });
-  const j = await r.json();
-  if (j.errors) throw new Error(JSON.stringify(j.errors));
-  return j.data;
+  const controller = new AbortController();
+  const t = setTimeout(()=>controller.abort(), 9000); // fail fast < Netlify 10s
+  try{
+    const r = await fetch('https://api.monday.com/v2', {
+      method: 'POST',
+      headers: { 'Content-Type':'application/json', 'Authorization': token },
+      body: JSON.stringify({ query, variables }),
+      signal: controller.signal
+    });
+    const j = await r.json();
+    if (j.errors) throw new Error(JSON.stringify(j.errors));
+    return j.data;
+  } finally {
+    clearTimeout(t);
+  }
 }
 function clampInt(v, def, min, max){
   const n = parseInt(v, 10);
