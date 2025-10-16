@@ -1,6 +1,6 @@
 // netlify/functions/items.js
-// Reads ONE Monday items_page and returns only "Shareable" items (plus cursor)
-// Adds backend-calculated fields for totals & net costs so the UI can display them reliably.
+// Reads Monday items_page and now accumulates multiple pages until we have
+// at least N "Shareable" items (default N=20). Returns items plus a cursor.
 
 export const handler = async (event) => {
   const TOKEN    = process.env.MONDAY_API_TOKEN;
@@ -13,8 +13,11 @@ export const handler = async (event) => {
   if (!TOKEN) return json({ error: 'No MONDAY_API_TOKEN set' }, 500);
 
   const p = event.queryStringParameters || {};
-  const limit  = clampInt(p.limit, 50, 1, 200);
-  const cursor = p.cursor || null;
+  const limit     = clampInt(p.limit, 100, 1, 200);     // default 100
+  let   cursor    = p.cursor || null;
+  const minFirst  = clampInt(p.min, 20, 0, 500);        // default 20 rows minimum
+  const maxPages  = clampInt(p.maxPages, 5, 1, 10);     // safety cap
+  const progressive = String(p.progressive || '').toLowerCase() === 'true';
 
   // Optional backend filters (mirrors your UI)
   const q      = (p.q || '').trim().toLowerCase();
@@ -44,16 +47,11 @@ export const handler = async (event) => {
       }
     }`;
 
-  const variables = { boardId: BOARD_ID, limit, cursor };
-  const data  = await gql(query, variables, TOKEN);
-  const page  = data?.boards?.[0]?.items_page || {};
-  const items = Array.isArray(page.items) ? page.items : [];
-
-  // Helpers to read column text/number
+  // Helper readers
   const gv    = (cols, id) => (cols.find(c => c.id === id)?.text || '').trim();
-  const gvNum = (cols, id) => numFromText(gv(cols, id)); // returns NaN if not parseable
+  const gvNum = (cols, id) => numFromText(gv(cols, id));
 
-  // Shareable status
+  // Shareable column logic
   const SHAREABLE_COL_ID = 'dup__of_sharable___bachelor_s___freshman___average_';
   const isShareable = (cols) => {
     const c = cols.find(x => x.id === SHAREABLE_COL_ID);
@@ -66,107 +64,96 @@ export const handler = async (event) => {
     return false;
   };
 
-  // Quick debug of current page only
+  // If called in debug mode, return a quick summary for a single page
   if ((p.debug || '').toLowerCase() === 'shareable') {
-    const shareable = items.filter(it => isShareable(it.column_values || []));
-    return json({
-      region: process.env.AWS_REGION || process.env.NETLIFY_REGION || 'unknown',
-      boardId: BOARD_ID,
-      requestedLimit: limit,
-      receivedThisPage: items.length,
-      shareableOnThisPage: shareable.length,
-      cursorPresent: !!page.cursor,
-      sampleIds: shareable.slice(0, 10).map(x => x.id),
-      note: "This inspects only the current items_page. The UI should keep calling with the returned cursor to load the rest."
-    });
+    try {
+      const variables = { boardId: BOARD_ID, limit, cursor };
+      const data  = await gql(query, variables, TOKEN);
+      const page  = data?.boards?.[0]?.items_page || {};
+      const items = Array.isArray(page.items) ? page.items : [];
+      const shareable = items.filter(it => isShareable(it.column_values || []));
+      return json({
+        region: process.env.AWS_REGION || process.env.NETLIFY_REGION || 'unknown',
+        boardId: BOARD_ID,
+        requestedLimit: limit,
+        receivedThisPage: items.length,
+        shareableOnThisPage: shareable.length,
+        cursorPresent: !!page.cursor,
+        sampleIds: shareable.slice(0, 10).map(x => x.id),
+        note: "This inspects only the current items_page."
+      });
+    } catch (e) {
+      return json({ error: 'Debug fetch failed', detail: String(e && e.message || e) }, 502);
+    }
   }
 
-  // === Backend calculations (replaces Monday formula cols when needed) =====
-  function calcTotals(cols){
-    const tuition = gvNum(cols, 'annual_tuition_cost');
-    const room    = gvNum(cols, '_usd__annual_room_cost');
-    const board   = gvNum(cols, '_usd__annual_board_cost');
-    const fees    = gvNum(cols, 'numbers5');
+  // Accumulator
+  const acc = [];
 
-    const parts = [tuition, room, board, fees].filter(n => Number.isFinite(n));
-    const total = parts.length ? parts.reduce((a,b)=>a+b, 0) : NaN;
+  // Process a raw page of items into our small shape and apply backend filters
+  function process(items){
+    const prepped = (items || [])
+      .filter(it => isShareable(it.column_values || []))
+      .map(it => {
+        const cols = it.column_values || [];
+        // NOTE: we keep raw column_values so the front-end can map 70+ columns
+        return {
+          id: it.id,
+          name: it.name,
+          state: gv(cols, 'state1'),          // "State" dropdown
+          totalCost: gvNum(cols, 'formula'),  // (legacy) TOTAL (B) if present
+          minGpa: gvNum(cols, 'numbers34'),   // GPA Minimum (Lowest Scholarship)
+          column_values: cols
+        };
+      });
 
-    const schLow = gvNum(cols, 'dup__of_minimum__usd__annual_scholarship_amount6'); // Lowest scholarship $
-    const schMid = gvNum(cols, 'numbers68');  // Mid-Range scholarship $
-    const schHi  = gvNum(cols, 'numbers11');  // Highest scholarship $
+    // Optional backend filters to reduce payload early
+    for (const row of prepped){
+      // q search over name + majors (if present in raw)
+      if (q) {
+        const majors = gv(row.column_values || [], 'dropdown73'); // Bachelor's Study Areas (B)
+        const hay = (row.name + ' ' + (majors || '')).toLowerCase();
+        if (!hay.includes(q)) continue;
+      }
+      if (stateF && stateF !== 'all') {
+        if ((row.state || '').toLowerCase() !== stateF.toLowerCase()) continue;
+      }
+      if (!between(row.totalCost, cMin, cMax)) continue;
+      if (!between(row.minGpa,   gMin, gMax)) continue;
 
-    // Net costs (per your definitions):
-    // net_low = TOTAL - Highest scholarship
-    // net_mid = TOTAL - Mid-Range scholarship
-    // net_hi  = TOTAL - Lowest scholarship
-    const net_low = Number.isFinite(total) && Number.isFinite(schHi)  ? (total - schHi)  : NaN;
-    const net_mid = Number.isFinite(total) && Number.isFinite(schMid) ? (total - schMid) : NaN;
-    const net_hi  = Number.isFinite(total) && Number.isFinite(schLow) ? (total - schLow) : NaN;
-
-    // Work comp: prefer the Monday formula if present; else estimate from min_wage
-    // Estimation heuristic: 10 hrs/week * 30 weeks ≈ 300 hours
-    const mondayWork = gvNum(cols, 'formula5'); // if Monday had a formula, use it
-    const minWage    = gvNum(cols, 'numbers985'); // 2025 Min Wage
-    const work_calc  = Number.isFinite(mondayWork)
-      ? mondayWork
-      : (Number.isFinite(minWage) ? (minWage * 300) : NaN);
-
-    return {
-      total_calc:   Number.isFinite(total)   ? total   : null,
-      net_low_calc: Number.isFinite(net_low) ? net_low : null,
-      net_mid_calc: Number.isFinite(net_mid) ? net_mid : null,
-      net_hi_calc:  Number.isFinite(net_hi)  ? net_hi  : null,
-      work_comp_calc: Number.isFinite(work_calc) ? work_calc : null
-    };
+      acc.push(row);
+    }
   }
-  // ========================================================================
 
-  // Prepare shape for UI
-  const prepped = items
-    .filter(it => isShareable(it.column_values || []))
-    .map(it => {
-      const cols = it.column_values || [];
-      const totals = calcTotals(cols);
-
-      return {
-        id: it.id,
-        name: it.name,
-        state: gv(cols, 'state1'),
-        totalCost: gvNum(cols, 'formula'),         // keep original (if any) for backend filtering
-        minGpa: gvNum(cols, 'numbers34'),          // GPA Minimum (Lowest Scholarship)
-        majors: gv(cols, 'dropdown73'),
-
-        // Expose ALL raw column_values for UI rendering
-        column_values: cols,
-
-        // Expose backend-calculated fields at top level so the UI can read them by colId
-        // (The new index.html checks item[colId] before Monday column_values)
-        total_calc: totals.total_calc,
-        net_low_calc: totals.net_low_calc,
-        net_mid_calc: totals.net_mid_calc,
-        net_hi_calc: totals.net_hi_calc,
-        work_comp_calc: totals.work_comp_calc
-      };
-    });
-
-  // Optional backend filters to reduce payload early
-  const filtered = prepped.filter(row => {
-    if (q) {
-      const hay = (row.name + ' ' + (row.majors || '')).toLowerCase();
-      if (!hay.includes(q)) return false;
+  // Fetch loop: keep pulling pages until we have at least `minFirst`
+  let pagesFetched = 0;
+  let nextCursor = cursor;
+  try {
+    do {
+      const variables = { boardId: BOARD_ID, limit, cursor: nextCursor || null };
+      const data  = await gql(query, variables, TOKEN);
+      const page  = data?.boards?.[0]?.items_page || {};
+      const items = Array.isArray(page.items) ? page.items : [];
+      process(items);
+      nextCursor = page.cursor || null;
+      pagesFetched++;
+      // Stop early if frontend asked for progressive “small first”
+      if (progressive) break;
+    } while (acc.length < minFirst && nextCursor && pagesFetched < maxPages);
+  } catch (e) {
+    // If Monday cursor expired mid-loop, return whatever we have, with no cursor
+    const msg = String(e && e.message || e || '');
+    const looksExpired = msg.includes('CursorExpiredError') || msg.includes('cursor has expired');
+    if (!looksExpired) {
+      return json({ error: 'Upstream Monday error', detail: msg }, 502);
     }
-    if (stateF && stateF !== 'all') {
-      if ((row.state || '').toLowerCase() !== stateF.toLowerCase()) return false;
-    }
-    if (!between(row.totalCost, cMin, cMax)) return false;
-    if (!between(row.minGpa,   gMin, gMax)) return false;
-    return true;
-  });
+    nextCursor = null; // force frontend to refresh without cursor
+  }
 
   return json({
-    cursor: page.cursor || null,
-    totalLoaded: filtered.length,
-    items: filtered
+    cursor: nextCursor,           // if present, UI can fetch the next page client-side
+    totalLoaded: acc.length,
+    items: acc
   });
 };
 
