@@ -899,18 +899,37 @@ tbody tr:hover td{background:#f8fafc}
     // Wire popovers already done
   }
 
-  async function initialLoad(){
-    items = []; cursor = null;
-    showLoader(true);
-    try { await fetchAndAppend({limit:100, cursorParam:null, progressive:false}); }
-    finally {
-      showLoader(false);
-      if (app) app.style.display = 'block';
-      syncTopScrollbar();
-      adjustTableHeight();
+ async function initialLoad(){
+  items = []; cursor = null;
+  showLoader(true);
+  try {
+    // First call: ask server to collect until it has at least 20 shareable rows.
+    // This loops server-side across 1–2 pages (fast, no 504), then returns.
+    const first = await fetchBatch({ limit: 200, min: 20, maxPages: 6, progressive: false });
+    const batch1 = first.items || [];
+    if (batch1.length){
+      items.push(...batch1);
+      render();
     }
-    if (cursor) { fetchAndAppend({limit:100, cursorParam:cursor, progressive:true}); }
+    cursor = first.cursor || null;
+
+    // Second step: keep going client-side, one page per request, until no cursor.
+    while (cursor){
+      const next = await fetchBatch({ limit: 200, cursorParam: cursor, progressive: true });
+      const more = next.items || [];
+      if (more.length){
+        items.push(...more);
+        render();
+      }
+      cursor = next.cursor || null;
+    }
+  } finally {
+    showLoader(false);
+    if (app) app.style.display = 'block';
+    syncTopScrollbar();
+    adjustTableHeight();
   }
+}
 
   // start
   initialHeadersAndUI();
