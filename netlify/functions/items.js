@@ -21,6 +21,7 @@ export const handler = async (event) => {
   const TOKEN    = getEnv('MONDAY_API_TOKEN', '');
   const BOARD_ID = getEnv('MONDAY_BOARD_ID', '2738090584');
 
+  // Health/debug
   if (event.queryStringParameters?.debug === 'env') {
     return json({ hasToken: !!TOKEN, boardId: BOARD_ID, runtime: runtimeInfo() });
   }
@@ -36,12 +37,12 @@ export const handler = async (event) => {
   const limit  = clampInt(p.limit, 100, 1, 200);
   let   cursor = p.cursor || null;
 
-  // IMPORTANT: default to 0 so we DON'T do multi-page loops on the server.
+  // Default to 0 so we DON’T do multi-page loops on the server (front-end paginates).
   const minFirst = clampInt(p.min, 0, 0, 500);
-  const maxPages = clampInt(p.maxPages, 2, 1, 10); // even if minFirst>0, cap the loop
+  const maxPages = clampInt(p.maxPages, 2, 1, 10);
   const progressive = String(p.progressive || '').toLowerCase() === 'true';
 
-  // Optional backend filters
+  // Optional backend filters (same as before)
   const q      = (p.q || '').trim().toLowerCase();
   const stateF = (p.state || '').trim();
   const cMin   = toNum(p.costMin, -Infinity);
@@ -49,6 +50,7 @@ export const handler = async (event) => {
   const gMin   = toNum(p.gpaMin, -Infinity);
   const gMax   = toNum(p.gpaMax, +Infinity);
 
+  // Monday GraphQL
   const query = `
     query($boardId: [ID!], $limit: Int, $cursor: String){
       boards(ids: $boardId){
@@ -71,6 +73,7 @@ export const handler = async (event) => {
   const gv    = (cols, id) => (cols.find(c => c.id === id)?.text || '').trim();
   const gvNum = (cols, id) => numFromText(gv(cols, id));
 
+  // “Shareable” check
   const SHAREABLE_COL_ID = 'dup__of_sharable___bachelor_s___freshman___average_';
   const isShareable = (cols) => {
     const c = cols.find(x => x.id === SHAREABLE_COL_ID);
@@ -83,6 +86,7 @@ export const handler = async (event) => {
     return false;
   };
 
+  // Quick debug of this single page
   if ((p.debug || '').toLowerCase() === 'shareable') {
     try {
       const data  = await gql(query, { boardId: BOARD_ID, limit, cursor }, TOKEN);
@@ -102,22 +106,50 @@ export const handler = async (event) => {
     }
   }
 
+  // Accumulator + page processor
   const acc = [];
   function process(items){
     const prepped = (items || [])
       .filter(it => isShareable(it.column_values || []))
       .map(it => {
         const cols = it.column_values || [];
+
+        // -------- Backend calculation: # Live on Campus (formula5) ----------
+        // ROUNDUP( {Total Enrollment} * {% live on campus} , 0 )
+        const enroll = gvNum(cols, 'numbers7');  // Total Enrollment
+        let pctLive  = gvNum(cols, 'numbers8');  // e.g. "35" or "35%"
+
+        // normalize percent: if 35 -> 0.35 ; if 0.35 keep as-is
+        if (pctLive != null && !isNaN(pctLive)) {
+          if (pctLive > 1) pctLive = pctLive / 100;
+          if (pctLive < 0) pctLive = 0;
+        } else {
+          pctLive = null;
+        }
+
+        let liveOnCampus = null;
+        if (enroll != null && !isNaN(enroll) && pctLive != null && !isNaN(pctLive)) {
+          liveOnCampus = Math.ceil(enroll * pctLive);
+        }
+        // --------------------------------------------------------------------
+
         return {
           id: it.id,
           name: it.name,
           state: gv(cols, 'state1'),
           totalCost: gvNum(cols, 'formula'),
           minGpa: gvNum(cols, 'numbers34'),
-          column_values: cols
+
+          // expose ALL raw Monday columns for the frontend mapper
+          column_values: cols,
+
+          // expose backend-calculated field under Monday id expected by the UI:
+          // live_num column should read from 'formula5'
+          formula5: liveOnCampus
         };
       });
 
+    // Optional backend filtering before returning
     for (const row of prepped){
       if (q) {
         const majors = gv(row.column_values || [], 'dropdown73');
@@ -133,6 +165,7 @@ export const handler = async (event) => {
     }
   }
 
+  // Fetch loop (single page unless client asks otherwise)
   let nextCursor = cursor;
   let pagesFetched = 0;
 
@@ -145,10 +178,7 @@ export const handler = async (event) => {
       nextCursor = page.cursor || null;
       pagesFetched++;
 
-      // If client asked for progressive, only return ONE page now.
       if (progressive) break;
-
-      // Only loop further if minFirst > 0 (explicit request).
     } while (minFirst > 0 && acc.length < minFirst && nextCursor && pagesFetched < maxPages);
   } catch (e) {
     const msg = errorMessage(e);
@@ -193,7 +223,7 @@ function toNum(v, fallback){
 }
 function numFromText(t){
   if (!t) return NaN;
-  const n = +(`${t}`.replace(/[, $€£]/g, ''));
+  const n = +(`${t}`.replace(/[, $€£%]/g, '')); // accept % too
   return isNaN(n) ? NaN : n;
 }
 function between(n, min, max){
