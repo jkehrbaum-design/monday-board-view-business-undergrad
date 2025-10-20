@@ -821,28 +821,36 @@ tbody tr:hover td{background:#f8fafc}
   window.addEventListener('resize', function(){ syncTopScrollbar(); adjustTableHeight(); });
 
   // Data fetching
-  async function fetchBatch(params){
-    const errorBanner = document.getElementById('errorBanner');
-    const base = location.origin || window.location.href;
-    const url = new URL('/.netlify/functions/items', base);
-    url.searchParams.set('limit', String(params && params.limit ? params.limit : '100'));
-    if (params && params.cursorParam) url.searchParams.set('cursor', params.cursorParam);
-    try {
-      const resp = await fetch(url.toString(), { cache: 'no-store' });
-      if (!resp.ok) {
-        let txt=''; try{ txt = await resp.text(); }catch(_){}
-        throw new Error('HTTP '+resp.status+': '+String(txt).slice(0,300));
-      }
-      const json = await resp.json();
-      if (!json || !Array.isArray(json.items)) throw new Error('Unexpected payload: '+JSON.stringify(json).slice(0,300));
-      errorBanner && (errorBanner.style.display = 'none');
-      return json;
-    } catch (e) {
-      console.error('Fetch failed', e);
-      if (errorBanner) { errorBanner.textContent = 'Could not load data. ' + (e && e.message ? e.message : String(e)); errorBanner.style.display = 'block'; }
-      return { items: [], cursor: null };
+ async function fetchBatch(params){
+  const errorBanner = document.getElementById('errorBanner');
+  const base = location.origin || window.location.href;
+  const url = new URL('/.netlify/functions/items', base);
+
+  // defaults
+  url.searchParams.set('limit', String(params && params.limit ? params.limit : '100'));
+  if (params && params.cursorParam) url.searchParams.set('cursor', params.cursorParam);
+
+  // NEW: pass through progressive + min + maxPages
+  if (params && params.progressive) url.searchParams.set('progressive', 'true');
+  if (params && params.min != null)  url.searchParams.set('min', String(params.min));
+  if (params && params.maxPages != null) url.searchParams.set('maxPages', String(params.maxPages));
+
+  try {
+    const resp = await fetch(url.toString(), { cache: 'no-store' });
+    if (!resp.ok) {
+      let txt=''; try{ txt = await resp.text(); }catch(_){}
+      throw new Error('HTTP '+resp.status+': '+String(txt).slice(0,300));
     }
+    const json = await resp.json();
+    if (!json || !Array.isArray(json.items)) throw new Error('Unexpected payload: '+JSON.stringify(json).slice(0,300));
+    if (errorBanner) errorBanner.style.display = 'none';
+    return json;
+  } catch (e) {
+    console.error('Fetch failed', e);
+    if (errorBanner) { errorBanner.textContent = 'Could not load data. ' + (e && e.message ? e.message : String(e)); errorBanner.style.display = 'block'; }
+    return { items: [], cursor: null };
   }
+}
   async function fetchAndAppend(opts){
     setMoreLoading(true);
     const res = await fetchBatch(opts || {});
