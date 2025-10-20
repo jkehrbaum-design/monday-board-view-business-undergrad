@@ -1,6 +1,6 @@
 // netlify/functions/items.js
-// Fetches ONE Monday items_page per call by default (fast).
-// Frontend can keep calling with the returned cursor (progressive loading).
+// Fetches ONE Monday items_page per call (fast). Frontend paginates with cursor.
+// Now includes: retry-on-timeout + backoff, and backend calc for "live on campus" (formula5).
 
 function getEnv(name, fallback = '') {
   try {
@@ -34,15 +34,15 @@ export const handler = async (event) => {
   }
 
   const p = event.queryStringParameters || {};
-  const limit  = clampInt(p.limit, 100, 1, 200);
+  let   limit  = clampInt(p.limit, 100, 1, 200);      // default 100; retry will reduce if needed
   let   cursor = p.cursor || null;
 
   // Default to 0 so we DON’T do multi-page loops on the server (front-end paginates).
-  const minFirst = clampInt(p.min, 0, 0, 500);
-  const maxPages = clampInt(p.maxPages, 2, 1, 10);
+  const minFirst   = clampInt(p.min, 0, 0, 500);
+  const maxPages   = clampInt(p.maxPages, 2, 1, 10);
   const progressive = String(p.progressive || '').toLowerCase() === 'true';
 
-  // Optional backend filters (same as before)
+  // Optional backend filters
   const q      = (p.q || '').trim().toLowerCase();
   const stateF = (p.state || '').trim();
   const cMin   = toNum(p.costMin, -Infinity);
@@ -86,10 +86,10 @@ export const handler = async (event) => {
     return false;
   };
 
-  // Quick debug of this single page
+  // Quick debug for this single page
   if ((p.debug || '').toLowerCase() === 'shareable') {
     try {
-      const data  = await gql(query, { boardId: BOARD_ID, limit, cursor }, TOKEN);
+      const data  = await gqlWithRetry(() => gql(query, { boardId: BOARD_ID, limit, cursor }, TOKEN), { retries: 2, timeoutMs: 8500 });
       const page  = data?.boards?.[0]?.items_page || {};
       const items = Array.isArray(page.items) ? page.items : [];
       const shareable = items.filter(it => isShareable(it.column_values || []));
@@ -106,7 +106,6 @@ export const handler = async (event) => {
     }
   }
 
-  // Accumulator + page processor
   const acc = [];
   function process(items){
     const prepped = (items || [])
@@ -119,9 +118,8 @@ export const handler = async (event) => {
         const enroll = gvNum(cols, 'numbers7');  // Total Enrollment
         let pctLive  = gvNum(cols, 'numbers8');  // e.g. "35" or "35%"
 
-        // normalize percent: if 35 -> 0.35 ; if 0.35 keep as-is
         if (pctLive != null && !isNaN(pctLive)) {
-          if (pctLive > 1) pctLive = pctLive / 100;
+          if (pctLive > 1) pctLive = pctLive / 100;  // 35 => 0.35
           if (pctLive < 0) pctLive = 0;
         } else {
           pctLive = null;
@@ -140,16 +138,14 @@ export const handler = async (event) => {
           totalCost: gvNum(cols, 'formula'),
           minGpa: gvNum(cols, 'numbers34'),
 
-          // expose ALL raw Monday columns for the frontend mapper
-          column_values: cols,
+          column_values: cols, // keep all raw columns
 
-          // expose backend-calculated field under Monday id expected by the UI:
-          // live_num column should read from 'formula5'
+          // expose backend-calculated value under Monday id the UI reads
           formula5: liveOnCampus
         };
       });
 
-    // Optional backend filtering before returning
+    // Optional backend filters
     for (const row of prepped){
       if (q) {
         const majors = gv(row.column_values || [], 'dropdown73');
@@ -165,13 +161,40 @@ export const handler = async (event) => {
     }
   }
 
-  // Fetch loop (single page unless client asks otherwise)
+  // Wrapper to fetch a page with retry + dynamic limit reduction on timeout
+  async function fetchPageWithRetry(curLimit, curCursor){
+    let lastErr = null;
+    for (let attempt = 0; attempt < 3; attempt++){
+      try{
+        const data  = await gqlWithRetry(
+          () => gql(query, { boardId: BOARD_ID, limit: curLimit, cursor: curCursor || null }, TOKEN),
+          { retries: 1, timeoutMs: 8500 } // per-attempt guard
+        );
+        return data;
+      } catch(e){
+        lastErr = e;
+        const msg = errorMessage(e);
+        const aborted = /aborted|AbortError|The operation was aborted/i.test(msg);
+        // halve the limit on abort to make the next call cheaper
+        if (aborted) {
+          curLimit = Math.max(20, Math.floor(curLimit / 2));
+          await sleep(150 * (attempt + 1)); // small backoff
+          continue;
+        }
+        // For non-abort errors, just rethrow
+        throw e;
+      }
+    }
+    throw lastErr || new Error('Unknown fetch failure');
+  }
+
+  // Fetch loop (one page unless client asked for minFirst > 0)
   let nextCursor = cursor;
   let pagesFetched = 0;
 
   try {
     do {
-      const data  = await gql(query, { boardId: BOARD_ID, limit, cursor: nextCursor || null }, TOKEN);
+      const data  = await fetchPageWithRetry(limit, nextCursor);
       const page  = data?.boards?.[0]?.items_page || {};
       const items = Array.isArray(page.items) ? page.items : [];
       process(items);
@@ -194,9 +217,10 @@ export const handler = async (event) => {
 function json(obj, status = 200){
   return { statusCode: status, headers: { 'content-type': 'application/json; charset=utf-8' }, body: JSON.stringify(obj) };
 }
+
 async function gql(query, variables, token){
   const controller = new AbortController();
-  const t = setTimeout(()=>controller.abort(), 9000); // fail fast < Netlify 10s
+  const t = setTimeout(()=>controller.abort(), 8500); // keep under Netlify time budget
   try{
     const r = await fetch('https://api.monday.com/v2', {
       method: 'POST',
@@ -211,6 +235,27 @@ async function gql(query, variables, token){
     clearTimeout(t);
   }
 }
+
+// Retry wrapper for gql-like functions
+async function gqlWithRetry(fn, { retries = 2, timeoutMs = 8500 } = {}){
+  let lastErr = null;
+  for (let i = 0; i <= retries; i++){
+    try{
+      return await fn();
+    } catch(e){
+      lastErr = e;
+      const msg = errorMessage(e);
+      const aborted = /aborted|AbortError|The operation was aborted/i.test(msg);
+      // Only retry on abort/timeout/network-ish errors
+      if (!aborted && i === retries) break;
+      await sleep(200 * (i + 1)); // backoff
+    }
+  }
+  throw lastErr || new Error('Request failed');
+}
+
+function sleep(ms){ return new Promise(res=>setTimeout(res, ms)); }
+
 function clampInt(v, def, min, max){
   const n = parseInt(v, 10);
   if (isNaN(n)) return def;
@@ -223,7 +268,7 @@ function toNum(v, fallback){
 }
 function numFromText(t){
   if (!t) return NaN;
-  const n = +(`${t}`.replace(/[, $€£%]/g, '')); // accept % too
+  const n = +(`${t}`.replace(/[, $€£%]/g, '')); // accept %
   return isNaN(n) ? NaN : n;
 }
 function between(n, min, max){
