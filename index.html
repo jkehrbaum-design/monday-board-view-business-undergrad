@@ -129,6 +129,24 @@ tbody tr:hover td{background:#f8fafc}
 #recordText{ font-size:14px; font-weight:600; color:#1f2937; }
 #recordBar{ position:relative; height:8px; background:#d1d5db; border-radius:999px; overflow:hidden; }
 #recordBarFill{ height:100%; width:100%; background:#9ca3af; border-radius:999px; transition:width .25s ease; }
+
+/* Toolbar stays left with clean spacing */
+.toolbar{justify-content:flex-start; gap:12px;}
+
+/* Footer record counter (Airtable-ish chip) */
+.record-footer{
+  margin:8px 0 0 0;
+  display:inline-block;
+  font-size:13px;
+  color:#555;
+  background:#f5f7fa;
+  border:1px solid var(--line);
+  border-radius:12px;
+  padding:6px 10px;
+  line-height:18px;
+}
+</style>
+  
 </style>
 </head>
 
@@ -148,90 +166,33 @@ tbody tr:hover td{background:#f8fafc}
   <div class="h1">Bachelor’s Programs – Freshman & Average Student</div>
   <div class="sub">The data comes from a secure Netlify function (read-only). The look and feel is inspired by Monday.</div>
 
-  <!-- ======= TOOLBAR ======= -->
-  <div class="toolbar" id="toolbar">
-    <div class="toolbar-title sr-only">Table actions</div>
+<!-- ======= TOOLBAR ======= -->
+<div class="toolbar" id="toolbar">
+  <button class="tb-btn" id="tbHide">
+    <svg class="tb-ico" viewBox="0 0 24 24" fill="none" stroke="#111" stroke-width="2">
+      <path d="M3 3l18 18" />
+      <path d="M10.6 10.6a2 2 0 102.8 2.8" />
+      <path d="M9.9 4.2A9.9 9.9 0 0121 12c-.7 1.2-2.5 3.6-5.4 4.9M6.5 6.5C4 8 2.7 9.9 2 12c.7 1.8 2.7 4.5 6 6"/>
+    </svg>
+    Hide columns
+  </button>
 
-    <button class="tb-btn" id="tbHide">
-      <svg class="tb-ico" viewBox="0 0 24 24" fill="none" stroke="#111" stroke-width="2"><path d="M3 3l18 18"/><path d="M10.6 10.6a2 2 0 102.8 2.8"/><path d="M9.9 4.2A9.9 9.9 0 0121 12c-.7 1.2-2.5 3.6-5.4 4.9M6.5 6.5C4 8 2.7 9.9 2 12c.7 1.8 2.7 4.5 6 6"/></svg>
-      Hide columns
-    </button>
+  <button class="tb-btn" id="tbFilter">
+    <svg class="tb-ico" viewBox="0 0 24 24" fill="none" stroke="#111" stroke-width="2">
+      <path d="M3 5h18l-7 8v6l-4-2v-4z"/>
+    </svg>
+    Filter
+  </button>
 
-    <button class="tb-btn" id="tbFilter">
-      <svg class="tb-ico" viewBox="0 0 24 24" fill="none" stroke="#111" stroke-width="2"><path d="M3 5h18l-7 8v6l-4-2v-4z"/></svg>
-      Filter
-    </button>
+  <button class="tb-btn" id="tbSort">
+    <svg class="tb-ico" viewBox="0 0 24 24" fill="none" stroke="#111" stroke-width="2">
+      <path d="M7 4v16M7 4l-3 3M7 4l3 3M17 20V4m0 16l-3-3m3 3l3-3"/>
+    </svg>
+    Sort
+  </button>
+</div>
+<!-- ======= /TOOLBAR ======= -->
 
-    <button class="tb-btn" id="tbGroup">
-      <svg class="tb-ico" viewBox="0 0 24 24" fill="none" stroke="#111" stroke-width="2"><rect x="3" y="4" width="8" height="6"/><rect x="13" y="4" width="8" height="6"/><rect x="3" y="14" width="8" height="6"/><rect x="13" y="14" width="8" height="6"/></svg>
-      Group
-    </button>
-
-    <button class="tb-btn" id="tbSort">
-      <svg class="tb-ico" viewBox="0 0 24 24" fill="none" stroke="#111" stroke-width="2"><path d="M7 4v16M7 4l-3 3M7 4l3 3M17 20V4m0 16l-3-3m3 3l3-3"/></svg>
-      Sort
-    </button>
-
-    <div class="spacer"></div>
-
-    <!-- Records badge -->
-    <div id="recordBadge" aria-live="polite">
-      <div id="recordText">0 records</div>
-      <div id="recordBar"><div id="recordBarFill"></div></div>
-    </div>
-
-    <button class="tb-btn" id="tbMore">…</button>
-
-    <!-- HIDE COLUMNS POPOVER -->
-    <div class="popover" id="pvHide">
-      <div class="pv-row"><label style="font-weight:600">Hide columns</label></div>
-      <input id="hideSearch" type="text" placeholder="Find a field" />
-      <div class="hide-list" id="hideList"></div>
-      <div class="pv-actions">
-        <button class="btn" id="hideAllBtn">Hide all</button>
-        <div class="spacer"></div>
-        <button class="btn" id="showAllBtn">Show all</button>
-      </div>
-    </div>
-
-    <!-- FILTER POPOVER -->
-    <div class="popover" id="pvFilter">
-      <div class="pv-row"><label style="font-weight:600">Add conditions</label></div>
-      <div id="condList"></div>
-      <div class="pv-actions">
-        <button class="btn" id="addCondBtn">+ Add condition</button>
-        <div class="spacer"></div>
-        <button class="btn" id="fltResetBtn">Reset</button>
-        <button class="btn primary" id="fltApplyBtn">Apply</button>
-      </div>
-    </div>
-
-    <!-- SORT POPOVER -->
-    <div class="popover" id="pvSort">
-      <div class="pv-row"><label style="font-weight:600">Sort by</label></div>
-      <div class="pv-row-inline" id="sortRow">
-        <select id="sortKey" style="min-width:240px"></select>
-        <select id="sortDir" style="min-width:120px">
-          <option value="asc">A → Z</option>
-          <option value="desc">Z → A</option>
-        </select>
-      </div>
-    </div>
-
-    <!-- MORE POPOVER -->
-    <div class="popover" id="pvMore">
-      <div class="pv-row-inline">
-        <button class="btn" id="reloadBtn"><div class="little-spinner" id="reloadSpin" style="display:none"></div>Reload</button>
-        <button class="btn" id="exportBtn">Export Excel</button>
-        <button class="btn" id="moreBtn"><div class="little-spinner" id="moreSpin" style="display:none"></div>Load more</button>
-      </div>
-      <div class="muted" style="margin-top:8px">
-        <span id="shown" class="chip">0 shown</span>
-        <span id="loaded" class="chip">0 loaded</span>
-      </div>
-    </div>
-  </div>
-  <!-- ======= /TOOLBAR ======= -->
 
   <!-- TOP HORIZONTAL SCROLLBAR -->
   <div class="hScrollTop" id="hScrollTop"><div class="hScrollInner" id="hScrollInner"></div></div>
@@ -243,6 +204,11 @@ tbody tr:hover td{background:#f8fafc}
       <tbody id="tbody"></tbody>
     </table>
   </div>
+
+<div class="chips" style="margin-top:8px">
+  <span id="recordFooter" class="chip">0 universities</span>
+</div>
+  
 </div>
 
 <!-- Popup for full cell text -->
@@ -361,6 +327,9 @@ tbody tr:hover td{background:#f8fafc}
   const loaded = document.getElementById('loaded');
   const recordText = document.getElementById('recordText');
   const recordBarFill = document.getElementById('recordBarFill');
+  const recordFooter = document.getElementById('recordFooter');
+  const noun = (n) => (n === 1 ? 'university' : 'universities');
+
 
   // Top scrollbar & table wrap
   const hScrollTop = document.getElementById('hScrollTop');
@@ -747,6 +716,13 @@ tbody tr:hover td{background:#f8fafc}
 
     adjustTableHeight();
     syncTopScrollbar();
+    
+    if (recordFooter) {
+  recordFooter.textContent = `${filtered.length} ${noun(filtered.length)}`;
+}
+
+const hasCursor = !!cursor;
+if (moreBtn) moreBtn.style.display = hasCursor ? 'inline-flex' : 'none';
   }
 
   // --------- Head actions & popover wiring for More
