@@ -179,7 +179,7 @@ export const handler = async (event) => {
       if (progressive) break;
 
       // Hard cap first-screen work so we return quickly even if minFirst is large
-      const FIRST_SCREEN_CAP = 12;
+      const FIRST_SCREEN_CAP = 20;
       if (acc.length >= Math.min(minFirst, FIRST_SCREEN_CAP)) break;
 
       if (!nextCursor) break;
