@@ -35,7 +35,8 @@ export const handler = async (event) => {
   }
 
   const p = event.queryStringParameters || {};
-  const clientLimit = clampInt(p.limit, 25, 1, 200);
+  // Use a smaller default client limit to reduce page size and ease load on the Monday API.
+  const clientLimit = clampInt(p.limit, 10, 1, 200);
   let cursor = p.cursor || null;
 
   // return at least this many items for first (non-progressive) call
@@ -55,7 +56,8 @@ export const handler = async (event) => {
 
   // Wider budget + slightly looser per-call window (prevents spurious aborts)
   const startTs = Date.now();
-  const timeBudgetMs = 8000; // was 5000 — give slow pages a bit more breathing room
+  // Increase the overall time budget to give the Monday API more time to respond.
+  const timeBudgetMs = 15000; // 15s budget for slower pages
   const timeLeft = () => Math.max(0, timeBudgetMs - (Date.now() - startTs));
 
   // Monday query
@@ -137,6 +139,17 @@ export const handler = async (event) => {
           workComp = minWage * 20 * 32; // weekly hours * weeks
         }
 
+        // === Additional computed fields ===
+        // Compute numeric ranking from the U.S. News ranking column (long_text).
+        const rankNum = gvNum(cols, 'long_text');
+
+        // Compute live percentage as a whole number (0-100) where available.
+        let livePctCalc = null;
+        if (isFiniteNum(pctLive)) {
+          // pctLive is in range 0..1; multiply to get percentage.
+          livePctCalc = Math.round(pctLive * 100);
+        }
+
         return {
           id: it.id,
           name: it.name,
@@ -151,7 +164,11 @@ export const handler = async (event) => {
           net_mid_calc: netMid,
           net_hi_calc: netHi,
           formula5: liveOnCampus,
-          work_comp_calc: workComp
+          work_comp_calc: workComp,
+
+          // New computed fields for front-end sorting/filtering
+          rank_num_calc: isFiniteNum(rankNum) ? rankNum : null,
+          live_pct_calc: livePctCalc
         };
       });
 
@@ -199,14 +216,16 @@ export const handler = async (event) => {
 // ---------- Helpers ----------
 async function fetchPageResilient(query, { boardId, cursor, clientLimit }, remainingBudgetMs){
   // Try with descending page sizes; retry quickly on transient network/abort
-  const ladder = [clampInt(clientLimit, 25, 10, 50), 25, 20, 15, 10];
+  // Start with the client limit but clamp to a smaller default and progressively decrease the page size to avoid timeouts.
+  const ladder = [clampInt(clientLimit, 10, 5, 50), 10, 8, 5, 3];
   let attempt = 0, lastErr = null;
 
   for (const lim of ladder){
     for (let inner = 0; inner < 2 && attempt < 4; inner++, attempt++){
       try {
         // Looser per-call cap than before (prevents “operation aborted” on slow pages)
-        const perCall = Math.max(2500, Math.min(5500, Math.floor((remainingBudgetMs || 6000) * 0.7)));
+        // Increase per-call timeouts to give Monday more time to respond.
+        const perCall = Math.max(4000, Math.min(10000, Math.floor((remainingBudgetMs || 10000) * 0.8)));
         return await gqlWithTimeout(query, { boardId, limit: lim, cursor: cursor || null }, perCall);
       } catch (e){
         lastErr = e;
