@@ -856,8 +856,7 @@ syncTopScrollbar();
   items = []; cursor = null;
   showLoader(true);
   try {
-    // First call: ask server to collect until it has at least 20 shareable rows.
-    // This loops server-side across 1–2 pages (fast, no 504), then returns.
+    // First batch: ask server for at least ~20 fast
     const first = await fetchBatch({ limit: 200, min: 20, maxPages: 6, progressive: false });
     const batch1 = first.items || [];
     if (batch1.length){
@@ -865,6 +864,29 @@ syncTopScrollbar();
       render();
     }
     cursor = first.cursor || null;
+
+    // ✅ Reveal the app immediately after the first batch
+    showLoader(false);
+    if (app) app.style.display = 'block';
+    syncTopScrollbar && syncTopScrollbar();
+    adjustTableHeight && adjustTableHeight();
+
+    // Keep loading more pages progressively, but the app is already usable
+    while (cursor){
+      const next = await fetchBatch({ limit: 200, cursorParam: cursor, progressive: true });
+      const more = next.items || [];
+      if (more.length){
+        items.push(...more);
+        render();
+      }
+      cursor = next.cursor || null;
+    }
+  } finally {
+    // We already turned the loader off after first batch; keep this as a safety
+    showLoader(false);
+    if (app) app.style.display = 'block';
+  }
+}
 
     // Second step: keep going client-side, one page per request, until no cursor.
     while (cursor){
