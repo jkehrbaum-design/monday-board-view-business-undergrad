@@ -7,7 +7,6 @@
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
-<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 
 <style>
 :root{
@@ -368,7 +367,6 @@ const tbl = document.getElementById('tbl');
   const reloadSpin = document.getElementById('reloadSpin');
   const moreBtn = document.getElementById('moreBtn');
   const moreSpin = document.getElementById('moreSpin');
-  const exportBtn = document.getElementById('exportBtn');
 
   // Popovers + toolbar buttons
   const tbHide = document.getElementById('tbHide');
@@ -765,19 +763,6 @@ syncTopScrollbar();
     if(isLoading || !cursor) return;
     fetchAndAppend({limit: 100, cursorParam: cursor, progressive: true});
   };
-
-  // Excel export (uses dynamic headers)
-  if (exportBtn) exportBtn.addEventListener('click', function(){
-    const headers = visibleCols().map(c=>c.title);
-    const rows = Array.from(tbody.querySelectorAll('tr')).map(tr =>
-      Array.from(tr.children).map(td => td.textContent.replace(/\s+/g,' ').trim())
-    );
-    const aoa = [headers, ...rows];
-    const ws = XLSX.utils.aoa_to_sheet(aoa);
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, 'Programs');
-    XLSX.writeFile(wb, 'bachelors-programs.xlsx');
-  });
 
   // Scroll sync
   function adjustTableHeight(){
