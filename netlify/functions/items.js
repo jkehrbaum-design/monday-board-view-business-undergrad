@@ -1,6 +1,6 @@
 // netlify/functions/items.js
 // Computes backend fields for total cost, 3 net cost variants, # live on campus, and work compensation.
-// Includes: warm-instance cache, quicker first screen, tighter timeouts.
+// Includes: warm-instance cache, progressive paging support, and resilient timeouts.
 
 function getEnv(name, fallback = '') {
   try {
@@ -38,18 +38,14 @@ export const handler = async (event) => {
   const clientLimit = clampInt(p.limit, 25, 1, 200);
   let cursor = p.cursor || null;
 
+  // return at least this many items for first (non-progressive) call
   const DEFAULT_MIN_FIRST = 20;
-  const minFirst = clampInt(p.min ?? DEFAULT_MIN_FIRST, DEFAULT_MIN_FIRST, 0, 200);
-  const maxPages = clampInt(p.maxPages, 4, 1, 8);
+  const minFirst   = clampInt(p.min ?? DEFAULT_MIN_FIRST, DEFAULT_MIN_FIRST, 0, 200);
+  const maxPages   = clampInt(p.maxPages, 4, 1, 8);
   const progressive = String(p.progressive || '').toLowerCase() === 'true';
 
   // ---------- Fast path via warm cache for the first screen (no cursor) ----------
-  const cacheKey = JSON.stringify({
-    board: BOARD_ID,
-    limit: clientLimit,
-    min: minFirst,
-    progressive
-  });
+  const cacheKey = JSON.stringify({ board: BOARD_ID, limit: clientLimit, min: minFirst, progressive });
   if (!cursor) {
     const now = Date.now();
     if (FIRST_PAGE_CACHE.payload && FIRST_PAGE_CACHE.key === cacheKey && (now - FIRST_PAGE_CACHE.ts) < CACHE_TTL_MS) {
@@ -57,8 +53,9 @@ export const handler = async (event) => {
     }
   }
 
+  // Wider budget + slightly looser per-call window (prevents spurious aborts)
   const startTs = Date.now();
-  const timeBudgetMs = 5000; // quicker first response (was 8000)
+  const timeBudgetMs = 8000; // was 5000 — give slow pages a bit more breathing room
   const timeLeft = () => Math.max(0, timeBudgetMs - (Date.now() - startTs));
 
   // Monday query
@@ -84,6 +81,7 @@ export const handler = async (event) => {
   const gv    = (cols, id) => (cols.find(c => c.id === id)?.text || '').trim();
   const gvNum = (cols, id) => numFromText(gv(cols, id));
 
+  // Shareable gate
   const SHAREABLE_COL_ID = 'dup__of_sharable___bachelor_s___freshman___average_';
   const isShareable = (cols) => {
     const c = cols.find(x => x.id === SHAREABLE_COL_ID);
@@ -176,11 +174,12 @@ export const handler = async (event) => {
     do {
       nextCursor = await getOnePage(nextCursor);
       pagesFetched++;
+
+      // Progressive mode: caller wants exactly one page quickly.
       if (progressive) break;
 
-      // Hard cap first-screen work so we return quickly even if minFirst is large
-      const FIRST_SCREEN_CAP = 20;
-      if (acc.length >= Math.min(minFirst, FIRST_SCREEN_CAP)) break;
+      // Non-progressive: stop once we have enough for the first screen.
+      if (acc.length >= minFirst) break;
 
       if (!nextCursor) break;
       if (pagesFetched >= maxPages) break;
@@ -199,20 +198,22 @@ export const handler = async (event) => {
 
 // ---------- Helpers ----------
 async function fetchPageResilient(query, { boardId, cursor, clientLimit }, remainingBudgetMs){
+  // Try with descending page sizes; retry quickly on transient network/abort
   const ladder = [clampInt(clientLimit, 25, 10, 50), 25, 20, 15, 10];
   let attempt = 0, lastErr = null;
 
   for (const lim of ladder){
-    for (let inner = 0; inner < 1 && attempt < 3; inner++, attempt++){
+    for (let inner = 0; inner < 2 && attempt < 4; inner++, attempt++){
       try {
-        // Tighter per-call timeouts: fail slow calls sooner to keep the UX snappy
-        const perCall = Math.max(1800, Math.min(4000, Math.floor((remainingBudgetMs || 6000) * 0.6)));
+        // Looser per-call cap than before (prevents “operation aborted” on slow pages)
+        const perCall = Math.max(2500, Math.min(5500, Math.floor((remainingBudgetMs || 6000) * 0.7)));
         return await gqlWithTimeout(query, { boardId, limit: lim, cursor: cursor || null }, perCall);
       } catch (e){
         lastErr = e;
-        if (!/aborted|AbortError|operation was aborted|network|Failed to fetch|HTTP 50[234]/i.test(e.message)) throw e;
+        // Only retry on abort/network/50x; bubble up other errors
+        if (!/aborted|AbortError|operation was aborted|network|Failed to fetch|HTTP 50[234]/i.test(String(e && e.message || e))) throw e;
         await sleep(150);
-        if ((remainingBudgetMs || 0) < 800) break;
+        if ((remainingBudgetMs || 0) < 900) break;
       }
     }
   }
