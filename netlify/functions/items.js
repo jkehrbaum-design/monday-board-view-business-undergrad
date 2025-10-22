@@ -35,8 +35,11 @@ export const handler = async (event) => {
   }
 
   const p = event.queryStringParameters || {};
-  // Use a smaller default client limit to reduce page size and ease load on the Monday API.
-  const clientLimit = clampInt(p.limit, 10, 1, 200);
+  // Use a larger default client limit to retrieve more items per page. This helps ensure that
+  // the first screen contains more than just a few shareable items. The default here is 20,
+  // meaning that if no `limit` parameter is provided, the handler will request up to 20 items
+  // from Monday per page. It still respects the 1–200 bounds.
+  const clientLimit = clampInt(p.limit, 20, 1, 200);
   let cursor = p.cursor || null;
 
   // return at least this many items for first (non-progressive) call
@@ -56,8 +59,10 @@ export const handler = async (event) => {
 
   // Wider budget + slightly looser per-call window (prevents spurious aborts)
   const startTs = Date.now();
-  // Increase the overall time budget to give the Monday API more time to respond.
-  const timeBudgetMs = 15000; // 15s budget for slower pages
+  // Increase the overall time budget to give the Monday API more time to respond. Allow up to
+  // 60 seconds per request to accumulate enough shareable items. This cap prevents the function
+  // from hanging indefinitely but allows up to 1 minute as requested.
+  const timeBudgetMs = 60000; // 60s budget for slower pages
   const timeLeft = () => Math.max(0, timeBudgetMs - (Date.now() - startTs));
 
   // Monday query
