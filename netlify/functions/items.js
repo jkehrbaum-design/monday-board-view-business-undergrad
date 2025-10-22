@@ -246,7 +246,15 @@ async function gqlWithTimeout(query, variables, timeoutMs){
   try{
     const r = await fetch('https://api.monday.com/v2', {
       method: 'POST',
-      headers: { 'Content-Type':'application/json', 'Authorization': token },
+      // Explicitly set a stable API version header. By specifying 2025-04 we opt in to the
+      // April 2025 version of the monday API. This version still supports the items_page
+      // query but is marked as maintenance, which ensures backward compatibility for at
+      // least six months. Adjust this value as future versions are released.
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization' : token,
+        'API-Version'  : '2025-04'
+      },
       body: JSON.stringify({ query, variables }),
       signal: controller.signal
     });
