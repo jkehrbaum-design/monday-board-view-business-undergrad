@@ -49,7 +49,6 @@ input,select{height:36px;padding:0 10px;border:1px solid var(--line);border-radi
   padding:12px;
   display:none;
   min-width:340px;
-  /* Ensure popovers appear above the sticky table header and scroll container */
   z-index:50;
 }
 .popover.open{display:block}
@@ -172,68 +171,72 @@ tbody tr:hover td{background:#f8fafc}
   <div class="h1">Bachelor’s Programs – Freshman & Average Student</div>
   <div class="sub">The data comes from a secure Netlify function (read-only). The look and feel is inspired by Monday.</div>
 
-<!-- ======= TOOLBAR ======= -->
-<div class="toolbar" id="toolbar">
-  <button class="tb-btn" id="tbHide">
-    <svg class="tb-ico" viewBox="0 0 24 24" fill="none" stroke="#111" stroke-width="2">
-      <path d="M3 3l18 18" />
-      <path d="M10.6 10.6a2 2 0 102.8 2.8" />
-      <path d="M9.9 4.2A9.9 9.9 0 0121 12c-.7 1.2-2.5 3.6-5.4 4.9M6.5 6.5C4 8 2.7 9.9 2 12c.7 1.8 2.7 4.5 6 6"/>
-    </svg>
-    Hide columns
-  </button>
+  <!-- ======= TOOLBAR ======= -->
+  <div class="toolbar" id="toolbar">
+    <button class="tb-btn" id="tbHide">
+      <svg class="tb-ico" viewBox="0 0 24 24" fill="none" stroke="#111" stroke-width="2">
+        <path d="M3 3l18 18" />
+        <path d="M10.6 10.6a2 2 0 102.8 2.8" />
+        <path d="M9.9 4.2A9.9 9.9 0 0121 12c-.7 1.2-2.5 3.6-5.4 4.9M6.5 6.5C4 8 2.7 9.9 2 12c.7 1.8 2.7 4.5 6 6"/>
+      </svg>
+      Hide columns
+    </button>
 
-  <button class="tb-btn" id="tbFilter">
-    <svg class="tb-ico" viewBox="0 0 24 24" fill="none" stroke="#111" stroke-width="2">
-      <path d="M3 5h18l-7 8v6l-4-2v-4z"/>
-    </svg>
-    Filter
-  </button>
+    <button class="tb-btn" id="tbFilter">
+      <svg class="tb-ico" viewBox="0 0 24 24" fill="none" stroke="#111" stroke-width="2">
+        <path d="M3 5h18l-7 8v6l-4-2v-4z"/>
+      </svg>
+      Filter
+    </button>
 
-  <button class="tb-btn" id="tbSort">
-    <svg class="tb-ico" viewBox="0 0 24 24" fill="none" stroke="#111" stroke-width="2">
-      <path d="M7 4v16M7 4l-3 3M7 4l3 3M17 20V4m0 16l-3-3m3 3l3-3"/>
-    </svg>
-    Sort
-  </button>
-</div>
-<!-- ======= /TOOLBAR ======= -->
+    <button class="tb-btn" id="tbSort">
+      <svg class="tb-ico" viewBox="0 0 24 24" fill="none" stroke="#111" stroke-width="2">
+        <path d="M7 4v16M7 4l-3 3M7 4l3 3M17 20V4m0 16l-3-3m3 3l3-3"/>
+      </svg>
+      Sort
+    </button>
+
+    <!-- ▶▶ ADDED: Progress badge pill (right-aligned) -->
+    <span id="loadProgress" class="chip" style="display:none;margin-left:auto"></span>
+    <!-- ◀◀ /ADDED -->
+  </div>
+  <!-- ======= /TOOLBAR ======= -->
 
   <!-- HIDE COLUMNS POPOVER -->
-<div class="popover" id="pvHide">
-  <div class="pv-row"><label style="font-weight:600">Hide columns</label></div>
-  <input id="hideSearch" type="text" placeholder="Find a field" />
-  <div class="hide-list" id="hideList"></div>
-  <div class="pv-actions">
-    <button class="btn" id="hideAllBtn">Hide all</button>
-    <div class="spacer"></div>
-    <button class="btn" id="showAllBtn">Show all</button>
+  <div class="popover" id="pvHide">
+    <div class="pv-row"><label style="font-weight:600">Hide columns</label></div>
+    <input id="hideSearch" type="text" placeholder="Find a field" />
+    <div class="hide-list" id="hideList"></div>
+    <div class="pv-actions">
+      <button class="btn" id="hideAllBtn">Hide all</button>
+      <div class="spacer"></div>
+      <button class="btn" id="showAllBtn">Show all</button>
+    </div>
   </div>
-</div>
 
-<!-- FILTER POPOVER -->
-<div class="popover" id="pvFilter">
-  <div class="pv-row"><label style="font-weight:600">Add conditions</label></div>
-  <div id="condList"></div>
-  <div class="pv-actions">
-    <button class="btn" id="addCondBtn">+ Add condition</button>
-    <div class="spacer"></div>
-    <button class="btn" id="fltResetBtn">Reset</button>
-    <button class="btn primary" id="fltApplyBtn">Apply</button>
+  <!-- FILTER POPOVER -->
+  <div class="popover" id="pvFilter">
+    <div class="pv-row"><label style="font-weight:600">Add conditions</label></div>
+    <div id="condList"></div>
+    <div class="pv-actions">
+      <button class="btn" id="addCondBtn">+ Add condition</button>
+      <div class="spacer"></div>
+      <button class="btn" id="fltResetBtn">Reset</button>
+      <button class="btn primary" id="fltApplyBtn">Apply</button>
+    </div>
   </div>
-</div>
 
-<!-- SORT POPOVER -->
-<div class="popover" id="pvSort">
-  <div class="pv-row"><label style="font-weight:600">Sort by</label></div>
-  <div class="pv-row-inline" id="sortRow">
-    <select id="sortKey" style="min-width:240px"></select>
-    <select id="sortDir" style="min-width:120px">
-      <option value="asc">A → Z</option>
-      <option value="desc">Z → A</option>
-    </select>
+  <!-- SORT POPOVER -->
+  <div class="popover" id="pvSort">
+    <div class="pv-row"><label style="font-weight:600">Sort by</label></div>
+    <div class="pv-row-inline" id="sortRow">
+      <select id="sortKey" style="min-width:240px"></select>
+      <select id="sortDir" style="min-width:120px">
+        <option value="asc">A → Z</option>
+        <option value="desc">Z → A</option>
+      </select>
+    </div>
   </div>
-</div>
 
   <!-- TABLE -->
   <div class="tableWrap" id="tableWrap">
@@ -243,10 +246,9 @@ tbody tr:hover td{background:#f8fafc}
     </table>
   </div>
 
-<div class="chips" style="margin-top:8px">
-  <span id="recordFooter" class="chip">0 universities</span>
-</div>
-  
+  <div class="chips" style="margin-top:8px">
+    <span id="recordFooter" class="chip">0 universities</span>
+  </div>
 </div>
 
 <!-- Popup for full cell text -->
@@ -272,7 +274,7 @@ tbody tr:hover td{background:#f8fafc}
     { key:'fach_det',       title:'Fachabitur Details', trunc:true,    type:'text',  colId:'long_text15' },
     { key:'usnews_rank',    title:'U.S. News Ranking',  align:'right', type:'mono',  colId:'long_text' },
     { key:'usnews_link',    title:'U.S. News Link',                   type:'link',  colId:'link1' },
-    { key:'type',           title:'Type of Institution',              type:'chip',  colId:'dropdown', chipCategory:'type' },
+    { key:'type',           title:'Type of Institution',              type:'chip',  colId:'dropdown' },
     { key:'enroll',         title:'Total Enrollment',   align:'right', type:'number',colId:'numbers7' },
     { key:'live_pct',       title:'% Live on Campus',   align:'right', type:'text',  colId:'numbers8' },
     { key:'live_num',       title:'# Live on Campus',   align:'right', type:'number',colId:'formula5' },
@@ -294,7 +296,7 @@ tbody tr:hover td{background:#f8fafc}
     { key:'degrees_link',   title:'Bachelor’s Degrees Link',           type:'link',  colId:'link30' },
     { key:'acad_year',      title:'Academic Year',      trunc:true,    type:'text',  colId:'dropdown4' },
 
-    /* Money + formulas (prefer backend-calculated fields) */
+    /* Money + formulas */
     { key:'tuition',        title:'Tuition (Annual Cost in USD)', align:'right', type:'money', colId:'annual_tuition_cost' },
     { key:'room',           title:'Room (Annual Cost in USD)',    align:'right', type:'money', colId:'_usd__annual_room_cost' },
     { key:'board',          title:'Board (Annual Cost in USD)',   align:'right', type:'money', colId:'_usd__annual_board_cost' },
@@ -367,6 +369,11 @@ tbody tr:hover td{background:#f8fafc}
   const recordFooter = document.getElementById('recordFooter');
   const noun = (n) => (n === 1 ? 'university' : 'universities');
 
+  // ▶▶ ADDED: progress badge ref + total tracker
+  const loadProgress = document.getElementById('loadProgress');
+  let totalItems = null; // will use json.total if backend provides it
+  // ◀◀ /ADDED
+
   // Table wrap & table
   const tableWrap = document.getElementById('tableWrap');
   const tbl = document.getElementById('tbl');
@@ -420,7 +427,7 @@ tbody tr:hover td{background:#f8fafc}
   const GEO_STYLES = {'Pacific West Coast':['#FFF4DB','#FFDFA6','#915930'],'West':['#FFE8EE','#FFC6D4','#8A2E45'],'Midwest':['#E7F7FF','#C8EFFF','#0B5586'],'Southeast':['#EFFFF3','#CCF3D7','#1F6B3A'],'Northeast':['#F1ECFF','#DDD6FE','#4A38A5'],'Southwest':['#FFF0E6','#FFD6BD','#884A1F']};
   const STATUS_STYLES = {'shareable':['#E6F6EA','#BFE7C8','#256D3C'],'working on it':['#E6F0FF','#C9D7FF','#2746B3'],'in progress':['#E6F0FF','#C9D7FF','#2746B3'],'yes':['#E6F6EA','#BFE7C8','#256D3C'],'true':['#E6F6EA','#BFE7C8','#256D3C'],'no':['#FEEAEA','#F8C7C7','#9F1D1D'],'not shareable':['#FEEAEA','#F8C7C7','#9F1D1D'],'false':['#FEEAEA','#F8C7C7','#9F1D1D'],'unknown':['#F2F4F7','#E4E7EC','#475467'],'n/a':['#F2F4F7','#E4E7EC','#475467'],'':['#F2F4F7','#E4E7EC','#475467']};
   const TYPE_STYLES = {'Public':['#E7F7FF','#C8EFFF','#0B5586'],'Private':['#FFE8EE','#FFC6D4','#8A2E45'],'Community College':['#FFF4DB','#FFDFA6','#915930']};
-  const STATE_HUES = [['#E6F6EA','#BFE7C8','#256D3C'],['#E6F0FF','#C9D7FF','#2746B3'],['#FFF4DB','#FFDFA6','#915930'],['#F1ECFF','#DDD6FE','#4A38A5'],['#E7F7FF','#C8EFFF','#0B5586'],['#FFE8EE','#FFC6D4','#8A2E45'],['#EFFFF3','#CCF3D7','#1F6B3A'],['#FFF0E6','#FFD6BD','#884A1F'],['#F2F4F7','#E4E7EC','#475467'],['#EAF3FF','#CFE2FF','#23498C'],['#FDEBF6','#F8CDE8','#8F2D6A'],['#EAFBF7','#CFF3EA','#176D63']];
+  const STATE_HUES = [['#E6F6EA','#BFE7C8','#256D3C'],['#E6F0FF','#C9D7FF','#2746B3'],['#FFF4DB','#FFDFA6','#915930'],['#F1ECFF','#DDD6FE','#4A38A5'],['#E7F7FF','#C8EFFF','#0B5586'],['#FFE8EE','#FFC6D4','#8A2E45'],['#EFFFF3','#CCF3D7','#1F6B3A'],['#FFF0E6','#FFD6BD','#884A1F'],['#F2F4F7','#E6E9F0','#49506A'],['#EAF3FF','#CFE2FF','#23498C'],['#FDEBF6','#F8CDE8','#8F2D6A'],['#EAFBF7','#CFF3EA','#176D63']];
   function hashIndex(str){ let h=0; str=String(str||''); for(let i=0;i<str.length;i++){ h=(h*31 + str.charCodeAt(i))|0; } if(h<0) h=-h; return h % STATE_HUES.length; }
   function chipsFor(val, category){
     if (!val) return '';
@@ -753,11 +760,31 @@ tbody tr:hover td{background:#f8fafc}
     const hasCursor = !!cursor;
     if (moreBtn) moreBtn.style.display = hasCursor ? 'inline-flex' : 'none';
 
-    // Adjust table height after render
+    // Adjust height after render
     adjustTableHeight();
+
+    // ▶▶ ADDED: keep progress badge fresh on each render
+    updateProgressBadge();
+    // ◀◀ /ADDED
   } // end render()
 
-  // Delegated click for popup (for .trunc spans) — single listener
+  // ▶▶ ADDED: progress badge updater
+  function updateProgressBadge(){
+    if (!loadProgress) return;
+    const loadedCount = items.length;
+    // If backend provided a total, show "X / Y loaded"; else fall back to "X loaded"
+    if (totalItems != null) {
+      loadProgress.textContent = `${loadedCount} / ${totalItems} loaded`;
+    } else {
+      loadProgress.textContent = `${loadedCount} loaded`;
+    }
+    // Hide when fully loaded (no cursor left)
+    const done = !cursor;
+    loadProgress.style.display = done ? 'none' : 'inline-block';
+  }
+  // ◀◀ /ADDED
+
+  // Delegated click for popup (for .trunc spans)
   tbody.addEventListener('click', (e)=>{
     let target = e.target;
     while (target && target !== tbody && !target.classList.contains('trunc')) target = target.parentNode;
@@ -774,7 +801,7 @@ tbody tr:hover td{background:#f8fafc}
     fetchAndAppend({limit: 100, cursorParam: cursor, progressive: true});
   };
 
-  // Adjust height util (one copy)
+  // Adjust height util
   function adjustTableHeight(){
     if (!tableWrap) return;
     const vwTop = tableWrap.getBoundingClientRect().top;
@@ -789,11 +816,9 @@ tbody tr:hover td{background:#f8fafc}
     const base = location.origin || window.location.href;
     const url = new URL('/.netlify/functions/items', base);
 
-    // defaults
     url.searchParams.set('limit', String(params && params.limit ? params.limit : '100'));
     if (params && params.cursorParam) url.searchParams.set('cursor', params.cursorParam);
 
-    // pass through progressive + min + maxPages
     if (params && params.progressive) url.searchParams.set('progressive', 'true');
     if (params && params.min != null)  url.searchParams.set('min', String(params.min));
     if (params && params.maxPages != null) url.searchParams.set('maxPages', String(params.maxPages));
@@ -805,6 +830,13 @@ tbody tr:hover td{background:#f8fafc}
         throw new Error('HTTP '+resp.status+': '+String(txt).slice(0,300));
       }
       const json = await resp.json();
+
+      // ▶▶ ADDED: pick up a total count if backend provides it
+      if (json && typeof json.total === 'number') {
+        totalItems = json.total;
+      }
+      // ◀◀ /ADDED
+
       if (!json || !Array.isArray(json.items)) throw new Error('Unexpected payload: '+JSON.stringify(json).slice(0,300));
       if (errorBanner) errorBanner.style.display = 'none';
       return json;
@@ -837,6 +869,10 @@ tbody tr:hover td{background:#f8fafc}
       cursor = nextCur;
     }
     setMoreLoading(false);
+
+    // ▶▶ ADDED: ensure progress badge reflects final state after loop
+    updateProgressBadge();
+    // ◀◀ /ADDED
   }
 
   function showLoader(on){ if (loader) loader.style.display = on ? 'flex' : 'none'; }
@@ -856,7 +892,6 @@ tbody tr:hover td{background:#f8fafc}
     buildThead();
     attachSortHandlers();
     initSortUI();
-    // Default sort by Name asc
     sort = { key:'name', dir:1 };
     sortKeySel && (sortKeySel.value = 'name');
     sortDirSel && (sortDirSel.value = 'asc');
@@ -864,9 +899,9 @@ tbody tr:hover td{background:#f8fafc}
 
   async function initialLoad(){
     items = []; cursor = null;
+    totalItems = null; // ▶ reset total for a fresh session
     showLoader(true);
     try {
-      // First page only; return fast
       const FIRST_PAGE_LIMIT = 60;
       const first = await fetchBatch({ limit: FIRST_PAGE_LIMIT, progressive: true });
       const batch1 = first.items || [];
@@ -876,12 +911,10 @@ tbody tr:hover td{background:#f8fafc}
       }
       cursor = first.cursor || null;
 
-      // Reveal UI immediately after first page
       showLoader(false);
       if (app) app.style.display = 'block';
       adjustTableHeight();
 
-      // Keep fetching more pages in the background
       const PROGRESS_LIMIT = 120;
       while (cursor){
         const next = await fetchAndAppend({ limit: PROGRESS_LIMIT, cursorParam: cursor, progressive: true });
@@ -890,6 +923,8 @@ tbody tr:hover td{background:#f8fafc}
     } finally {
       showLoader(false);
       if (app) app.style.display = 'block';
+      // ▶ final ensure
+      updateProgressBadge();
     }
   }
 
