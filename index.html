@@ -953,8 +953,9 @@ tbody tr:hover td{background:#f8fafc}
     showLoader(true);
     try {
       // First page only; return fast
-      const FIRST_PAGE_LIMIT = 60;
-      const first = await fetchBatch({ limit: FIRST_PAGE_LIMIT, progressive: true });
+      const FIRST_PAGE_LIMIT = 50;
+      const MIN_FIRST = 10;
+      const first = await fetchBatch({ limit: FIRST_PAGE_LIMIT, min: MIN_FIRST });
       const batch1 = first.items || [];
       if (batch1.length){
         items.push(...batch1);
