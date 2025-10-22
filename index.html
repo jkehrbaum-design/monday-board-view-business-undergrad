@@ -856,8 +856,9 @@ syncTopScrollbar();
   items = []; cursor = null;
   showLoader(true);
   try {
-    // First batch: ask server for at least ~20 fast
-    const first = await fetchBatch({ limit: 200, min: 20, maxPages: 6, progressive: false });
+    // ⚡️ First page only; return fast
+    const FIRST_PAGE_LIMIT = 60; // 30–60 is a good sweet spot
+    const first = await fetchBatch({ limit: FIRST_PAGE_LIMIT, progressive: true });
     const batch1 = first.items || [];
     if (batch1.length){
       items.push(...batch1);
@@ -865,46 +866,25 @@ syncTopScrollbar();
     }
     cursor = first.cursor || null;
 
-    // ✅ Reveal the app immediately after the first batch
+    // 👀 Reveal UI immediately after first page
     showLoader(false);
     if (app) app.style.display = 'block';
-    syncTopScrollbar && syncTopScrollbar();
-    adjustTableHeight && adjustTableHeight();
+    if (typeof syncTopScrollbar === 'function') syncTopScrollbar();
+    if (typeof adjustTableHeight === 'function') adjustTableHeight();
 
-    // Keep loading more pages progressively, but the app is already usable
+    // 🔁 Keep fetching more pages in the background
+    const PROGRESS_LIMIT = 120; // bigger pages after UI is visible
     while (cursor){
-      const next = await fetchBatch({ limit: 200, cursorParam: cursor, progressive: true });
-      const more = next.items || [];
-      if (more.length){
-        items.push(...more);
-        render();
-      }
-      cursor = next.cursor || null;
+      const next = await fetchAndAppend({ limit: PROGRESS_LIMIT, cursorParam: cursor, progressive: true });
+      // fetchAndAppend updates items + render internally
+      // cursor is updated there; we mirror it here:
+      cursor = next && next.cursor || cursor;
     }
   } finally {
-    // We already turned the loader off after first batch; keep this as a safety
+    // safety
     showLoader(false);
     if (app) app.style.display = 'block';
   }
-}
-
-    // Second step: keep going client-side, one page per request, until no cursor.
-    while (cursor){
-      const next = await fetchBatch({ limit: 200, cursorParam: cursor, progressive: true });
-      const more = next.items || [];
-      if (more.length){
-        items.push(...more);
-        render();
-      }
-      cursor = next.cursor || null;
-    }
-  } finally {
-    showLoader(false);
-    if (app) app.style.display = 'block';
-    syncTopScrollbar();
-    adjustTableHeight();
-  }
-}
 
   // start
   initialHeadersAndUI();
