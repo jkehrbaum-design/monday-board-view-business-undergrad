@@ -1,5 +1,6 @@
 // netlify/functions/items.js
 // Computes backend fields for total cost, 3 net cost variants, # live on campus, and work compensation.
+// Includes: warm-instance cache, quicker first screen, tighter timeouts.
 
 function getEnv(name, fallback = '') {
   try {
@@ -13,6 +14,10 @@ function getEnv(name, fallback = '') {
   } catch (_) {}
   return fallback;
 }
+
+// ---------- Warm-instance micro cache (persists while the function is warm) ----------
+let FIRST_PAGE_CACHE = { key: null, ts: 0, payload: null };
+const CACHE_TTL_MS = 60 * 1000; // 60s
 
 export const handler = async (event) => {
   const TOKEN    = getEnv('MONDAY_API_TOKEN', '');
@@ -38,8 +43,22 @@ export const handler = async (event) => {
   const maxPages = clampInt(p.maxPages, 4, 1, 8);
   const progressive = String(p.progressive || '').toLowerCase() === 'true';
 
+  // ---------- Fast path via warm cache for the first screen (no cursor) ----------
+  const cacheKey = JSON.stringify({
+    board: BOARD_ID,
+    limit: clientLimit,
+    min: minFirst,
+    progressive
+  });
+  if (!cursor) {
+    const now = Date.now();
+    if (FIRST_PAGE_CACHE.payload && FIRST_PAGE_CACHE.key === cacheKey && (now - FIRST_PAGE_CACHE.ts) < CACHE_TTL_MS) {
+      return json(FIRST_PAGE_CACHE.payload);
+    }
+  }
+
   const startTs = Date.now();
-  const timeBudgetMs = 8000;
+  const timeBudgetMs = 5000; // quicker first response (was 8000)
   const timeLeft = () => Math.max(0, timeBudgetMs - (Date.now() - startTs));
 
   // Monday query
@@ -158,7 +177,11 @@ export const handler = async (event) => {
       nextCursor = await getOnePage(nextCursor);
       pagesFetched++;
       if (progressive) break;
-      if (acc.length >= minFirst) break;
+
+      // Hard cap first-screen work so we return quickly even if minFirst is large
+      const FIRST_SCREEN_CAP = 12;
+      if (acc.length >= Math.min(minFirst, FIRST_SCREEN_CAP)) break;
+
       if (!nextCursor) break;
       if (pagesFetched >= maxPages) break;
     } while (timeLeft() > 0);
@@ -169,7 +192,9 @@ export const handler = async (event) => {
     nextCursor = null;
   }
 
-  return json({ cursor: nextCursor, totalLoaded: acc.length, items: acc });
+  const responsePayload = { cursor: nextCursor, totalLoaded: acc.length, items: acc };
+  if (!cursor) { FIRST_PAGE_CACHE = { key: cacheKey, ts: Date.now(), payload: responsePayload }; }
+  return json(responsePayload);
 };
 
 // ---------- Helpers ----------
@@ -180,7 +205,8 @@ async function fetchPageResilient(query, { boardId, cursor, clientLimit }, remai
   for (const lim of ladder){
     for (let inner = 0; inner < 1 && attempt < 3; inner++, attempt++){
       try {
-        const perCall = Math.max(2500, Math.min(5500, Math.floor((remainingBudgetMs || 6000) * 0.8)));
+        // Tighter per-call timeouts: fail slow calls sooner to keep the UX snappy
+        const perCall = Math.max(1800, Math.min(4000, Math.floor((remainingBudgetMs || 6000) * 0.6)));
         return await gqlWithTimeout(query, { boardId, limit: lim, cursor: cursor || null }, perCall);
       } catch (e){
         lastErr = e;
