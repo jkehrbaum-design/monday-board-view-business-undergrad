@@ -63,7 +63,6 @@ input,select{height:36px;padding:0 10px;border:1px solid var(--line);border-radi
 #pvFilter input[type="text"]{ height:32px; font-size:13px; padding:4px 8px; }
 #pvFilter select:focus,#pvFilter input:focus{ outline:none;border-color:var(--primary);box-shadow:0 0 0 2px rgba(31,118,255,0.2); }
 
-
 /* Table */
 .tableWrap{background:var(--card);border:1px solid var(--line);border-radius:10px;overflow:auto;position:relative;max-height:70vh;}
 table{border-collapse:separate;border-spacing:0;width:max-content;min-width:1200px;}
@@ -327,7 +326,6 @@ tbody tr:hover td{background:#f8fafc}
     { key:'work_details_b', title:'Work on Campus Details', trunc:true, type:'text', colId:'long_text56' },
   ];
 
-  // show ALL columns in filter pickers
   const DEFAULT_FILTERABLE_KEYS = COLUMNS.map(c=>c.key);
 
   // --- global error surface
@@ -357,12 +355,11 @@ tbody tr:hover td{background:#f8fafc}
   const recordFooter = document.getElementById('recordFooter');
   const noun = (n) => (n === 1 ? 'university' : 'universities');
 
-  // Table wrap & table (keep these)
-const tableWrap = document.getElementById('tableWrap');
-const tbl = document.getElementById('tbl');
+  // Table wrap & table
+  const tableWrap = document.getElementById('tableWrap');
+  const tbl = document.getElementById('tbl');
 
-
-  // Buttons
+  // Buttons (optional in DOM; guarded below)
   const reloadBtn = document.getElementById('reloadBtn');
   const reloadSpin = document.getElementById('reloadSpin');
   const moreBtn = document.getElementById('moreBtn');
@@ -538,7 +535,7 @@ const tbl = document.getElementById('tbl');
   function drawHideList(){
     const q = (hideSearch.value||'').toLowerCase();
     const rows = COLUMNS
-      .filter(c => c.key!=='name') // keep Name always visible
+      .filter(c => c.key!=='name')
       .filter(c => c.title.toLowerCase().includes(q) || c.key.toLowerCase().includes(q))
       .map(c=>{
         const on = !hidden.has(c.key);
@@ -641,12 +638,12 @@ const tbl = document.getElementById('tbl');
   function itemToRow(item){
     const row = {};
     for (const col of COLUMNS){
-      if (hidden.has(col.key)) continue; // we'll still compute but render filters use only visible; optional choice
+      if (hidden.has(col.key)) continue;
       let raw;
       if (col.key==='name') {
         raw = (item && item.name ? item.name : '');
       } else if (Object.prototype.hasOwnProperty.call(item, col.colId)) {
-        raw = item[col.colId]; // backend-calculated field support
+        raw = item[col.colId];
       } else {
         raw = readCell(item, col.colId);
       }
@@ -735,75 +732,77 @@ const tbl = document.getElementById('tbl');
     }
     tbody.innerHTML = html;
 
-// Update footer chip
-if (recordFooter) {
-  recordFooter.textContent = `${filtered.length} ${noun(filtered.length)}`;
-}
+    // Update footer chip
+    if (recordFooter) {
+      recordFooter.textContent = `${filtered.length} ${noun(filtered.length)}`;
+    }
 
-// Show/hide “Load more” if present
-const hasCursor = !!cursor;
-if (moreBtn) moreBtn.style.display = hasCursor ? 'inline-flex' : 'none';
+    // Show/hide “Load more” if present
+    const hasCursor = !!cursor;
+    if (moreBtn) moreBtn.style.display = hasCursor ? 'inline-flex' : 'none';
 
-adjustTableHeight();
-syncTopScrollbar();
+    // Adjust table height after render
+    adjustTableHeight();
+  } // end render()
 
-  // Delegated click for popup (for .trunc spans)
-  document.getElementById('tbody').addEventListener('click', (e)=>{
+  // Delegated click for popup (for .trunc spans) — single listener
+  tbody.addEventListener('click', (e)=>{
     let target = e.target;
     while (target && target !== tbody && !target.classList.contains('trunc')) target = target.parentNode;
-    if(!target || target === tbody) return;
+    if (!target || target === tbody) return;
     const title = target.getAttribute('data-title') || 'Details';
-    const full = target.getAttribute('data-full') || target.textContent || '';
+    const full  = target.getAttribute('data-full')  || target.textContent || '';
     if (String(full).trim()) openPopup(title, full);
   });
 
-  // Controls
+  // Controls (if present)
   if (reloadBtn) reloadBtn.onclick = ()=>{ if(isLoading) return; initialLoad(); };
   if (moreBtn) moreBtn.onclick = ()=>{
     if(isLoading || !cursor) return;
     fetchAndAppend({limit: 100, cursorParam: cursor, progressive: true});
   };
 
-  // Scroll sync
+  // Adjust height util (one copy)
   function adjustTableHeight(){
     if (!tableWrap) return;
     const vwTop = tableWrap.getBoundingClientRect().top;
     const maxH = Math.max(360, window.innerHeight - vwTop - 16);
     tableWrap.style.maxHeight = maxH + 'px';
   }
-  window.addEventListener('resize', function(){ syncTopScrollbar(); adjustTableHeight(); });
+  window.addEventListener('resize', function(){ adjustTableHeight(); });
 
   // Data fetching
- async function fetchBatch(params){
-  const errorBanner = document.getElementById('errorBanner');
-  const base = location.origin || window.location.href;
-  const url = new URL('/.netlify/functions/items', base);
+  async function fetchBatch(params){
+    const errorBanner = document.getElementById('errorBanner');
+    const base = location.origin || window.location.href;
+    const url = new URL('/.netlify/functions/items', base);
 
-  // defaults
-  url.searchParams.set('limit', String(params && params.limit ? params.limit : '100'));
-  if (params && params.cursorParam) url.searchParams.set('cursor', params.cursorParam);
+    // defaults
+    url.searchParams.set('limit', String(params && params.limit ? params.limit : '100'));
+    if (params && params.cursorParam) url.searchParams.set('cursor', params.cursorParam);
 
-  // NEW: pass through progressive + min + maxPages
-  if (params && params.progressive) url.searchParams.set('progressive', 'true');
-  if (params && params.min != null)  url.searchParams.set('min', String(params.min));
-  if (params && params.maxPages != null) url.searchParams.set('maxPages', String(params.maxPages));
+    // pass through progressive + min + maxPages
+    if (params && params.progressive) url.searchParams.set('progressive', 'true');
+    if (params && params.min != null)  url.searchParams.set('min', String(params.min));
+    if (params && params.maxPages != null) url.searchParams.set('maxPages', String(params.maxPages));
 
-  try {
-    const resp = await fetch(url.toString(), { cache: 'no-store' });
-    if (!resp.ok) {
-      let txt=''; try{ txt = await resp.text(); }catch(_){}
-      throw new Error('HTTP '+resp.status+': '+String(txt).slice(0,300));
+    try {
+      const resp = await fetch(url.toString(), { cache: 'no-store' });
+      if (!resp.ok) {
+        let txt=''; try{ txt = await resp.text(); }catch(_){}
+        throw new Error('HTTP '+resp.status+': '+String(txt).slice(0,300));
+      }
+      const json = await resp.json();
+      if (!json || !Array.isArray(json.items)) throw new Error('Unexpected payload: '+JSON.stringify(json).slice(0,300));
+      if (errorBanner) errorBanner.style.display = 'none';
+      return json;
+    } catch (e) {
+      console.error('Fetch failed', e);
+      if (errorBanner) { errorBanner.textContent = 'Could not load data. ' + (e && e.message ? e.message : String(e)); errorBanner.style.display = 'block'; }
+      return { items: [], cursor: null };
     }
-    const json = await resp.json();
-    if (!json || !Array.isArray(json.items)) throw new Error('Unexpected payload: '+JSON.stringify(json).slice(0,300));
-    if (errorBanner) errorBanner.style.display = 'none';
-    return json;
-  } catch (e) {
-    console.error('Fetch failed', e);
-    if (errorBanner) { errorBanner.textContent = 'Could not load data. ' + (e && e.message ? e.message : String(e)); errorBanner.style.display = 'block'; }
-    return { items: [], cursor: null };
   }
-}
+
   async function fetchAndAppend(opts){
     setMoreLoading(true);
     const res = await fetchBatch(opts || {});
@@ -827,6 +826,7 @@ syncTopScrollbar();
     }
     setMoreLoading(false);
   }
+
   function showLoader(on){ if (loader) loader.style.display = on ? 'flex' : 'none'; }
   function setMoreLoading(on){
     isLoading = on;
@@ -848,42 +848,37 @@ syncTopScrollbar();
     sort = { key:'name', dir:1 };
     sortKeySel && (sortKeySel.value = 'name');
     sortDirSel && (sortDirSel.value = 'asc');
-
-    // Wire popovers already done
   }
 
- async function initialLoad(){
-  items = []; cursor = null;
-  showLoader(true);
-  try {
-    // ⚡️ First page only; return fast
-    const FIRST_PAGE_LIMIT = 60; // 30–60 is a good sweet spot
-    const first = await fetchBatch({ limit: FIRST_PAGE_LIMIT, progressive: true });
-    const batch1 = first.items || [];
-    if (batch1.length){
-      items.push(...batch1);
-      render();
-    }
-    cursor = first.cursor || null;
+  async function initialLoad(){
+    items = []; cursor = null;
+    showLoader(true);
+    try {
+      // First page only; return fast
+      const FIRST_PAGE_LIMIT = 60;
+      const first = await fetchBatch({ limit: FIRST_PAGE_LIMIT, progressive: true });
+      const batch1 = first.items || [];
+      if (batch1.length){
+        items.push(...batch1);
+        render();
+      }
+      cursor = first.cursor || null;
 
-    // 👀 Reveal UI immediately after first page
-    showLoader(false);
-    if (app) app.style.display = 'block';
-    if (typeof syncTopScrollbar === 'function') syncTopScrollbar();
-    if (typeof adjustTableHeight === 'function') adjustTableHeight();
+      // Reveal UI immediately after first page
+      showLoader(false);
+      if (app) app.style.display = 'block';
+      adjustTableHeight();
 
-    // 🔁 Keep fetching more pages in the background
-    const PROGRESS_LIMIT = 120; // bigger pages after UI is visible
-    while (cursor){
-      const next = await fetchAndAppend({ limit: PROGRESS_LIMIT, cursorParam: cursor, progressive: true });
-      // fetchAndAppend updates items + render internally
-      // cursor is updated there; we mirror it here:
-      cursor = next && next.cursor || cursor;
+      // Keep fetching more pages in the background
+      const PROGRESS_LIMIT = 120;
+      while (cursor){
+        const next = await fetchAndAppend({ limit: PROGRESS_LIMIT, cursorParam: cursor, progressive: true });
+        cursor = next && next.cursor || cursor;
+      }
+    } finally {
+      showLoader(false);
+      if (app) app.style.display = 'block';
     }
-  } finally {
-    // safety
-    showLoader(false);
-    if (app) app.style.display = 'block';
   }
 
   // start
