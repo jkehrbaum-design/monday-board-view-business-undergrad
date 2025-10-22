@@ -39,7 +39,19 @@ input,select{height:36px;padding:0 10px;border:1px solid var(--line);border-radi
 .tb-btn .ico{line-height:1}
 
 /* Popovers */
-.popover{position:absolute;top:44px;background:#fff;border:1px solid var(--line);border-radius:10px;box-shadow:0 12px 30px rgba(0,0,0,.10);padding:12px;display:none;min-width:340px;}
+.popover{
+  position:absolute;
+  top:44px;
+  background:#fff;
+  border:1px solid var(--line);
+  border-radius:10px;
+  box-shadow:0 12px 30px rgba(0,0,0,.10);
+  padding:12px;
+  display:none;
+  min-width:340px;
+  /* Ensure popovers appear above the sticky table header and scroll container */
+  z-index:50;
+}
 .popover.open{display:block}
 #pvHide{min-width:420px}
 #pvFilter{min-width:520px}
