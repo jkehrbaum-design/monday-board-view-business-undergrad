@@ -64,9 +64,6 @@ input,select{height:36px;padding:0 10px;border:1px solid var(--line);border-radi
 #pvFilter input[type="text"]{ height:32px; font-size:13px; padding:4px 8px; }
 #pvFilter select:focus,#pvFilter input:focus{ outline:none;border-color:var(--primary);box-shadow:0 0 0 2px rgba(31,118,255,0.2); }
 
-/* Top scrollbar */
-.hScrollTop{position:sticky;top:0;z-index:18;background:var(--card);border:1px solid var(--line);border-radius:10px;margin-bottom:8px;height:12px;overflow-x:auto;overflow-y:hidden;}
-.hScrollInner{height:1px;}
 
 /* Table */
 .tableWrap{background:var(--card);border:1px solid var(--line);border-radius:10px;overflow:auto;position:relative;max-height:70vh;}
@@ -112,7 +109,7 @@ tbody tr:hover td{background:#f8fafc}
 
 /* Dimension hotfix (wider) */
 .wrap{max-width:none;width:min(1800px,98vw);padding:0 12px;}
-.hScrollTop,.tableWrap{width:100%;}
+.tableWrap{width:100%;}
 @media (min-height:800px){ .tableWrap{max-height:76vh;} }
 @media (min-width:1600px){ .wrap{width:min(2000px,96vw);} }
 
@@ -147,7 +144,6 @@ tbody tr:hover td{background:#f8fafc}
 }
 </style>
   
-</style>
 </head>
 
 <body>
@@ -193,9 +189,41 @@ tbody tr:hover td{background:#f8fafc}
 </div>
 <!-- ======= /TOOLBAR ======= -->
 
+  <!-- HIDE COLUMNS POPOVER -->
+<div class="popover" id="pvHide">
+  <div class="pv-row"><label style="font-weight:600">Hide columns</label></div>
+  <input id="hideSearch" type="text" placeholder="Find a field" />
+  <div class="hide-list" id="hideList"></div>
+  <div class="pv-actions">
+    <button class="btn" id="hideAllBtn">Hide all</button>
+    <div class="spacer"></div>
+    <button class="btn" id="showAllBtn">Show all</button>
+  </div>
+</div>
 
-  <!-- TOP HORIZONTAL SCROLLBAR -->
-  <div class="hScrollTop" id="hScrollTop"><div class="hScrollInner" id="hScrollInner"></div></div>
+<!-- FILTER POPOVER -->
+<div class="popover" id="pvFilter">
+  <div class="pv-row"><label style="font-weight:600">Add conditions</label></div>
+  <div id="condList"></div>
+  <div class="pv-actions">
+    <button class="btn" id="addCondBtn">+ Add condition</button>
+    <div class="spacer"></div>
+    <button class="btn" id="fltResetBtn">Reset</button>
+    <button class="btn primary" id="fltApplyBtn">Apply</button>
+  </div>
+</div>
+
+<!-- SORT POPOVER -->
+<div class="popover" id="pvSort">
+  <div class="pv-row"><label style="font-weight:600">Sort by</label></div>
+  <div class="pv-row-inline" id="sortRow">
+    <select id="sortKey" style="min-width:240px"></select>
+    <select id="sortDir" style="min-width:120px">
+      <option value="asc">A → Z</option>
+      <option value="desc">Z → A</option>
+    </select>
+  </div>
+</div>
 
   <!-- TABLE -->
   <div class="tableWrap" id="tableWrap">
@@ -330,12 +358,10 @@ tbody tr:hover td{background:#f8fafc}
   const recordFooter = document.getElementById('recordFooter');
   const noun = (n) => (n === 1 ? 'university' : 'universities');
 
+  // Table wrap & table (keep these)
+const tableWrap = document.getElementById('tableWrap');
+const tbl = document.getElementById('tbl');
 
-  // Top scrollbar & table wrap
-  const hScrollTop = document.getElementById('hScrollTop');
-  const hScrollInner = document.getElementById('hScrollInner');
-  const tableWrap = document.getElementById('tableWrap');
-  const tbl = document.getElementById('tbl');
 
   // Buttons
   const reloadBtn = document.getElementById('reloadBtn');
@@ -711,34 +737,17 @@ tbody tr:hover td{background:#f8fafc}
     }
     tbody.innerHTML = html;
 
-    const hasCursor = !!cursor;
-    if (moreBtn) moreBtn.style.display = hasCursor ? 'inline-flex' : 'none';
-
-    adjustTableHeight();
-    syncTopScrollbar();
-    
-    if (recordFooter) {
+// Update footer chip
+if (recordFooter) {
   recordFooter.textContent = `${filtered.length} ${noun(filtered.length)}`;
 }
 
+// Show/hide “Load more” if present
 const hasCursor = !!cursor;
 if (moreBtn) moreBtn.style.display = hasCursor ? 'inline-flex' : 'none';
-  }
 
-  // --------- Head actions & popover wiring for More
-  const tbMore = document.getElementById('tbMore');
-  const pvMore = document.getElementById('pvMore');
-  if (tbMore && pvMore){
-    tbMore.addEventListener('click', (e)=>{
-      e.stopPropagation();
-      pvMore.classList.toggle('open');
-      if (pvMore.classList.contains('open')){
-        const r = tbMore.getBoundingClientRect();
-        pvMore.style.left = (r.left) + 'px';
-        pvMore.style.top  = (r.bottom + window.scrollY + 8) + 'px';
-      }
-    });
-  }
+adjustTableHeight();
+syncTopScrollbar();
 
   // Delegated click for popup (for .trunc spans)
   document.getElementById('tbody').addEventListener('click', (e)=>{
@@ -771,23 +780,6 @@ if (moreBtn) moreBtn.style.display = hasCursor ? 'inline-flex' : 'none';
   });
 
   // Scroll sync
-  let syncingTop = false, syncingBottom = false;
-  function syncTopScrollbar(){
-    if (!tbl || !hScrollInner || !hScrollTop || !tableWrap) return;
-    const w = tbl.scrollWidth;
-    hScrollInner.style.width = w + 'px';
-    hScrollTop.scrollLeft = tableWrap.scrollLeft;
-  }
-  if (hScrollTop) hScrollTop.addEventListener('scroll', function(){
-    if(syncingTop) return; syncingBottom = true;
-    if (tableWrap) tableWrap.scrollLeft = hScrollTop.scrollLeft;
-    syncingBottom = false;
-  });
-  if (tableWrap) tableWrap.addEventListener('scroll', function(){
-    if(syncingBottom) return; syncingTop = true;
-    if (hScrollTop) hScrollTop.scrollLeft = tableWrap.scrollLeft;
-    syncingTop = false;
-  });
   function adjustTableHeight(){
     if (!tableWrap) return;
     const vwTop = tableWrap.getBoundingClientRect().top;
