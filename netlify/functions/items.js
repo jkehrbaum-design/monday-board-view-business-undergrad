@@ -35,20 +35,14 @@ export const handler = async (event) => {
   }
 
   const p = event.queryStringParameters || {};
-  // Use a larger default client limit to retrieve more items per page. This helps ensure that
-  // the first screen contains more than just a few shareable items. The default here is 20,
-  // meaning that if no `limit` parameter is provided, the handler will request up to 20 items
-  // from Monday per page. It still respects the 1–200 bounds.
-  const clientLimit = clampInt(p.limit, 20, 1, 200);
+  const clientLimit = clampInt(p.limit, 12, 5, 50); // reduced default limit for faster responses
   let cursor = p.cursor || null;
 
-  // return at least this many items for first (non-progressive) call
-  const DEFAULT_MIN_FIRST = 20; // Increased initial load to 20 items
+  const DEFAULT_MIN_FIRST = 15;
   const minFirst   = clampInt(p.min ?? DEFAULT_MIN_FIRST, DEFAULT_MIN_FIRST, 0, 200);
-  const maxPages   = clampInt(p.maxPages, 4, 1, 8);
+  const maxPages   = clampInt(p.maxPages, 3, 1, 5);
   const progressive = String(p.progressive || '').toLowerCase() === 'true';
 
-  // ---------- Fast path via warm cache for the first screen (no cursor) ----------
   const cacheKey = JSON.stringify({ board: BOARD_ID, limit: clientLimit, min: minFirst, progressive });
   if (!cursor) {
     const now = Date.now();
@@ -57,15 +51,10 @@ export const handler = async (event) => {
     }
   }
 
-  // Wider budget + slightly looser per-call window (prevents spurious aborts)
   const startTs = Date.now();
-  // Increase the overall time budget to give the Monday API more time to respond. Allow up to
-  // 60 seconds per request to accumulate enough shareable items. This cap prevents the function
-  // from hanging indefinitely but allows up to 1 minute as requested.
-  const timeBudgetMs = 60000; // 60s budget for slower pages
+  const timeBudgetMs = 25000; // reduced to fit Netlify's 30s limit safely
   const timeLeft = () => Math.max(0, timeBudgetMs - (Date.now() - startTs));
 
-  // Monday query
   const query = `
     query($boardId: [ID!], $limit: Int, $cursor: String){
       boards(ids: $boardId){
@@ -87,7 +76,6 @@ export const handler = async (event) => {
   const gv    = (cols, id) => (cols.find(c => c.id === id)?.text || '').trim();
   const gvNum = (cols, id) => numFromText(gv(cols, id));
 
-  // Shareable gate
   const SHAREABLE_COL_ID = 'dup__of_sharable___bachelor_s___freshman___average_';
   const isShareable = (cols) => {
     const c = cols.find(x => x.id === SHAREABLE_COL_ID);
@@ -107,24 +95,20 @@ export const handler = async (event) => {
       .map(it => {
         const cols = it.column_values || [];
 
-        // === TOTAL (Tuition + Room + Board + Fees) ===
         const tuition = gvNum(cols, 'annual_tuition_cost');
         const room    = gvNum(cols, '_usd__annual_room_cost');
         const board   = gvNum(cols, '_usd__annual_board_cost');
         const fees    = gvNum(cols, 'numbers5');
         const total = safeSum([tuition, room, board, fees]);
 
-        // === Scholarship amounts ===
-        const schLow = gvNum(cols, 'dup__of_minimum__usd__annual_scholarship_amount6'); // Lowest
-        const schMid = gvNum(cols, 'numbers68');                                        // Mid
-        const schHi  = gvNum(cols, 'numbers11');                                        // Highest
+        const schLow = gvNum(cols, 'dup__of_minimum__usd__annual_scholarship_amount6');
+        const schMid = gvNum(cols, 'numbers68');
+        const schHi  = gvNum(cols, 'numbers11');
 
-        // === Net costs ===
         const netLow = clampZero(total - safeNum(schHi));
         const netMid = clampZero(total - safeNum(schMid));
         const netHi  = clampZero(total - safeNum(schLow));
 
-        // === Live on Campus (#) ===
         const enroll = gvNum(cols, 'numbers7');
         let pctLive  = gvNum(cols, 'numbers8');
         if (isFiniteNum(pctLive)) {
@@ -135,36 +119,18 @@ export const handler = async (event) => {
           ? Math.ceil(enroll * pctLive)
           : null;
 
-        // === Work on Campus Compensation ===
         const campusOpp = (gv(cols, 'bachelor_s___campus_employment_opportunities_') || '').toLowerCase();
-        const minWage   = gvNum(cols, 'numbers70'); // 2025 Minimum Wage column
+        const minWage   = gvNum(cols, 'numbers70');
         let workComp = 0;
         if (campusOpp === 'yes' && isFiniteNum(minWage)) {
-          workComp = minWage * 20 * 32; // weekly hours * weeks
+          workComp = minWage * 20 * 32;
         }
 
-        // === Additional computed fields ===
-        // Compute numeric ranking from the U.S. News ranking column (long_text).
         const rankNum = gvNum(cols, 'long_text');
 
-        // Compute live percentage as a whole number (0-100) where available.
-        let livePctCalc = null;
-        if (isFiniteNum(pctLive)) {
-          // pctLive is in range 0..1; multiply to get percentage.
-          livePctCalc = Math.round(pctLive * 100);
-        }
-
-        // Return only the relevant data for frontend consumption
-        return {
-          id: it.id,
-          name: it.name,
-          totalCost: total,
-          netLowCalc: netLow,
-          rank: rankNum ? rankNum : null,
-        };
+        return { id: it.id, name: it.name, totalCost: total, netLowCalc: netLow, rank: rankNum || null };
       });
 
-    // Add the prepped data to the accumulator
     for (const row of prepped) acc.push(row);
   }
 
@@ -184,15 +150,9 @@ export const handler = async (event) => {
     do {
       nextCursor = await getOnePage(nextCursor);
       pagesFetched++;
-
-      // Progressive mode: caller wants exactly one page quickly.
       if (progressive) break;
-
-      // Non-progressive: stop once we have enough for the first screen.
       if (acc.length >= minFirst) break;
-
-      if (!nextCursor) break;
-      if (pagesFetched >= maxPages) break;
+      if (!nextCursor || pagesFetched >= maxPages) break;
     } while (timeLeft() > 0);
   } catch (e) {
     const msg = errorMessage(e);
@@ -201,36 +161,35 @@ export const handler = async (event) => {
     nextCursor = null;
   }
 
-  const responsePayload = { cursor: nextCursor, totalLoaded: acc.length, items: acc };
+  const responsePayload = { cursor: nextCursor, totalLoaded: acc.length, items: acc, ms: Date.now() - startTs };
   if (!cursor) { FIRST_PAGE_CACHE = { key: cacheKey, ts: Date.now(), payload: responsePayload }; }
   return json(responsePayload);
 };
 
-// ---------- Helpers ----------
 async function fetchPageResilient(query, { boardId, cursor, clientLimit }, remainingBudgetMs){
-  const ladder = [clampInt(clientLimit, 10, 5, 50), 10, 8, 5, 3];
+  const ladder = [clampInt(clientLimit, 10, 5, 40), 8, 5, 3];
   let attempt = 0, lastErr = null;
 
   for (const lim of ladder){
     for (let inner = 0; inner < 2 && attempt < 4; inner++, attempt++){
       try {
-        const perCall = Math.max(4000, Math.min(10000, Math.floor((remainingBudgetMs || 10000) * 0.8)));
+        const perCall = Math.max(3000, Math.min(8000, Math.floor((remainingBudgetMs || 8000) * 0.8)));
         return await gqlWithTimeout(query, { boardId, limit: lim, cursor: cursor || null }, perCall);
       } catch (e){
         lastErr = e;
         if (!/aborted|AbortError|operation was aborted|network|Failed to fetch|HTTP 50[234]/i.test(String(e && e.message || e))) throw e;
         await sleep(150);
-        if ((remainingBudgetMs || 0) < 900) break;
+        if ((remainingBudgetMs || 0) < 700) break;
       }
     }
   }
-  throw lastErr || new Error('This operation was aborted');
+  throw lastErr || new Error('Operation aborted');
 }
 
 async function gqlWithTimeout(query, variables, timeoutMs){
   const token = getEnv('MONDAY_API_TOKEN', '');
   const controller = new AbortController();
-  const t = setTimeout(()=>controller.abort(), Math.max(1000, timeoutMs || 6000));
+  const t = setTimeout(()=>controller.abort(), Math.max(500, timeoutMs || 7000));
   try{
     const r = await fetch('https://api.monday.com/v2', {
       method: 'POST',
@@ -250,7 +209,7 @@ async function gqlWithTimeout(query, variables, timeoutMs){
 }
 
 function json(obj, status = 200){
-  return { statusCode: status, headers: { 'content-type':'application/json; charset=utf-8' }, body: JSON.stringify(obj) };
+  return { statusCode: status, headers: { 'content-type':'application/json; charset=utf-8', 'Cache-Control': 'public, s-maxage=300' }, body: JSON.stringify(obj) };
 }
 function sleep(ms){ return new Promise(res=>setTimeout(res, ms)); }
 function clampInt(v, def, min, max){ const n = parseInt(v,10); if(isNaN(n))return def; return Math.max(min,Math.min(max,n)); }
