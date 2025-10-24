@@ -364,20 +364,33 @@
           return chipHTML(text, bg, bd, fg);
         }
 
+        // === NEW: deterministic HSL color for ANY label (unique per option) ===
+        function colorFromText(text){
+          let hash = 0;
+          const s = String(text || '');
+          for (let i = 0; i < s.length; i++){
+            hash = s.charCodeAt(i) + ((hash << 5) - hash);
+          }
+          const hue = Math.abs(hash) % 360;
+          const bg = `hsl(${hue}, 70%, 55%)`;
+          const bd = `hsl(${hue}, 70%, 45%)`;
+          const fg = '#fff';
+          return [bg, bd, fg];
+        }
+
         function chipsFor(val, category){
           if (!val) return '';
           const parts = String(val).split(',').map(s=>s.trim()).filter(Boolean);
           let out = '';
           for (const p of parts){
-            let bg='#F4F6FA', bd='#E6E9F0', fg='#49506A';
-            if (category==='geo' && GEO_STYLES[p]) [bg,bd,fg]=GEO_STYLES[p];
-            else if (category==='status'){
-              const st=STATUS_STYLES[(p||'').toLowerCase()] || STATUS_STYLES['unknown'];
-              [bg,bd,fg]=st; out += chipHTML(p, bg, bd, fg) + ' '; continue;
-            } else if (category==='type' && TYPE_STYLES[p]) [bg,bd,fg]=TYPE_STYLES[p];
-            else if (category==='state'){
-              const h=STATE_HUES[hashIndex(p)]; [bg,bd,fg]=h;
-            } else if (category==='any'){ out += chipByHash(p) + ' '; continue; }
+            // Keep your special palette for GEO if available…
+            if (category==='geo' && GEO_STYLES[p]) {
+              const [bg,bd,fg] = GEO_STYLES[p];
+              out += chipHTML(p, bg, bd, fg) + ' ';
+              continue;
+            }
+            // …otherwise auto-generate a unique color for every option
+            const [bg, bd, fg] = colorFromText(p);
             out += chipHTML(p, bg, bd, fg) + ' ';
           }
           return out.trim();
