@@ -151,7 +151,7 @@
           { key:'usnews_rank', title:'U.S. News Ranking', align:'right', type:'mono', colId:'long_text' },
           { key:'usnews_link', title:'U.S. News Link', type:'link', colId:'link1' },
 
-          { key:'type', title:'Type of Institution', type:'chip', colId:'dropdown', chipCategory:'type' },
+          { key:'type', title:'Type of Institution', type:'chip', colId:'dropdown' },
 
           { key:'enroll', title:'Total Enrollment', align:'right', type:'number',colId:'numbers7' },
           { key:'live_pct', title:'% Live on Campus', align:'right', type:'text', colId:'numbers8' },
@@ -491,7 +491,11 @@
 
             opSel.addEventListener('change', e=>{
               rules[idx].op = e.target.value || 'contains';
-              const needsVal = !(rules[idx].op==='empty' || rules[idx.'notempty']);
+              const needsVal = !(rules[idx].op==='empty' || rules[idx].op==='notempty'); // fixed
+              if (valInp) {
+                valInp.disabled = !needsVal;
+                if (!needsVal) valInp.value = '';
+              }
             });
 
             if (valInp){
@@ -788,7 +792,7 @@
           const filtered = rows.filter(passesAll);
 
           // Update counters
-          if (recordText) recordText.textContent = ${filtered.length} records;
+          if (recordText) recordText.textContent = `${filtered.length} records`; // fixed
           if (shown) shown.textContent = filtered.length + ' shown';
           if (loaded) loaded.textContent = items.length + ' loaded';
 
@@ -816,7 +820,7 @@
 
           // Update footer chip
           if (recordFooter) {
-            recordFooter.textContent = ${filtered.length} ${noun(filtered.length)};
+            recordFooter.textContent = `${filtered.length} ${noun(filtered.length)}`; // fixed
           }
 
           // Show/hide “Load more” if present
@@ -835,9 +839,9 @@
           if (!loadProgress) return;
           const loadedCount = items.length;
           if (totalItems != null) {
-            loadProgress.textContent = ${loadedCount} / ${totalItems} loaded;
+            loadProgress.textContent = `${loadedCount} / ${totalItems} loaded`; // fixed
           } else {
-            loadProgress.textContent = ${loadedCount} loaded;
+            loadProgress.textContent = `${loadedCount} loaded`; // fixed
           }
           const done = !cursor;
           loadProgress.style.display = done ? 'none' : 'inline-block';
