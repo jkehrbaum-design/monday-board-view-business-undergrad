@@ -43,7 +43,7 @@ export const handler = async (event) => {
   let cursor = p.cursor || null;
 
   // return at least this many items for first (non-progressive) call
-  const DEFAULT_MIN_FIRST = 20;
+  const DEFAULT_MIN_FIRST = 20; // Increased initial load to 20 items
   const minFirst   = clampInt(p.min ?? DEFAULT_MIN_FIRST, DEFAULT_MIN_FIRST, 0, 200);
   const maxPages   = clampInt(p.maxPages, 4, 1, 8);
   const progressive = String(p.progressive || '').toLowerCase() === 'true';
