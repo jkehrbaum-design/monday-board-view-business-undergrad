@@ -69,14 +69,13 @@ export const handler = async (event) => {
   const query = `
     query($boardId: [ID!], $limit: Int, $cursor: String){
       boards(ids: $boardId){
-        items_page (limit: $limit, cursor: $cursor){
+        items_page(limit: $limit, cursor: $cursor){
           cursor
           items {
             id
             name
             column_values {
               id
-              type
               text
               value
             }
@@ -155,28 +154,17 @@ export const handler = async (event) => {
           livePctCalc = Math.round(pctLive * 100);
         }
 
+        // Return only the relevant data for frontend consumption
         return {
           id: it.id,
           name: it.name,
-          state: gv(cols, 'state1'),
           totalCost: total,
-          minGpa: gvNum(cols, 'numbers34'),
-          column_values: cols,
-
-          // Exposed computed fields
-          total_calc: total,
-          net_low_calc: netLow,
-          net_mid_calc: netMid,
-          net_hi_calc: netHi,
-          formula5: liveOnCampus,
-          work_comp_calc: workComp,
-
-          // New computed fields for front-end sorting/filtering
-          rank_num_calc: isFiniteNum(rankNum) ? rankNum : null,
-          live_pct_calc: livePctCalc
+          netLowCalc: netLow,
+          rank: rankNum ? rankNum : null,
         };
       });
 
+    // Add the prepped data to the accumulator
     for (const row of prepped) acc.push(row);
   }
 
@@ -220,21 +208,16 @@ export const handler = async (event) => {
 
 // ---------- Helpers ----------
 async function fetchPageResilient(query, { boardId, cursor, clientLimit }, remainingBudgetMs){
-  // Try with descending page sizes; retry quickly on transient network/abort
-  // Start with the client limit but clamp to a smaller default and progressively decrease the page size to avoid timeouts.
   const ladder = [clampInt(clientLimit, 10, 5, 50), 10, 8, 5, 3];
   let attempt = 0, lastErr = null;
 
   for (const lim of ladder){
     for (let inner = 0; inner < 2 && attempt < 4; inner++, attempt++){
       try {
-        // Looser per-call cap than before (prevents “operation aborted” on slow pages)
-        // Increase per-call timeouts to give Monday more time to respond.
         const perCall = Math.max(4000, Math.min(10000, Math.floor((remainingBudgetMs || 10000) * 0.8)));
         return await gqlWithTimeout(query, { boardId, limit: lim, cursor: cursor || null }, perCall);
       } catch (e){
         lastErr = e;
-        // Only retry on abort/network/50x; bubble up other errors
         if (!/aborted|AbortError|operation was aborted|network|Failed to fetch|HTTP 50[234]/i.test(String(e && e.message || e))) throw e;
         await sleep(150);
         if ((remainingBudgetMs || 0) < 900) break;
@@ -251,10 +234,6 @@ async function gqlWithTimeout(query, variables, timeoutMs){
   try{
     const r = await fetch('https://api.monday.com/v2', {
       method: 'POST',
-      // Explicitly set a stable API version header. By specifying 2025-04 we opt in to the
-      // April 2025 version of the monday API. This version still supports the items_page
-      // query but is marked as maintenance, which ensures backward compatibility for at
-      // least six months. Adjust this value as future versions are released.
       headers: {
         'Content-Type': 'application/json',
         'Authorization' : token,
