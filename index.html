@@ -14,11 +14,15 @@
 
    <style>
 :root{
-  --bg:#f6f7fb;
+  --bg:var(--brand-cyan-20); /* CHANGED: brand-cyan background */
   --card:#ffffff;
   --text:#1f2430;
   --muted:#6b7280;
   --line:#eaedf2;
+
+  /* Needed for .chip styles */
+  --chip:#f4f6fa;
+  --chipText:#49506a;
 
   /* Epro 360 brand colors */
   --brand-cyan:#00B5C8;
@@ -31,7 +35,7 @@
   --primary:var(--brand-cyan);
   --pill:var(--brand-cyan-10);
   --pillText:var(--brand-ink);
-  --link:var(--brand-coral);
+  --link:#1f76ff;              /* restore original link blue */
   --thead:var(--brand-cyan-20);
 
   --stickyW:300px;
@@ -101,9 +105,24 @@ input,select{
   margin-bottom:10px;
   display:flex;
   align-items:center;
-  gap:12px;
-  justify-content:flex-start;
+  gap:8px; /* restore original spacing */
+  /* removed justify-content override */
 }
+
+/* Toolbar buttons (restore) */
+.tb-btn{
+  height:30px;
+  padding:0 10px;
+  border:1px solid var(--line);
+  background:#fff;
+  border-radius:8px;
+  font-weight:600;
+  display:inline-flex;
+  align-items:center;
+  gap:8px;
+  cursor:pointer;
+}
+.tb-btn .ico{line-height:1}
 
 /* Popovers */
 .popover{
@@ -207,7 +226,7 @@ th.sticky, td.sticky{
   max-width:var(--stickyW);
   box-shadow:1px 0 0 var(--line);
 }
-thead th.sticky{z-index:7;left:0;}
+thead th.sticky{zindex:7;left:0;}
 tbody tr:hover td{background:#f8fafc}
 
 /* Pills */
@@ -322,15 +341,8 @@ input:focus, select:focus, button:focus{
   box-shadow:0 0 0 3px rgba(0,181,200,0.18);
   border-radius:8px;
 }
-
-     /* Table header in brand cyan */
-thead th {
-  background: var(--brand-cyan) !important;
-  color: #fff !important;
-  border-bottom: 2px solid var(--brand-coral);
-}
-
 </style>
+
 
   </head>
 
