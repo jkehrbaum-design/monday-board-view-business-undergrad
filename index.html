@@ -708,9 +708,11 @@ input:focus, select:focus, button:focus{
     hash = s.charCodeAt(i) + ((hash << 5) - hash);
   }
   const hue = Math.abs(hash) % 360;
-  const bg = `hsl(${hue}, 45%, 80%)`; // softer background
-  const bd = `hsl(${hue}, 45%, 70%)`; // slightly darker border
-  const fg = '#333';                  // dark text for readability
+  const nudge = 8; // small shift to avoid overlap with brand hues
+  const safeHue = (hue + nudge) % 360;
+  const bg = `hsl(${safeHue}, 45%, 80%)`; // softer background
+  const bd = `hsl(${safeHue}, 45%, 70%)`; // slightly darker border
+  const fg = '#333'; // dark text for readability
   return [bg, bd, fg];
 }
 
