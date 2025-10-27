@@ -702,17 +702,17 @@ input:focus, select:focus, button:focus{
 
         // === NEW: deterministic HSL color for ANY label (unique per option) ===
         function colorFromText(text){
-          let hash = 0;
-          const s = String(text || '');
-          for (let i = 0; i < s.length; i++){
-            hash = s.charCodeAt(i) + ((hash << 5) - hash);
-          }
-          const hue = Math.abs(hash) % 360;
-          const bg = `hsl(${hue}, 70%, 55%)`;
-          const bd = `hsl(${hue}, 70%, 45%)`;
-          const fg = '#fff';
-          return [bg, bd, fg];
-        }
+  let hash = 0;
+  const s = String(text || '');
+  for (let i = 0; i < s.length; i++){
+    hash = s.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  const hue = Math.abs(hash) % 360;
+  const bg = `hsl(${hue}, 45%, 80%)`; // softer background
+  const bd = `hsl(${hue}, 45%, 70%)`; // slightly darker border
+  const fg = '#333';                  // dark text for readability
+  return [bg, bd, fg];
+}
 
         function chipsFor(val, category){
           if (!val) return '';
