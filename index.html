@@ -36,8 +36,7 @@
   --pill:var(--brand-cyan-10);
   --pillText:var(--brand-ink);
   --link:#1f76ff;              /* restore original link blue */
-  --thead: #fff; /* make table header background white like the toolbar */
-
+  --thead:#fff;                /* table header background = white */
 
   --stickyW:300px;
 }
@@ -95,21 +94,20 @@ input,select{
 .tb-ico{width:18px;height:18px;display:inline-block;vertical-align:-3px}
 
 /* Toolbar with full cyan border */
-.toolbar {
-  position: sticky;
-  top: 0;
-  z-index: 20;
-  background: #fff;
-  border: 2px solid var(--brand-cyan); /* thicker cyan border */
-  border-radius: 10px;
-  padding: 8px;
-  margin-bottom: 12px;
-  display: flex;
-  align-items: center;
-  gap: 8px;
+.toolbar{
+  position:sticky;
+  top:0;
+  z-index:20;
+  background:#fff;
+  border:2px solid var(--brand-cyan); /* cyan border */
+  border-radius:10px;
+  padding:8px;
+  margin-bottom:12px;
+  display:flex;
+  align-items:center;
+  gap:8px;
 }
 
-  
 /* Toolbar buttons */
 .tb-btn{
   height:30px;
@@ -146,60 +144,42 @@ input,select{
 .pv-row-inline{display:flex;gap:10px;align-items:center}
 .pv-actions{display:flex;align-items:center;gap:8px;margin-top:8px}
 
-/* Compact filter dropdown */
-#pvFilter select{
-  max-width:180px;
-  font-size:13px;
-  height:32px;
-  padding:4px 8px;
-  border-radius:6px;
-}
-#pvFilter input[type="text"]{
-  height:32px;
-  font-size:13px;
-  padding:4px 8px;
-}
-#pvFilter select:focus,#pvFilter input:focus{
-  outline:none;
-  border-color:var(--primary);
-  box-shadow:0 0 0 2px rgba(0,181,200,0.2);
+/* Table wrapper — white background + cyan border */
+.tableWrap{
+  background:#fff;                        /* make table area white */
+  border:2px solid var(--brand-cyan);     /* cyan border around table */
+  border-radius:10px;
+  overflow:auto;
+  position:relative;
 }
 
-/* Table header with cyan border wrapping the whole header row */
-thead th {
-  position: sticky;
-  top: 0;
-  background: #fff; /* white background */
-  z-index: 5;
-  font-size: 12px;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: .02em;
-  color: #49506a;
-  padding: 8px 12px;
-  min-height: 44px;
-  border-top: 2px solid var(--brand-cyan);     /* cyan top border */
-  border-bottom: 2px solid var(--brand-cyan);  /* cyan bottom border */
-  border-left: 2px solid var(--brand-cyan);    /* cyan vertical dividers */
-  user-select: none;
-  cursor: pointer;
-  text-align: center;
+table{border-collapse:separate;border-spacing:0;width:max-content;min-width:1200px;}
+
+/* Table header with cyan frame and white background */
+thead th{
+  position:sticky;
+  top:0;
+  background:#fff;                        /* header cells white */
+  z-index:5;
+  font-size:12px;
+  font-weight:600;
+  text-transform:uppercase;
+  letter-spacing:.02em;
+  color:#49506a;
+  padding:8px 12px;
+  min-height:44px;
+  border-top:2px solid var(--brand-cyan);
+  border-bottom:2px solid var(--brand-cyan);
+  border-left:2px solid var(--brand-cyan);
+  user-select:none;
+  cursor:pointer;
+  text-align:center;
 }
+thead th:last-child{border-right:2px solid var(--brand-cyan);}
 
-/* cyan border also on right edge of last header cell */
-thead th:last-child {
-  border-right: 2px solid var(--brand-cyan);
-}
-
-
-/* Optional: vertical dividers between header cells */
-thead th + th {
-  border-left: 1px solid var(--line);
-}
-
-thead th.sortable::after { content: " ⇅"; font-size: 10px; color: #999; margin-left: 4px; }
-thead th.sort-asc::after { content: " ▲"; }
-thead th.sort-desc::after { content: " ▼"; }
+thead th.sortable::after{content:" ⇅";font-size:10px;color:#999;margin-left:4px;}
+thead th.sort-asc::after{content:" ▲";}
+thead th.sort-desc::after{content:" ▼";}
 
 /* Default center alignment for cells */
 tbody td{
@@ -233,9 +213,9 @@ th.sticky, td.sticky{
 }
 /* Make the sticky NAME header match the others */
 thead th.sticky{
-  z-index:7; 
+  z-index:7;
   left:0;
-  background:var(--thead); /* NEW: match header background */
+  background:var(--thead);
 }
 
 tbody tr:hover td{background:#f8fafc}
@@ -353,6 +333,7 @@ input:focus, select:focus, button:focus{
   border-radius:8px;
 }
 </style>
+
     
   </head>
 
