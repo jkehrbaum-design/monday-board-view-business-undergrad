@@ -94,13 +94,13 @@ input,select{
 .spacer{flex:1}
 .tb-ico{width:18px;height:18px;display:inline-block;vertical-align:-3px}
 
-/* Toolbar with cyan border */
+/* Toolbar with full cyan border */
 .toolbar {
   position: sticky;
   top: 0;
   z-index: 20;
-  background: var(--card); /* white background */
-  border: 1px solid var(--brand-cyan); /* cyan border */
+  background: #fff;
+  border: 2px solid var(--brand-cyan); /* thicker cyan border */
   border-radius: 10px;
   padding: 8px;
   margin-bottom: 12px;
@@ -165,7 +165,7 @@ input,select{
   box-shadow:0 0 0 2px rgba(0,181,200,0.2);
 }
 
-/* Table header (white background with cyan underline) */
+/* Table header with cyan border wrapping the whole header row */
 thead th {
   position: sticky;
   top: 0;
@@ -178,11 +178,19 @@ thead th {
   color: #49506a;
   padding: 8px 12px;
   min-height: 44px;
-  border-bottom: 2px solid var(--brand-cyan); /* cyan underline */
+  border-top: 2px solid var(--brand-cyan);     /* cyan top border */
+  border-bottom: 2px solid var(--brand-cyan);  /* cyan bottom border */
+  border-left: 2px solid var(--brand-cyan);    /* cyan vertical dividers */
   user-select: none;
   cursor: pointer;
   text-align: center;
 }
+
+/* cyan border also on right edge of last header cell */
+thead th:last-child {
+  border-right: 2px solid var(--brand-cyan);
+}
+
 
 /* Optional: vertical dividers between header cells */
 thead th + th {
