@@ -48,6 +48,8 @@ body{
   background:var(--bg);
   color:var(--text);
   font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,"Helvetica Neue",Arial;
+  /* NEW: keep page from scrolling; scroll happens inside .tableWrap */
+  overflow:hidden;
 }
 .wrap{max-width:1200px;margin:24px auto;padding:0 20px;}
 .h1{font-size:28px;font-weight:700;margin:8px 0 4px;}
@@ -93,16 +95,18 @@ input,select{
 .spacer{flex:1}
 .tb-ico{width:18px;height:18px;display:inline-block;vertical-align:-3px}
 
-/* Toolbar with full cyan border */
+/* Toolbar (now INSIDE .tableWrap) */
 .toolbar{
   position:sticky;
   top:0;
   z-index:20;
   background:#fff;
-  border:2px solid var(--brand-cyan); /* cyan border */
-  border-radius:10px;
+  /* NEW: no outer border here; the tableWrap provides the cyan frame */
+  border:0;
+  border-bottom:1px solid var(--line);
+  border-radius:12px 12px 0 0;
   padding:8px;
-  margin-bottom:12px;
+  margin:0;
   display:flex;
   align-items:center;
   gap:8px;
@@ -144,39 +148,38 @@ input,select{
 .pv-row-inline{display:flex;gap:10px;align-items:center}
 .pv-actions{display:flex;align-items:center;gap:8px;margin-top:8px}
 
-/* Table wrapper — white background + cyan border */
+/* Table wrapper — white background + cyan border; owns scrolling */
 .tableWrap{
-  background:#fff;                        /* make table area white */
-  border:2px solid var(--brand-cyan);     /* cyan border around table */
-  border-radius:10px;
+  background:#fff;
+  border:2px solid var(--brand-cyan);
+  border-radius:12px;
   overflow:auto;
   position:relative;
+  /* NEW: fill available height and keep scroll within */
+  flex:1;
+  min-height:0;
 }
 
 table{border-collapse:separate;border-spacing:0;width:max-content;min-width:1200px;}
 
-/* Table header with cyan frame and white background */
+/* Header: white + slimmer + cyan underline */
 thead th{
   position:sticky;
   top:0;
-  background:#fff;                        /* header cells white */
+  background:#fff;
   z-index:5;
   font-size:12px;
   font-weight:600;
   text-transform:uppercase;
   letter-spacing:.02em;
   color:#49506a;
-  padding:8px 12px;
-  min-height:44px;
-  border-top:2px solid var(--brand-cyan);
+  padding:6px 10px;            /* NEW: narrower */
+  min-height:36px;             /* NEW: shorter */
   border-bottom:2px solid var(--brand-cyan);
-  border-left:2px solid var(--brand-cyan);
   user-select:none;
   cursor:pointer;
   text-align:center;
 }
-thead th:last-child{border-right:2px solid var(--brand-cyan);}
-
 thead th.sortable::after{content:" ⇅";font-size:10px;color:#999;margin-left:4px;}
 thead th.sort-asc::after{content:" ▲";}
 thead th.sort-desc::after{content:" ▼";}
@@ -211,7 +214,7 @@ th.sticky, td.sticky{
   max-width:var(--stickyW);
   box-shadow:1px 0 0 var(--line);
 }
-/* Make the sticky NAME header match the others */
+/* Sticky NAME header stays white */
 thead th.sticky{
   z-index:7;
   left:0;
@@ -293,11 +296,19 @@ tbody tr:hover td{background:#f8fafc}
 #popup pre{white-space:pre-wrap;word-break:break-word;font-family:inherit;font-size:14px;margin:0;}
 .little-spinner{width:14px;height:14px;border:2px solid #e2e8f0;border-top-color:#fff;border-radius:50%;animation:spin .8s linear infinite;}
 
-/* Dimension hotfix */
-.wrap{max-width:none;width:min(1800px,98vw);padding:0 12px;}
+/* Dimension hotfix (updated to fill viewport) */
+.wrap{
+  max-width:none;
+  width:100%;
+  padding:0 16px 16px;
+  margin:16px auto 0;
+  height:calc(100vh - 32px);
+  display:flex;
+  flex-direction:column;
+}
 .tableWrap{width:100%;}
-@media (min-height:800px){ .tableWrap{max-height:76vh;} }
-@media (min-width:1600px){ .wrap{width:min(2000px,96vw);} }
+@media (min-height:800px){ .tableWrap{max-height:unset;} }
+@media (min-width:1600px){ .wrap{width:100%;} }
 
 /* Record badge */
 #recordBadge{
@@ -360,36 +371,6 @@ input:focus, select:focus, button:focus{
     <div class="wrap" id="app" style="display:none">
       <div class="h1">Bachelor’s Programs – Freshman Student</div>
 
-      <!-- ======= TOOLBAR ======= -->
-      <div class="toolbar" id="toolbar">
-        <button class="tb-btn" id="tbHide">
-          <svg class="tb-ico" viewBox="0 0 24 24" fill="none" stroke="#111" stroke-width="2">
-            <path d="M3 3l18 18" />
-            <path d="M10.6 10.6a2 2 0 102.8 2.8" />
-            <path d="M9.9 4.2A9.9 9.9 0 0121 12c-.7 1.2-2.5 3.6-5.4 4.9M6.5 6.5C4 8 2.7 9.9 2 12c.7 1.8 2.7 4.5 6 6"/>
-          </svg>
-          Hide columns
-        </button>
-
-        <button class="tb-btn" id="tbFilter">
-          <svg class="tb-ico" viewBox="0 0 24 24" fill="none" stroke="#111" stroke-width="2">
-            <path d="M3 5h18l-7 8v6l-4-2v-4z"/>
-          </svg>
-          Filter
-        </button>
-
-        <button class="tb-btn" id="tbSort">
-          <svg class="tb-ico" viewBox="0 0 24 24" fill="none" stroke="#111" stroke-width="2">
-            <path d="M7 4v16M7 4l-3 3M7 4l3 3M17 20V4m0 16l-3-3m3 3l3-3"/>
-          </svg>
-          Sort
-        </button>
-
-        <!-- Progress badge pill (right-aligned) -->
-        <span id="loadProgress" class="chip" style="display:none;margin-left:auto"></span>
-      </div>
-      <!-- ======= /TOOLBAR ======= -->
-
       <!-- HIDE COLUMNS POPOVER -->
       <div class="popover" id="pvHide">
         <div class="pv-row"><label style="font-weight:600">Hide columns</label></div>
@@ -426,8 +407,38 @@ input:focus, select:focus, button:focus{
         </div>
       </div>
 
-      <!-- TABLE -->
+      <!-- TABLE (toolbar moved inside) -->
       <div class="tableWrap" id="tableWrap">
+        <!-- ======= TOOLBAR ======= -->
+        <div class="toolbar" id="toolbar">
+          <button class="tb-btn" id="tbHide">
+            <svg class="tb-ico" viewBox="0 0 24 24" fill="none" stroke="#111" stroke-width="2">
+              <path d="M3 3l18 18" />
+              <path d="M10.6 10.6a2 2 0 102.8 2.8" />
+              <path d="M9.9 4.2A9.9 9.9 0 0121 12c-.7 1.2-2.5 3.6-5.4 4.9M6.5 6.5C4 8 2.7 9.9 2 12c.7 1.8 2.7 4.5 6 6"/>
+            </svg>
+            Hide columns
+          </button>
+
+          <button class="tb-btn" id="tbFilter">
+            <svg class="tb-ico" viewBox="0 0 24 24" fill="none" stroke="#111" stroke-width="2">
+              <path d="M3 5h18l-7 8v6l-4-2v-4z"/>
+            </svg>
+            Filter
+          </button>
+
+          <button class="tb-btn" id="tbSort">
+            <svg class="tb-ico" viewBox="0 0 24 24" fill="none" stroke="#111" stroke-width="2">
+              <path d="M7 4v16M7 4l-3 3M7 4l3 3M17 20V4m0 16l-3-3m3 3l3-3"/>
+            </svg>
+            Sort
+          </button>
+
+          <!-- Progress badge pill (right-aligned) -->
+          <span id="loadProgress" class="chip" style="display:none;margin-left:auto"></span>
+        </div>
+        <!-- ======= /TOOLBAR ======= -->
+
         <table id="tbl">
           <thead>
             <tr id="thead-row"></tr>
@@ -1159,9 +1170,6 @@ input:focus, select:focus, button:focus{
           const hasCursor = !!cursor;
           if (moreBtn) moreBtn.style.display = hasCursor ? 'inline-flex' : 'none';
 
-          // Adjust height after render
-          adjustTableHeight();
-
           // Update progress badge
           updateProgressBadge();
         } // end render()
@@ -1199,15 +1207,6 @@ input:focus, select:focus, button:focus{
           if(isLoading || !cursor) return;
           fetchAndAppend({limit: 100, cursorParam: cursor, progressive: true});
         };
-
-        // Adjust height util (one copy)
-        function adjustTableHeight(){
-          if (!tableWrap) return;
-          const vwTop = tableWrap.getBoundingClientRect().top;
-          const maxH = Math.max(360, window.innerHeight - vwTop - 16);
-          tableWrap.style.maxHeight = maxH + 'px';
-        }
-        window.addEventListener('resize', function(){ adjustTableHeight(); });
 
         // Data fetching
         async function fetchBatch(params){
@@ -1277,7 +1276,6 @@ input:focus, select:focus, button:focus{
           }
 
           setMoreLoading(false);
-          // ensure progress badge reflects final state after loop
           updateProgressBadge();
         }
 
@@ -1328,7 +1326,6 @@ input:focus, select:focus, button:focus{
             // Reveal UI immediately after first page
             showLoader(false);
             if (app) app.style.display = 'block';
-            adjustTableHeight();
 
             // Keep fetching more pages in the background
             const PROGRESS_LIMIT = 120;
@@ -1350,4 +1347,3 @@ input:focus, select:focus, button:focus{
     </script>
   </body>
 </html>
-
