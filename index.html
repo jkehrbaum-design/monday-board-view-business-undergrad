@@ -143,7 +143,10 @@ input,select{
 .popover.open{display:block}
 #pvHide{min-width:420px}
 #pvFilter{min-width:520px}
-#pvSort{min-width:420px}
+#pvSort{
+  /*min-width:420px; CHANGE ME*/
+  width:420px;
+}
 .pv-row{display:flex;flex-direction:column;gap:6px;margin-bottom:10px}
 .pv-row-inline{display:flex;gap:10px;align-items:center}
 .pv-actions{display:flex;align-items:center;gap:8px;margin-top:8px}
@@ -172,18 +175,143 @@ input,select{
 .switch.on{background:#22c55e;}
 .switch.on::after{left:18px;}
 
+/* Table wrapper — hides native horizontal scrollbar */
+.tableWrap {
+  background: #fff;
+  border-radius: 12px;
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  
+  /* Allow horizontal scroll but hide the scrollbar */
+  overflow-x: auto;
+  overflow-y: auto;
+  
+  /* Hide scrollbar in Firefox */
+  scrollbar-width: none;
+  
+  /* Hide scrollbar in Chrome/Safari/Edge */
+  -ms-overflow-style: none;
+}
 
-/* Table wrapper — white background + cyan border; owns scrolling */
-.tableWrap{
+/* Chrome/Safari/Edge: Hide horizontal scrollbar completely */
+.tableWrap::-webkit-scrollbar:horizontal {
+  display: none;
+  height: 0;
+}
+
+/* Chrome/Safari/Edge: Keep vertical scrollbar visible */
+.tableWrap::-webkit-scrollbar:vertical {
+  width: 12px;
+}
+
+.tableWrap::-webkit-scrollbar-track {
+  background: #f1f5f9;
+  border-radius: 0 0 12px 0;
+}
+
+.tableWrap::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 6px;
+  border: 2px solid #f1f5f9;
+}
+
+.tableWrap::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+.tableWrap::-webkit-scrollbar-corner {
+  background: #f1f5f9;
+}
+
+/* Hide horizontal scrollbar in Firefox */
+@supports (scrollbar-width: none) {
+  .tableWrap {
+    scrollbar-width: thin;
+  }
+}
+
+/* For the horizontal scrollbar  */
+/* Sticky horizontal scrollbar container */
+.h-scroll-container{
+  position:sticky;
+  bottom:0;
+  left:0;
+  right:0;
+  height:12px;
+  background:#f1f5f9;
+  overflow-x:auto;
+  overflow-y:hidden;
+  z-index:15;
+  border-top:1px solid var(--line);
+  display:none; /* Hidden by default, shown by JS when needed */
+}
+
+.h-scroll-content{
+  height:1px;
+  pointer-events:none;
+}
+
+/* Style the sticky scrollbar to match main scrollbar */
+.h-scroll-container::-webkit-scrollbar {
+  height: 12px;
+}
+
+.h-scroll-container::-webkit-scrollbar-track {
+  background: #f1f5f9;
+}
+
+.h-scroll-container::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 6px;
+  border: 2px solid #f1f5f9;
+}
+
+.h-scroll-container::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+/* NEW: Wrapper that provides the unified border */
+.table-container{
   background:#fff;
-  border:2px solid var(--brand-cyan);
+  border:2px solid var(--brand-cyan);  /* Single border around everything */
   border-radius:12px;
-  overflow:auto;
-  position:relative;
-  /* NEW: fill available height and keep scroll within */
+  display:flex;
+  flex-direction:column;
   flex:1;
   min-height:0;
+  overflow:hidden;  /* Keeps rounded corners clean */
 }
+
+/* Toolbar - stays at top */
+.toolbar-wrap{
+  background:#fff;
+  border-bottom:1px solid var(--line);  /* Just a separator line */
+  padding:8px;
+  flex-shrink:0;  /* Doesn't scroll */
+}
+
+/* Table - scrolls independently */
+.tableWrap{
+  background:#fff;
+  overflow-x:auto;  /* Scrolls horizontally */
+  overflow-y:auto;  /* Scrolls vertically */
+  flex:1;
+}
+
+/* Toolbar (stays on top of everything) CHANGE ME */ 
+.toolbar { z-index: 20; }
+
+/* Regular sticky headers */
+thead th { z-index: 10; }
+
+/* Sticky NAME column header (intersection point) */
+thead th.sticky { z-index: 11; }
+
+/* Sticky NAME column cells */
+td.sticky { z-index: 8; }
+/* change me end */
+
 
 table{border-collapse:separate;border-spacing:0;width:max-content;min-width:1200px;}
   th[data-key="insurance"],
@@ -227,6 +355,23 @@ tbody td{
   overflow:hidden;
   text-overflow:ellipsis;
   text-align:center;
+}
+/* Type of Institution column - auto width based on content */
+tbody td[data-key="type"] {
+  max-width: none !important;
+  white-space: normal !important;
+  overflow: visible !important;
+  text-overflow: clip !important;
+  min-width: 150px !important;
+}
+
+/* University Insurance Required column - auto width based on content */
+tbody td[data-key="insurance"] {
+  max-width: none !important;
+  white-space: normal !important;
+  overflow: visible !important;
+  text-overflow: clip !important;
+  min-width: 250px !important;
 }
 
 /* Long text cells left-aligned */
@@ -373,6 +518,33 @@ input:focus, select:focus, button:focus{
   box-shadow:0 0 0 3px rgba(0,181,200,0.18);
   border-radius:8px;
 }
+
+/* Skeleton loader for table rows */
+.skeleton-row{
+  height:44px;
+  background:linear-gradient(90deg,#f0f0f0 25%,#e0e0e0 50%,#f0f0f0 75%);
+  background-size:200% 100%;
+  animation:shimmer 1.5s infinite;
+  border-radius:4px;
+  margin:8px 12px;
+}
+@keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
+
+.loading-msg{
+  text-align:center;
+  padding:40px 20px;
+  color:var(--muted);
+  font-size:14px;
+}
+.loading-msg .mini-spinner{
+  width:32px;
+  height:32px;
+  border:3px solid #eee;
+  border-top-color:var(--primary);
+  border-radius:50%;
+  animation:spin 1s linear infinite;
+  margin:0 auto 12px;
+}
 </style>
 
     
@@ -380,7 +552,7 @@ input:focus, select:focus, button:focus{
 
   <body>
     <!-- Loader -->
-    <div id="loader">
+    <!-- <div id="loader">
       <div class="loader-inner">
         <img
           src="./Link-zuruck-nach-oben.webp"
@@ -390,7 +562,7 @@ input:focus, select:focus, button:focus{
         <div class="spinner"></div>
         <div class="loader-text">Loading data…</div>
       </div>
-    </div>
+    </div> -->
 
     <!-- Error banner -->
     <div
@@ -398,7 +570,7 @@ input:focus, select:focus, button:focus{
       style="display:none;margin:10px 0;padding:10px 12px;border:1px solid #f59e0b;background:#fff8e1;border-radius:8px;color:#7c2d12;font-size:13px"
     ></div>
 
-    <div class="wrap" id="app" style="display:none">
+    <div class="wrap" id="app">
       <div class="h1">Bachelor’s Programs – Freshman Student</div>
 
       <!-- HIDE COLUMNS POPOVER -->
@@ -435,46 +607,64 @@ input:focus, select:focus, button:focus{
             <option value="desc">Z → A</option>
           </select>
         </div>
+        <!-- CHANGE ME clear button below -->
+        <div class="pv-actions"> 
+          <button class="btn" id="sortClearBtn">🗑️ Clear Sort</button>
+          <div class="spacer"></div>
+        </div>
       </div>
 
       <!-- TABLE (toolbar moved inside) -->
-      <div class="tableWrap" id="tableWrap">
-        <!-- ======= TOOLBAR ======= -->
-        <div class="toolbar" id="toolbar">
-          <button class="tb-btn" id="tbHide">
-            <svg class="tb-ico" viewBox="0 0 24 24" fill="none" stroke="#111" stroke-width="2">
-              <path d="M3 3l18 18" />
-              <path d="M10.6 10.6a2 2 0 102.8 2.8" />
-              <path d="M9.9 4.2A9.9 9.9 0 0121 12c-.7 1.2-2.5 3.6-5.4 4.9M6.5 6.5C4 8 2.7 9.9 2 12c.7 1.8 2.7 4.5 6 6"/>
-            </svg>
-            Hide columns
-          </button>
+      <div class="table-container">
+          <!-- ======= TOOLBAR ======= -->
+          <div class="toolbar-wrap" id="toolbar">
+            <button class="tb-btn" id="tbHide">
+              <svg class="tb-ico" viewBox="0 0 24 24" fill="none" stroke="#111" stroke-width="2">
+                <path d="M3 3l18 18" />
+                <path d="M10.6 10.6a2 2 0 102.8 2.8" />
+                <path d="M9.9 4.2A9.9 9.9 0 0121 12c-.7 1.2-2.5 3.6-5.4 4.9M6.5 6.5C4 8 2.7 9.9 2 12c.7 1.8 2.7 4.5 6 6"/>
+              </svg>
+              Hide columns
+            </button>
 
-          <button class="tb-btn" id="tbFilter">
-            <svg class="tb-ico" viewBox="0 0 24 24" fill="none" stroke="#111" stroke-width="2">
-              <path d="M3 5h18l-7 8v6l-4-2v-4z"/>
-            </svg>
-            Filter
-          </button>
+            <button class="tb-btn" id="tbFilter">
+              <svg class="tb-ico" viewBox="0 0 24 24" fill="none" stroke="#111" stroke-width="2">
+                <path d="M3 5h18l-7 8v6l-4-2v-4z"/>
+              </svg>
+              Filter
+            </button>
 
-          <button class="tb-btn" id="tbSort">
-            <svg class="tb-ico" viewBox="0 0 24 24" fill="none" stroke="#111" stroke-width="2">
-              <path d="M7 4v16M7 4l-3 3M7 4l3 3M17 20V4m0 16l-3-3m3 3l3-3"/>
-            </svg>
-            Sort
-          </button>
+            <button class="tb-btn" id="tbSort">
+              <svg class="tb-ico" viewBox="0 0 24 24" fill="none" stroke="#111" stroke-width="2">
+                <path d="M7 4v16M7 4l-3 3M7 4l3 3M17 20V4m0 16l-3-3m3 3l3-3"/>
+              </svg>
+              Sort
+            </button>
 
-          <!-- Progress badge pill (right-aligned) -->
-          <span id="loadProgress" class="chip" style="display:none;margin-left:auto"></span>
-        </div>
-        <!-- ======= /TOOLBAR ======= -->
+            <!-- Progress badge pill (right-aligned) -->
+            <span id="loadProgress" class="chip" style="display:none;margin-left:auto"></span>
+          </div>
+          <!-- ======= /TOOLBAR ======= -->
 
-        <table id="tbl">
-          <thead>
-            <tr id="thead-row"></tr>
-          </thead>
-          <tbody id="tbody"></tbody>
-        </table>
+          <div class="tableWrap" id="tableWrap">
+            <table id="tbl">
+            <thead>
+              <tr id="thead-row"></tr>
+            </thead>
+            <!-- <tbody id="tbody"></tbody> --> <!-- // change me -->
+            <tbody id="tbody">
+              <!-- Initial loading skeleton -->
+              <tr>
+                <td colspan="100" style="border:none;padding:0">
+                  <div class="loading-msg">
+                    <div class="mini-spinner"></div>
+                    <div>Loading universities...</div>
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+            </table>
+          </div>
       </div>
 
       <div class="chips" style="margin-top:8px">
@@ -636,6 +826,54 @@ input:focus, select:focus, button:focus{
         // Table wrap & table
         const tableWrap = document.getElementById('tableWrap');
         const tbl = document.getElementById('tbl');
+
+        // Sticky horizontal scrollbar
+        // const hScrollBar = document.getElementById('hScrollBar');
+        // const hScrollContent = document.getElementById('hScrollContent');
+
+        // Sync sticky scrollbar with table horizontal scrolling
+        // function syncHorizontalScroll(){
+        //   const tableWidth = tbl ? tbl.scrollWidth : 0;
+        //   const containerWidth = tableWrap ? tableWrap.clientWidth : 0;
+          
+        //   if (tableWidth > containerWidth) {
+        //     // Table is wider than container, show scrollbar
+        //     hScrollBar.style.display = 'block';
+        //     hScrollContent.style.width = tableWidth + 'px';
+        //   } else {
+        //     // No horizontal scroll needed
+        //     hScrollBar.style.display = 'none';
+        //   }
+        // }
+
+        // // Sync scrolling between table and sticky scrollbar
+        // if (tableWrap && hScrollBar) {
+        //   let isTableScrolling = false;
+        //   let isBarScrolling = false;
+
+        //   tableWrap.addEventListener('scroll', () => {
+        //     if (isBarScrolling) return;
+        //     isTableScrolling = true;
+            
+        //     requestAnimationFrame(() => {
+        //       hScrollBar.scrollLeft = tableWrap.scrollLeft;
+        //       isTableScrolling = false;
+        //     });
+        //   }, { passive: true });
+
+        //   hScrollBar.addEventListener('scroll', () => {
+        //     if (isTableScrolling) return;
+        //     isBarScrolling = true;
+            
+        //     requestAnimationFrame(() => {
+        //       tableWrap.scrollLeft = hScrollBar.scrollLeft;
+        //       isBarScrolling = false;
+        //     });
+        //   }, { passive: true });
+        // }
+
+        // Update scrollbar on window resize
+        // window.addEventListener('resize', syncHorizontalScroll);
 
         // Buttons (optional in DOM; guarded below)
         const reloadBtn = document.getElementById('reloadBtn');
@@ -1004,7 +1242,7 @@ input:focus, select:focus, button:focus{
 
         // --------- Sort (A→Z / Z→A) UI
         function initSortUI(){
-          sortKeySel.innerHTML = ['<option value="">Name</option>']
+          sortKeySel.innerHTML = []
             .concat(
               COLUMNS
                 .filter(c=>c.sortable || c.type==='text' || c.type==='money' || c.type==='number')
@@ -1034,6 +1272,19 @@ input:focus, select:focus, button:focus{
               sortKeySel.value = sort.key || '';
               sortDirSel.value = sort.dir===1 ? 'asc' : 'desc';
             }
+          });
+        }
+
+        // Clear sort button
+        const sortClearBtn = document.getElementById('sortClearBtn');
+        if (sortClearBtn) {
+          sortClearBtn.addEventListener('click', () => {
+            // Reset to default sort (name, ascending)
+            sort = { key: 'name', dir: 1 };
+            if (sortKeySel) sortKeySel.value = 'name';
+            if (sortDirSel) sortDirSel.value = 'asc';
+            pvSort.classList.remove('open');
+            render();
           });
         }
 
@@ -1158,51 +1409,101 @@ input:focus, select:focus, button:focus{
         }
 
         // --------- Render table
+        // function render(){
+        //   const rows = items.map(itemToRow);
+
+        //   // Apply filters
+        //   const filtered = rows.filter(passesAll);
+
+        //   // Update counters
+        //   if (recordText) recordText.textContent = `${filtered.length} records`; // fixed
+        //   if (shown) shown.textContent = filtered.length + ' shown';
+        //   if (loaded) loaded.textContent = items.length + ' loaded';
+
+        //   // Sort + draw
+        //   applySort(filtered);
+        //   updateSortIndicators();
+
+        //   const cols = visibleCols();
+        //   let html = '';
+        //   for (const r of filtered){
+        //     html += '<tr>';
+        //     for (const col of cols){
+        //       const val = r[col.key];
+        //       const cls = [
+        //         col.sticky ? 'sticky':'',
+        //         col.align==='right' ? 'right':'',
+        //         col.trunc ? 'trunc-cell':''
+        //       ].filter(Boolean).join(' ');
+        //       const tdClass = cls ? ` class="${cls}"` : '';
+        //       html += `<td${tdClass}>${renderCell(col, val)}</td>`;
+        //     }
+        //     html += '</tr>';
+        //   }
+        //   tbody.innerHTML = html;
+
+        //   // Update footer chip
+        //   if (recordFooter) {
+        //     recordFooter.textContent = `${filtered.length} ${noun(filtered.length)}`; // fixed
+        //   }
+
+        //   // Show/hide “Load more” if present
+        //   const hasCursor = !!cursor;
+        //   if (moreBtn) moreBtn.style.display = hasCursor ? 'inline-flex' : 'none';
+
+        //   // Update progress badge
+        //   updateProgressBadge();
+        // } // end render()
+        // CHANGE ME
+
         function render(){
           const rows = items.map(itemToRow);
-
-          // Apply filters
           const filtered = rows.filter(passesAll);
-
-          // Update counters
-          if (recordText) recordText.textContent = `${filtered.length} records`; // fixed
-          if (shown) shown.textContent = filtered.length + ' shown';
-          if (loaded) loaded.textContent = items.length + ' loaded';
-
-          // Sort + draw
           applySort(filtered);
           updateSortIndicators();
 
           const cols = visibleCols();
           let html = '';
-          for (const r of filtered){
-            html += '<tr>';
-            for (const col of cols){
-              const val = r[col.key];
-              const cls = [
-                col.sticky ? 'sticky':'',
-                col.align==='right' ? 'right':'',
-                col.trunc ? 'trunc-cell':''
-              ].filter(Boolean).join(' ');
-              const tdClass = cls ? ` class="${cls}"` : '';
-              html += `<td${tdClass}>${renderCell(col, val)}</td>`;
+          
+          // NEW: Handle loading states
+          if (filtered.length === 0 && items.length === 0 && isLoading) {
+            // Still loading first batch
+            html = '<tr><td colspan="100" style="border:none;padding:0"><div class="loading-msg"><div class="mini-spinner"></div><div>Loading universities...</div></div></td></tr>';
+          } else if (filtered.length === 0) {
+            // No results
+            html = '<tr><td colspan="100" style="border:none;padding:40px 20px;text-align:center;color:#6b7280">No universities match your filters</td></tr>';
+          } else {
+            // Render actual rows (existing code)
+            for (const r of filtered){
+              html += '<tr>';
+              for (const col of cols){
+                const val = r[col.key];
+                const cls = [
+                  col.sticky ? 'sticky':'',
+                  col.align==='right' ? 'right':'',
+                  col.trunc ? 'trunc-cell':''
+                ].filter(Boolean).join(' ');
+                const tdClass = cls ? ` class="${cls}"` : '';
+                html += `<td${tdClass} data-key="${esc(col.key)}">${renderCell(col, val)}</td>`;
+              }
+              html += '</tr>';
             }
-            html += '</tr>';
           }
+        
           tbody.innerHTML = html;
 
-          // Update footer chip
+          // NEW: Update footer with loading state
           if (recordFooter) {
-            recordFooter.textContent = `${filtered.length} ${noun(filtered.length)}`; // fixed
+            if (items.length === 0 && isLoading) {
+              recordFooter.textContent = 'Loading...';
+            } else {
+              recordFooter.textContent = `${filtered.length} ${noun(filtered.length)}`;
+            }
           }
-
-          // Show/hide “Load more” if present
-          const hasCursor = !!cursor;
-          if (moreBtn) moreBtn.style.display = hasCursor ? 'inline-flex' : 'none';
 
           // Update progress badge
           updateProgressBadge();
-        } // end render()
+        }
 
         // Progress badge updater
         function updateProgressBadge(){
@@ -1241,7 +1542,8 @@ input:focus, select:focus, button:focus{
         // Data fetching
         async function fetchBatch(params){
           const errorBanner = document.getElementById('errorBanner');
-          const base = location.origin || window.location.href;
+          // const base = location.origin || window.location.href;
+          const base = "https://monday-board-view.netlify.app/" // CHANGE ME
           const url = new URL('/.netlify/functions/items', base);
 
           // defaults
@@ -1282,8 +1584,37 @@ input:focus, select:focus, button:focus{
           }
         }
 
+        // async function fetchAndAppend(opts){
+        //   setMoreLoading(true);
+        //   const res = await fetchBatch(opts || {});
+        //   const batch = res.items || [];
+        //   const cur = res.cursor || null;
+
+        //   if (batch.length){
+        //     items.push(...batch);
+        //     render();
+        //   }
+        //   cursor = cur;
+
+        //   while (opts && opts.progressive && cursor){
+        //     const resN = await fetchBatch({limit:100, cursorParam: cursor});
+        //     const nextBatch = resN.items || [];
+        //     const nextCur = resN.cursor || null;
+        //     if (nextBatch.length){
+        //       items.push(...nextBatch);
+        //       render();
+        //     }
+        //     cursor = nextCur;
+        //   }
+
+        //   setMoreLoading(false);
+        //   updateProgressBadge();
+        // }
+        // CHANGE ME
         async function fetchAndAppend(opts){
-          setMoreLoading(true);
+          isLoading = true;
+          render(); // Show loading state
+          
           const res = await fetchBatch(opts || {});
           const batch = res.items || [];
           const cur = res.cursor || null;
@@ -1294,35 +1625,45 @@ input:focus, select:focus, button:focus{
           }
           cursor = cur;
 
-          while (opts && opts.progressive && cursor){
-            const resN = await fetchBatch({limit:100, cursorParam: cursor});
-            const nextBatch = resN.items || [];
-            const nextCur = resN.cursor || null;
-            if (nextBatch.length){
-              items.push(...nextBatch);
+          // Continue fetching in background if progressive
+          if (opts && opts.progressive && cursor){
+            // NEW: Use setTimeout to yield to browser for rendering
+            setTimeout(async () => {
+              while (cursor){
+                const resN = await fetchBatch({limit:100, cursorParam: cursor});
+                const nextBatch = resN.items || [];
+                const nextCur = resN.cursor || null;
+                if (nextBatch.length){
+                  items.push(...nextBatch);
+                  render();
+                }
+                cursor = nextCur;
+                // NEW: Small delay to keep UI responsive
+                await new Promise(r => setTimeout(r, 50));
+              }
+              isLoading = false;
               render();
-            }
-            cursor = nextCur;
+            }, 100);
+          } else {
+            isLoading = false;
+            render();
           }
-
-          setMoreLoading(false);
-          updateProgressBadge();
         }
 
-        function showLoader(on){
-          if (loader) loader.style.display = on ? 'flex' : 'none';
-        }
+        // function showLoader(on){
+        //   if (loader) loader.style.display = on ? 'flex' : 'none';
+        // }
 
-        function setMoreLoading(on){
-          isLoading = on;
-          if (moreBtn) moreBtn.disabled = on;
-          if (reloadBtn) reloadBtn.disabled = on;
-          if (moreSpin) moreSpin.style.display = on ? 'inline-block' : 'none';
-          if (reloadSpin) reloadSpin.style.display = on ? 'inline-block' : 'none';
-          const span = moreBtn ? moreBtn.querySelector('span') : null;
-          if (span) span.textContent = on ? 'Load more…' : 'Load more';
-          if (recordBarFill) recordBarFill.style.width = on ? '40%' : '100%';
-        }
+        // function setMoreLoading(on){
+        //   isLoading = on;
+        //   if (moreBtn) moreBtn.disabled = on;
+        //   if (reloadBtn) reloadBtn.disabled = on;
+        //   if (moreSpin) moreSpin.style.display = on ? 'inline-block' : 'none';
+        //   if (reloadSpin) reloadSpin.style.display = on ? 'inline-block' : 'none';
+        //   const span = moreBtn ? moreBtn.querySelector('span') : null;
+        //   if (span) span.textContent = on ? 'Load more…' : 'Load more';
+        //   if (recordBarFill) recordBarFill.style.width = on ? '40%' : '100%';
+        // }
 
         // --------- Init
         function initialHeadersAndUI(){
@@ -1338,42 +1679,78 @@ input:focus, select:focus, button:focus{
         async function initialLoad(){
           items = [];
           cursor = null;
-          totalItems = null; // reset total for a fresh session
+          totalItems = null;
 
-          showLoader(true);
           try {
-            // First page only; return fast
-            const FIRST_PAGE_LIMIT = 50;
-            const MIN_FIRST = 10;
-            const first = await fetchBatch({ limit: FIRST_PAGE_LIMIT, min: MIN_FIRST });
+            isLoading = true; // NEW
+            render(); // NEW: Show loading skeleton immediately
+            
+            const FIRST_LIMIT = 20; // Reduced from 50
+            const first = await fetchBatch({ limit: FIRST_LIMIT });
             const batch1 = first.items || [];
+            
             if (batch1.length){
               items.push(...batch1);
-              render();
+              render(); // Show first batch immediately
             }
             cursor = first.cursor || null;
 
-            // Reveal UI immediately after first page
-            showLoader(false);
-            if (app) app.style.display = 'block';
-
-            // Keep fetching more pages in the background
+            // Continue loading in background
             const PROGRESS_LIMIT = 120;
-            while (cursor){
-              const next = await fetchAndAppend({ limit: PROGRESS_LIMIT, cursorParam: cursor, progressive: true });
-              cursor = next && next.cursor || cursor;
+            if (cursor) {
+              fetchAndAppend({ limit: PROGRESS_LIMIT, cursorParam: cursor, progressive: true });
+            } else {
+              isLoading = false;
+              render();
             }
-          } finally {
-            showLoader(false);
-            if (app) app.style.display = 'block'; // final ensure
-            updateProgressBadge();
+          } catch (err) {
+            console.error('Initial load error:', err);
+            isLoading = false;
+            render();
           }
         }
+
+        // async function initialLoad(){
+        //   items = [];
+        //   cursor = null;
+        //   totalItems = null; // reset total for a fresh session
+
+        //   showLoader(true);
+        //   try {
+        //     // First page only; return fast
+        //     const FIRST_PAGE_LIMIT = 50;
+        //     const MIN_FIRST = 10;
+        //     const first = await fetchBatch({ limit: FIRST_PAGE_LIMIT, min: MIN_FIRST });
+        //     const batch1 = first.items || [];
+        //     if (batch1.length){
+        //       items.push(...batch1);
+        //       render();
+        //     }
+        //     cursor = first.cursor || null;
+
+        //     // Reveal UI immediately after first page
+        //     showLoader(false);
+        //     if (app) app.style.display = 'block';
+
+        //     // Keep fetching more pages in the background
+        //     const PROGRESS_LIMIT = 120;
+        //     while (cursor){
+        //       const next = await fetchAndAppend({ limit: PROGRESS_LIMIT, cursorParam: cursor, progressive: true });
+        //       cursor = next && next.cursor || cursor;
+        //     }
+        //   } finally {
+        //     showLoader(false);
+        //     if (app) app.style.display = 'block'; // final ensure
+        //     updateProgressBadge();
+        //   }
+        // }
 
         // start
         initialHeadersAndUI();
         initialLoad();
       })();
     </script>
+
+
   </body>
 </html>
